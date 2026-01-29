@@ -1,0 +1,28 @@
+{
+  "name": "tips-music-analytics-dashboard",
+  "version": "1.0.0",
+  "description": "Interactive analytics dashboard for Tips Music YouTube metrics vs stock price",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "start": "serve .",
+    "dev": "vercel dev",
+    "test-cron": "node api/update-stock-price.js",
+    "backfill": "node scripts/backfill-stock-data.js"
+  },
+  "keywords": [
+    "tips-music",
+    "analytics",
+    "youtube",
+    "stock-price"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.1"
+  }
+}

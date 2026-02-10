@@ -8,14 +8,16 @@
 -- First, check if the table exists and create if it doesn't
 CREATE TABLE IF NOT EXISTS stock_prices (
     id BIGSERIAL PRIMARY KEY,
-    date DATE NOT NULL UNIQUE,
+    symbol VARCHAR(20) NOT NULL DEFAULT 'TIPSMUSIC',
+    date DATE NOT NULL,
     open DECIMAL(10, 2),
     high DECIMAL(10, 2),
     low DECIMAL(10, 2),
     close DECIMAL(10, 2) NOT NULL,
     volume BIGINT DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(symbol, date)
 );
 
 -- Add missing columns if they don't exist (safe to run multiple times)

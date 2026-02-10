@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Analytics - Tips & Saregama Dashboard</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        /* Header Styles */
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 0 20px;
+            gap: 4px;
+        }
+
+        .tab-button {
+            padding: 16px 32px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: rgba(102, 126, 234, 0.08);
+            color: var(--primary-color);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: var(--bg-primary);
+        }
+
+        /* Controls Section */
+        .controls {
+            padding: 24px;
+            background: var(--bg-secondary);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .controls label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .controls select,
+        .controls input[type="date"] {
+            padding: 10px 16px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .controls select:focus,
+        .controls input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .controls button:active {
+            transform: translateY(0);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 24px;
+            background: var(--bg-secondary);
+        }
+
+        .stat-card {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.25);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+        }
+
+        .stat-card h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            opacity: 0.9;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-card .subtitle {
+            font-size: 0.875rem;
+            opacity: 0.85;
+            font-weight: 400;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 24px;
+            padding: 24px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-container h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-options {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .chart-options button {
+            padding: 8px 16px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .chart-options button:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .chart-options button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        /* Table Styles */
+        .table-container {
+            padding: 24px;
+            background: white;
+        }
+
+        .table-container h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: var(--bg-secondary);
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .positive {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .negative {
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pagination button {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--secondary-color);
+            transform: translateX(0);
+        }
+
+        .pagination button:disabled {
+            background: var(--border-color);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .pagination span {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer p {
+            margin: 4px 0;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .header p {
+                font-size: 0.95rem;
+            }
+
+            .tabs {
+                padding: 0 10px;
+            }
+
+            .tab-button {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .controls select,
+            .controls input,
+            .controls button {
+                width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+
+            .chart-container {
+                padding: 16px;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 10px 12px;
+            }
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎵 Music Stock Analytics Dashboard</h1>
+            <p>YouTube Views vs Stock Price Correlation Analysis</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchCompany('tips')">
+                🎼 Tips Music
+            </button>
+            <button class="tab-button" onclick="switchCompany('saregama')">
+                🎵 Saregama India
+            </button>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <label for="timePeriod">Time Period:</label>
+            <select id="timePeriod" onchange="handleTimePeriodChange()">
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+                <option value="180">Last 6 Months</option>
+                <option value="365">Last 1 Year</option>
+                <option value="all">All Time (2023-Present)</option>
+                <option value="custom">Custom Range</option>
+            </select>
+            
+            <input type="date" id="startDate" class="hidden">
+            <input type="date" id="endDate" class="hidden">
+            
+            <button onclick="fetchData()">🔄 Refresh Data</button>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Subscribers</h3>
+                <div class="value" id="totalSubs">--</div>
+                <div class="subtitle">Loading...</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Views</h3>
+                <div class="value" id="totalViews">--</div>
+                <div class="subtitle">Loading...</div>
+            </div>
+            <div class="stat-card">
+                <h3>Daily Views (Latest)</h3>
+                <div class="value" id="dailyViews">--</div>
+                <div class="subtitle">Loading...</div>
+            </div>
+            <div class="stat-card">
+                <h3>Stock Price (Latest)</h3>
+                <div class="value" id="stockPrice">--</div>
+                <div class="subtitle">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <!-- Daily Views Chart -->
+            <div class="chart-container">
+                <h2>📈 Daily Views - <span id="viewsChartTitle">Tips Music</span></h2>
+                <div class="chart-options">
+                    <button class="active" onclick="toggleScale('views', 'linear', event)">Linear</button>
+                    <button onclick="toggleScale('views', 'logarithmic', event)">Logarithmic</button>
+                    <button onclick="toggleMA('views', event)">Show MA (7/30/45)</button>
+                </div>
+                <canvas id="viewsChart"></canvas>
+            </div>
+
+            <!-- Stock Price Chart -->
+            <div class="chart-container">
+                <h2>💹 Stock Price - <span id="stockChartTitle">NSE: TIPSMUSIC</span></h2>
+                <div class="chart-options">
+                    <button class="active" onclick="toggleScale('stock', 'linear', event)">Linear</button>
+                    <button onclick="toggleScale('stock', 'logarithmic', event)">Logarithmic</button>
+                    <button onclick="toggleMA('stock', event)">Show MA (7/30/45)</button>
+                </div>
+                <canvas id="stockChart"></canvas>
+            </div>
+
+            <!-- Monthly Growth Chart -->
+            <div class="chart-container">
+                <h2>📊 Monthly Views Growth</h2>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+
+            <!-- Correlation Chart -->
+            <div class="chart-container">
+                <h2>🔗 Daily Views vs Stock Price (Dual-Axis)</h2>
+                <div class="chart-options">
+                    <button class="active" onclick="toggleDualAxis('raw', event)">Raw Daily Views</button>
+                    <button onclick="toggleDualAxis('ma30', event)">30-Day MA</button>
+                    <button onclick="toggleDualAxis('ma45', event)">45-Day MA</button>
+                    <button onclick="toggleDualAxis('both', event)">45-Day MA (Both)</button>
+                </div>
+                <canvas id="correlationChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-container">
+            <h2>📋 Daily Channel Metrics</h2>
+            <div class="table-wrapper">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Daily Views</th>
+                            <th>Change</th>
+                            <th>% Change</th>
+                            <th>Stock Price (₹)</th>
+                            <th>Stock Change</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="6" class="text-center">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            <button onclick="previousPage()" id="prevBtn" disabled>← Previous</button>
+            <span id="pageInfo">Showing 0-0 of 0 records</span>
+            <button onclick="nextPage()" id="nextBtn">Next →</button>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Last updated: <span id="lastUpdated">--</span></p>
+            <p>Data source: Supabase PostgreSQL | Stock: <span id="footerStock">NSE TIPSMUSIC</span></p>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const SUPABASE_URL = 'https://bfafqccvzboyfjewzvhk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmYWZxY2N2emJveWZqZXd6dmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2OTM4NzUsImV4cCI6MjA4MzI2OTg3NX0.OoyXHxHxAvSiE28NG3fz-S5QXcKz6OwspLrb9mSGH2Q';
+
+        // Company configuration
+        let currentCompany = 'tips';
+
+        const COMPANY_CONFIG = {
+            tips: {
+                name: 'Tips Music',
+                youtubeTable: 'tips_youtube_data',
+                stockSymbol: 'TIPSMUSIC',
+                stockName: 'NSE: TIPSMUSIC',
+                channelUrl: 'https://www.youtube.com/@tipsofficial'
+            },
+            saregama: {
+                name: 'Saregama Music',
+                youtubeTable: 'saregama_youtube_data',
+                stockSymbol: 'SAREGAMA',
+                stockName: 'NSE: SAREGAMA',
+                channelUrl: 'https://www.youtube.com/@saregamamusic'
+            }
+        };
+
+        // ==========================================
+        // STATE VARIABLES
+        // ==========================================
+        let allYoutubeData = [];
+        let allStockData = [];
+        let currentPage = 1;
+        const rowsPerPage = 50;
+        let charts = {
+            views: null,
+            stock: null,
+            monthly: null,
+            correlation: null
+        };
+        let chartStates = {
+            views: { scale: 'linear', showMA: false },
+            stock: { scale: 'linear', showMA: false },
+            dualAxis: 'raw'
+        };
+
+        // ==========================================
+        // UTILITY FUNCTIONS
+        // ==========================================
+        function formatNumber(num) {
+            if (!num && num !== 0) return '--';
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function formatCurrency(num) {
+            if (!num && num !== 0) return '--';
+            return '₹' + parseFloat(num).toFixed(2);
+        }
+
+        function formatPercentage(num) {
+            if (!num && num !== 0) return '--';
+            const sign = num > 0 ? '+' : '';
+            return sign + parseFloat(num).toFixed(2) + '%';
+        }
+
+        function calculatePercentageChange(current, previous) {
+            if (!previous || previous === 0) return 0;
+            return ((current - previous) / previous) * 100;
+        }
+
+        function calculateMovingAverage(data, period) {
+            const result = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    result.push(null);
+                } else {
+                    let sum = 0;
+                    for (let j = 0; j < period; j++) {
+                        sum += data[i - j];
+                    }
+                    result.push(sum / period);
+                }
+            }
+            return result;
+        }
+
+        function filterDataByTimePeriod(data) {
+            const period = document.getElementById('timePeriod').value;
+            
+            if (period === 'all') {
+                return data;
+            }
+            
+            if (period === 'custom') {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                if (startDate && endDate) {
+                    return data.filter(item => {
+                        return item.date >= startDate && item.date <= endDate;
+                    });
+                }
+                return data;
+            }
+            
+            const days = parseInt(period);
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+            const cutoffStr = cutoffDate.toISOString().split('T')[0];
+            
+            return data.filter(item => item.date >= cutoffStr);
+        }
+
+        // ==========================================
+        // DATA FETCHING
+        // ==========================================
+        async function fetchYouTubeData() {
+            const config = COMPANY_CONFIG[currentCompany];
+            
+            try {
+                const response = await axios.get(
+                    `${SUPABASE_URL}/rest/v1/${config.youtubeTable}`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        params: {
+                            select: '*',
+                            order: 'date.desc'
+                        }
+                    }
+                );
+                
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching YouTube data:', error);
+                return [];
+            }
+        }
+
+        async function fetchStockPrices() {
+            const config = COMPANY_CONFIG[currentCompany];
+            
+            try {
+                const response = await axios.get(
+                    `${SUPABASE_URL}/rest/v1/stock_prices`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        params: {
+                            select: '*',
+                            symbol: `eq.${config.stockSymbol}`,
+                            order: 'date.desc'
+                        }
+                    }
+                );
+                
+                return response.data;
+            } catch (error) {
+                console.error('Error fetching stock data:', error);
+                return [];
+            }
+        }
+
+        async function fetchData() {
+            console.log('Fetching data for:', currentCompany);
+            
+            const [youtubeData, stockData] = await Promise.all([
+                fetchYouTubeData(),
+                fetchStockPrices()
+            ]);
+
+            allYoutubeData = youtubeData || [];
+            allStockData = stockData || [];
+
+            updateStats();
+            renderCharts();
+            renderTable();
+            updateLastUpdated();
+        }
+
+        // ==========================================
+        // UI UPDATE FUNCTIONS
+        // ==========================================
+        function updateStats() {
+            if (allYoutubeData.length > 0) {
+                const latest = allYoutubeData[0];
+                document.getElementById('totalSubs').textContent = formatNumber(latest.subscribers);
+                document.getElementById('totalViews').textContent = formatNumber(latest.total_views);
+                document.getElementById('dailyViews').textContent = formatNumber(latest.daily_views);
+                
+                const subChange = allYoutubeData.length > 1 ? latest.subscribers - allYoutubeData[1].subscribers : 0;
+                document.querySelector('#totalSubs').nextElementSibling.textContent = 
+                    subChange > 0 ? `+${formatNumber(subChange)} today` : 'No change';
+            }
+
+            if (allStockData.length > 0) {
+                const latestStock = allStockData[0];
+                const previousStock = allStockData.length > 1 ? allStockData[1] : null;
+                
+                document.getElementById('stockPrice').textContent = formatCurrency(latestStock.close);
+                
+                if (previousStock) {
+                    const change = latestStock.close - previousStock.close;
+                    const changePercent = calculatePercentageChange(latestStock.close, previousStock.close);
+                    const changeText = `${change > 0 ? '+' : ''}${formatCurrency(change)} (${formatPercentage(changePercent)})`;
+                    document.querySelector('#stockPrice').nextElementSibling.textContent = changeText;
+                    document.querySelector('#stockPrice').nextElementSibling.className = 
+                        'subtitle ' + (change >= 0 ? 'positive' : 'negative');
+                }
+            }
+        }
+
+        function switchCompany(company) {
+            currentCompany = company;
+            const config = COMPANY_CONFIG[company];
+            
+            // Update active tab
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update titles
+            document.getElementById('viewsChartTitle').textContent = config.name;
+            document.getElementById('stockChartTitle').textContent = config.stockName;
+            document.getElementById('footerStock').textContent = config.stockName;
+            
+            // Reset page
+            currentPage = 1;
+            
+            // Fetch new data
+            fetchData();
+        }
+
+        function handleTimePeriodChange() {
+            const period = document.getElementById('timePeriod').value;
+            
+            if (period === 'custom') {
+                document.getElementById('startDate').classList.remove('hidden');
+                document.getElementById('endDate').classList.remove('hidden');
+            } else {
+                document.getElementById('startDate').classList.add('hidden');
+                document.getElementById('endDate').classList.add('hidden');
+                renderCharts();
+                renderTable();
+            }
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const options = { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            };
+            document.getElementById('lastUpdated').textContent = now.toLocaleString('en-US', options);
+        }
+
+        // ==========================================
+        // CHART RENDERING
+        // ==========================================
+        function renderCharts() {
+            const filteredYoutubeData = filterDataByTimePeriod([...allYoutubeData].reverse());
+            const filteredStockData = filterDataByTimePeriod([...allStockData].reverse());
+            
+            renderViewsChart(filteredYoutubeData);
+            renderStockChart(filteredStockData);
+            renderMonthlyChart(filteredYoutubeData);
+            renderCorrelationChart(filteredYoutubeData, filteredStockData);
+        }
+
+        function renderViewsChart(data) {
+            const ctx = document.getElementById('viewsChart').getContext('2d');
+            
+            if (charts.views) {
+                charts.views.destroy();
+            }
+
+            const dates = data.map(d => d.date);
+            const views = data.map(d => d.daily_views);
+            
+            const datasets = [{
+                label: 'Daily Views',
+                data: views,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            }];
+
+            if (chartStates.views.showMA) {
+                datasets.push({
+                    label: '7-Day MA',
+                    data: calculateMovingAverage(views, 7),
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '30-Day MA',
+                    data: calculateMovingAverage(views, 30),
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '45-Day MA',
+                    data: calculateMovingAverage(views, 45),
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+            }
+
+            charts.views = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatNumber(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: chartStates.views.scale,
+                            beginAtZero: chartStates.views.scale === 'linear',
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStockChart(data) {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            
+            if (charts.stock) {
+                charts.stock.destroy();
+            }
+
+            const dates = data.map(d => d.date);
+            const prices = data.map(d => d.close);
+            
+            const datasets = [{
+                label: 'Stock Price (₹)',
+                data: prices,
+                borderColor: '#764ba2',
+                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 6
+            }];
+
+            if (chartStates.stock.showMA) {
+                datasets.push({
+                    label: '7-Day MA',
+                    data: calculateMovingAverage(prices, 7),
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '30-Day MA',
+                    data: calculateMovingAverage(prices, 30),
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: '45-Day MA',
+                    data: calculateMovingAverage(prices, 45),
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    pointRadius: 0
+                });
+            }
+
+            charts.stock = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ₹' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: chartStates.stock.scale,
+                            beginAtZero: chartStates.stock.scale === 'linear',
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toFixed(0);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderMonthlyChart(data) {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            
+            if (charts.monthly) {
+                charts.monthly.destroy();
+            }
+
+            // Group by month
+            const monthlyData = {};
+            data.forEach(item => {
+                const month = item.date.substring(0, 7); // YYYY-MM
+                if (!monthlyData[month]) {
+                    monthlyData[month] = { views: 0, count: 0 };
+                }
+                monthlyData[month].views += item.daily_views;
+                monthlyData[month].count += 1;
+            });
+
+            const months = Object.keys(monthlyData).sort();
+            const monthlyViews = months.map(m => monthlyData[m].views);
+
+            charts.monthly = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Total Monthly Views',
+                        data: monthlyViews,
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Total Views: ' + formatNumber(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCorrelationChart(youtubeData, stockData) {
+            const ctx = document.getElementById('correlationChart').getContext('2d');
+            
+            if (charts.correlation) {
+                charts.correlation.destroy();
+            }
+
+            // Merge data by date
+            const mergedData = [];
+            youtubeData.forEach(yt => {
+                const stock = stockData.find(s => s.date === yt.date);
+                if (stock) {
+                    mergedData.push({
+                        date: yt.date,
+                        views: yt.daily_views,
+                        price: stock.close
+                    });
+                }
+            });
+
+            const dates = mergedData.map(d => d.date);
+            const views = mergedData.map(d => d.views);
+            const prices = mergedData.map(d => d.price);
+
+            let viewsDataset;
+            
+            switch (chartStates.dualAxis) {
+                case 'raw':
+                    viewsDataset = views;
+                    break;
+                case 'ma30':
+                    viewsDataset = calculateMovingAverage(views, 30);
+                    break;
+                case 'ma45':
+                    viewsDataset = calculateMovingAverage(views, 45);
+                    break;
+                case 'both':
+                    viewsDataset = calculateMovingAverage(views, 45);
+                    break;
+            }
+
+            const datasets = [{
+                label: chartStates.dualAxis === 'raw' ? 'Daily Views' : `${chartStates.dualAxis.toUpperCase()} Views`,
+                data: viewsDataset,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1,
+                yAxisID: 'y',
+                pointRadius: 0
+            }];
+
+            if (chartStates.dualAxis === 'both') {
+                datasets.push({
+                    label: 'Stock Price (₹)',
+                    data: calculateMovingAverage(prices, 45),
+                    borderColor: '#764ba2',
+                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y1',
+                    pointRadius: 0
+                });
+            } else {
+                datasets.push({
+                    label: 'Stock Price (₹)',
+                    data: prices,
+                    borderColor: '#764ba2',
+                    backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1,
+                    yAxisID: 'y1',
+                    pointRadius: 0
+                });
+            }
+
+            charts.correlation = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Daily Views'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Stock Price (₹)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toFixed(0);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // CHART CONTROLS
+        // ==========================================
+        function toggleScale(chartName, scale, event) {
+            chartStates[chartName].scale = scale;
+            
+            // Update button states
+            const buttons = event.target.parentElement.querySelectorAll('button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            renderCharts();
+        }
+
+        function toggleMA(chartName, event) {
+            chartStates[chartName].showMA = !chartStates[chartName].showMA;
+            event.target.classList.toggle('active');
+            renderCharts();
+        }
+
+        function toggleDualAxis(mode, event) {
+            chartStates.dualAxis = mode;
+            
+            // Update button states
+            const buttons = event.target.parentElement.querySelectorAll('button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            renderCharts();
+        }
+
+        // ==========================================
+        // TABLE RENDERING
+        // ==========================================
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            const filteredData = filterDataByTimePeriod(allYoutubeData);
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No data available</td></tr>';
+                updatePagination(0);
+                return;
+            }
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = Math.min(start + rowsPerPage, filteredData.length);
+            const pageData = filteredData.slice(start, end);
+
+            pageData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                
+                // Calculate view changes
+                const nextIndex = filteredData.indexOf(row) + 1;
+                const previousRow = nextIndex < filteredData.length ? filteredData[nextIndex] : null;
+                
+                let viewChange = '--';
+                let viewChangePercent = '--';
+                let viewChangeClass = '';
+                
+                if (previousRow) {
+                    const change = row.daily_views - previousRow.daily_views;
+                    const changePercent = calculatePercentageChange(row.daily_views, previousRow.daily_views);
+                    viewChange = (change > 0 ? '+' : '') + formatNumber(change);
+                    viewChangePercent = formatPercentage(changePercent);
+                    viewChangeClass = change >= 0 ? 'positive' : 'negative';
+                }
+
+                // Find matching stock data
+                const stockMatch = allStockData.find(s => s.date === row.date);
+                let stockPrice = '--';
+                let stockChange = '--';
+                let stockChangeClass = '';
+
+                if (stockMatch) {
+                    stockPrice = formatCurrency(stockMatch.close);
+                    
+                    // Find previous stock price
+                    const stockIndex = allStockData.indexOf(stockMatch);
+                    const previousStock = stockIndex < allStockData.length - 1 ? allStockData[stockIndex + 1] : null;
+                    
+                    if (previousStock) {
+                        const change = stockMatch.close - previousStock.close;
+                        const changePercent = calculatePercentageChange(stockMatch.close, previousStock.close);
+                        stockChange = `${change > 0 ? '+' : ''}${formatCurrency(change)} (${formatPercentage(changePercent)})`;
+                        stockChangeClass = change >= 0 ? 'positive' : 'negative';
+                    }
+                }
+
+                tr.innerHTML = `
+                    <td>${row.date}</td>
+                    <td>${formatNumber(row.daily_views)}</td>
+                    <td class="${viewChangeClass}">${viewChange}</td>
+                    <td class="${viewChangeClass}">${viewChangePercent}</td>
+                    <td>${stockPrice}</td>
+                    <td class="${stockChangeClass}">${stockChange}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updatePagination(filteredData.length);
+        }
+
+        // ==========================================
+        // PAGINATION
+        // ==========================================
+        function updatePagination(totalRecords) {
+            const start = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+            const end = Math.min(start + rowsPerPage - 1, totalRecords);
+
+            document.getElementById('pageInfo').textContent = `Showing ${start}-${end} of ${totalRecords} records`;
+            document.getElementById('prevBtn').disabled = currentPage === 1;
+            document.getElementById('nextBtn').disabled = end >= totalRecords;
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function nextPage() {
+            const filteredData = filterDataByTimePeriod(allYoutubeData);
+            const maxPage = Math.ceil(filteredData.length / rowsPerPage);
+            
+            if (currentPage < maxPage) {
+                currentPage++;
+                renderTable();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Dashboard initialized');
+            fetchData();
+        });
+    </script>
+</body>
+</html>

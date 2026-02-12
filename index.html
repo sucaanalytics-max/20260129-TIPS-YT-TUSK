@@ -375,6 +375,101 @@
             font-size: 1rem;
         }
 
+        /* Period Summary */
+        .period-summary {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .period-summary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--gradient-secondary);
+        }
+
+        .period-summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .period-summary-header .section-title { margin-bottom: 0; }
+
+        .period-range {
+            padding: 5px 14px;
+            background: rgba(6,182,212,0.1);
+            border: 1px solid rgba(6,182,212,0.25);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            letter-spacing: 0.3px;
+        }
+
+        .period-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .period-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 14px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .period-stat-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .period-stat-value {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.3px;
+        }
+
+        .period-stat-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .period-stat-sub.positive { color: var(--accent-green); }
+        .period-stat-sub.negative { color: var(--accent-red); }
+
+        [data-theme="light"] .period-summary { backdrop-filter: none; box-shadow: var(--shadow-sm); }
+
+        @media (max-width: 768px) {
+            .period-summary { padding: 16px; }
+            .period-summary-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .period-stat { padding: 10px 12px; }
+            .period-stat-value { font-size: 1.1rem; }
+        }
+
+        @media (max-width: 480px) {
+            .period-summary-grid { grid-template-columns: 1fr; }
+        }
+
         /* Charts */
         .charts-grid {
             display: grid;
@@ -753,6 +848,44 @@
                 </div>
             </div>
 
+            <!-- Period Summary - reacts to date range selection -->
+            <div class="period-summary" id="periodSummary">
+                <div class="period-summary-header">
+                    <h2 class="section-title">Period Summary</h2>
+                    <span class="period-range" id="periodRangeLabel">Last 90 Days</span>
+                </div>
+                <div class="period-summary-grid">
+                    <div class="period-stat">
+                        <span class="period-stat-label">Total Views in Period</span>
+                        <span class="period-stat-value" id="periodTotalViews">--</span>
+                    </div>
+                    <div class="period-stat">
+                        <span class="period-stat-label">Avg Daily Views</span>
+                        <span class="period-stat-value" id="periodAvgViews">--</span>
+                    </div>
+                    <div class="period-stat">
+                        <span class="period-stat-label">Peak Daily Views</span>
+                        <span class="period-stat-value" id="periodPeakViews">--</span>
+                        <span class="period-stat-sub" id="periodPeakDate"></span>
+                    </div>
+                    <div class="period-stat">
+                        <span class="period-stat-label">Lowest Daily Views</span>
+                        <span class="period-stat-value" id="periodMinViews">--</span>
+                        <span class="period-stat-sub" id="periodMinDate"></span>
+                    </div>
+                    <div class="period-stat">
+                        <span class="period-stat-label">Subscriber Growth</span>
+                        <span class="period-stat-value" id="periodSubGrowth">--</span>
+                        <span class="period-stat-sub" id="periodSubGrowthPct"></span>
+                    </div>
+                    <div class="period-stat">
+                        <span class="period-stat-label">Days of Data</span>
+                        <span class="period-stat-value" id="periodDays">--</span>
+                        <span class="period-stat-sub" id="periodDateRange"></span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Charts -->
             <div class="charts-grid">
                 <!-- Daily Views Chart -->
@@ -1121,6 +1254,7 @@
 
             updateDataStatus();
             updateStats();
+            updatePeriodSummary();
             renderAllCharts();
             renderTable();
             updateLastUpdated();
@@ -1230,6 +1364,66 @@
         }
 
         // ==========================================
+        // PERIOD SUMMARY - total views for selected date range
+        // ==========================================
+        function updatePeriodSummary() {
+            const filtered = filterDataByTimePeriod(allYoutubeData);
+            const period = document.getElementById('timePeriod').value;
+
+            // Period label
+            const labels = { '30': 'Last 30 Days', '90': 'Last 90 Days', '180': 'Last 6 Months', '365': 'Last 1 Year', 'all': 'All Time', 'custom': 'Custom Range' };
+            document.getElementById('periodRangeLabel').textContent = labels[period] || period;
+
+            if (!filtered.length) {
+                ['periodTotalViews','periodAvgViews','periodPeakViews','periodMinViews','periodSubGrowth','periodDays'].forEach(id => {
+                    document.getElementById(id).textContent = '--';
+                });
+                return;
+            }
+
+            // Total views in period (sum of daily_views)
+            const totalViews = filtered.reduce((sum, d) => sum + (d.daily_views || 0), 0);
+            document.getElementById('periodTotalViews').textContent = formatNumber(totalViews);
+
+            // Average daily views
+            const avgViews = Math.round(totalViews / filtered.length);
+            document.getElementById('periodAvgViews').textContent = formatNumber(avgViews);
+
+            // Peak day
+            let peak = filtered[0], min = filtered[0];
+            filtered.forEach(d => {
+                if ((d.daily_views || 0) > (peak.daily_views || 0)) peak = d;
+                if ((d.daily_views || 0) < (min.daily_views || 0)) min = d;
+            });
+
+            document.getElementById('periodPeakViews').textContent = formatNumber(peak.daily_views);
+            document.getElementById('periodPeakDate').textContent = peak.date;
+
+            document.getElementById('periodMinViews').textContent = formatNumber(min.daily_views);
+            document.getElementById('periodMinDate').textContent = min.date;
+
+            // Subscriber growth across the period
+            // Data is sorted desc, so last element = oldest in period, first = newest
+            const newest = filtered[0];
+            const oldest = filtered[filtered.length - 1];
+            if (newest.subscribers && oldest.subscribers) {
+                const growth = newest.subscribers - oldest.subscribers;
+                const growthPct = calculatePercentageChange(newest.subscribers, oldest.subscribers);
+                document.getElementById('periodSubGrowth').textContent = (growth > 0 ? '+' : '') + formatNumber(growth);
+                const pctEl = document.getElementById('periodSubGrowthPct');
+                pctEl.textContent = formatPercentage(growthPct);
+                pctEl.className = growth >= 0 ? 'period-stat-sub positive' : 'period-stat-sub negative';
+            } else {
+                document.getElementById('periodSubGrowth').textContent = '--';
+                document.getElementById('periodSubGrowthPct').textContent = '';
+            }
+
+            // Days count and range
+            document.getElementById('periodDays').textContent = filtered.length;
+            document.getElementById('periodDateRange').textContent = `${oldest.date} to ${newest.date}`;
+        }
+
+        // ==========================================
         // TAB SWITCHING
         // ==========================================
         function switchCompany(company, btn) {
@@ -1259,6 +1453,7 @@
             } else {
                 document.getElementById('startDate').classList.add('hidden');
                 document.getElementById('endDate').classList.add('hidden');
+                updatePeriodSummary();
                 renderAllCharts();
                 renderTable();
             }

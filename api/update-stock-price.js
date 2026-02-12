@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.s
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY; // Use SERVICE_ROLE key from environment
 const CRON_SECRET = process.env.CRON_SECRET;
 const STOCK_SYMBOL = 'TIPSMUSIC'; // Symbol used in dashboard queries
-const YAHOO_SYMBOL = 'TIPSINDLTD'; // Yahoo Finance ticker for Tips Industries Ltd
+const YAHOO_SYMBOL = 'TIPSINDLTD'; // Yahoo Finance uses TIPSINDLTD.NS for Tips Industries
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   console.log('🚀 Starting stock price update for TIPSMUSIC...');
   
   try {
-    // Fetch stock price using Yahoo ticker
+    // Fetch stock price using Yahoo Finance symbol
     const stockPrice = await fetchNSEPrice(YAHOO_SYMBOL);
     
     if (!stockPrice || stockPrice.close === 0) {

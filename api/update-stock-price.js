@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY; // Use SERVICE_ROLE key from environment
 const CRON_SECRET = process.env.CRON_SECRET;
-const STOCK_SYMBOL = 'TIPSMUSIC';
+const STOCK_SYMBOL = 'TIPSMUSIC'; // Symbol used in dashboard queries
 const YAHOO_SYMBOL = 'TIPSINDLTD'; // Yahoo Finance uses TIPSINDLTD.NS for Tips Industries
 
 export default async function handler(req, res) {
@@ -134,6 +134,7 @@ export default async function handler(req, res) {
           error_details: {
             stack: error.stack,
             symbol: STOCK_SYMBOL,
+            yahoo_symbol: YAHOO_SYMBOL,
             timestamp: new Date().toISOString()
           }
         }]);

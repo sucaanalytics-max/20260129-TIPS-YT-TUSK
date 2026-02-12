@@ -1,18 +1,20 @@
 export default async function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
   try {
-    const SUPABASE_URL = 'https://bfafqccvzboyfjewzvhk.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJmYWZxY2N2emJveWZqZXd6dmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2OTM4NzUsImV4cCI6MjA4MzI2OTg3NX0.OoyXHxHxAvSiE28NG3fz-S5QXcKz6OwspLrb9mSGH2Q';
+    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.supabase.co';
+    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
 
-    // Default to last year of data
+    if (!SUPABASE_KEY) {
+      return res.status(500).json({ success: false, error: 'SUPABASE_SERVICE_KEY not configured' });
+    }
+
     const startDate = req.query.start || '2023-01-01';
     const endDate = req.query.end || new Date().toISOString().split('T')[0];
 
-    // Fetch from Yahoo Finance
     const symbol = 'SAREGAMA.NS';
+    const dbSymbol = 'SAREGAMA';
     const start = Math.floor(new Date(startDate).getTime() / 1000);
     const end = Math.floor(new Date(endDate).getTime() / 1000);
 
@@ -30,32 +32,30 @@ export default async function handler(req, res) {
     if (!result) {
       return res.status(404).json({
         success: false,
-        message: 'No data from Yahoo Finance',
-        yahooUrl
+        message: 'No data from Yahoo Finance'
       });
     }
 
     const timestamps = result.timestamp || [];
     const quotes = result.indicators?.quote?.[0] || {};
 
-    // Build records array
     const records = [];
     for (let i = 0; i < timestamps.length; i++) {
       const date = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
       if (quotes.close?.[i]) {
         records.push({
-          symbol: 'SAREGAMA',
+          symbol: dbSymbol,
           date: date,
           open: quotes.open?.[i] || 0,
           high: quotes.high?.[i] || 0,
           low: quotes.low?.[i] || 0,
           close: quotes.close?.[i] || 0,
-          volume: quotes.volume?.[i] || 0
+          volume: quotes.volume?.[i] || 0,
+          source: 'yahoo_finance'
         });
       }
     }
 
-    // Insert into Supabase
     let successCount = 0;
     let failCount = 0;
     const details = [];
@@ -75,22 +75,22 @@ export default async function handler(req, res) {
 
         if (response.ok) {
           successCount++;
-          details.push({ date: record.date, close: record.close, status: '✅' });
+          details.push({ date: record.date, close: record.close, status: 'ok' });
         } else {
           failCount++;
-          details.push({ date: record.date, status: '❌', error: await response.text() });
+          details.push({ date: record.date, status: 'fail', error: await response.text() });
         }
 
       } catch (error) {
         failCount++;
-        details.push({ date: record.date, status: '❌', error: error.message });
+        details.push({ date: record.date, status: 'fail', error: error.message });
       }
     }
 
     return res.status(200).json({
       success: true,
       message: 'Backfill completed',
-      symbol: 'SAREGAMA',
+      symbol: dbSymbol,
       dateRange: { start: startDate, end: endDate },
       summary: {
         total: records.length,
@@ -103,8 +103,7 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 }

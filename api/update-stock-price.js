@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY; // Use SERVICE_ROLE key from environment
 const CRON_SECRET = process.env.CRON_SECRET;
-const STOCK_SYMBOL = 'TIPSINDLTD'; // ✅ FIXED: Changed from 'TIPSMUSIC' to match your database
+const STOCK_SYMBOL = 'TIPSMUSIC'; // Symbol used in dashboard queries
+const YAHOO_SYMBOL = 'TIPSINDLTD'; // Yahoo Finance ticker for Tips Industries Ltd
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -28,11 +29,11 @@ export default async function handler(req, res) {
     });
   }
 
-  console.log('🚀 Starting stock price update for TIPSINDLTD...');
+  console.log('🚀 Starting stock price update for TIPSMUSIC...');
   
   try {
-    // Fetch stock price
-    const stockPrice = await fetchNSEPrice(STOCK_SYMBOL);
+    // Fetch stock price using Yahoo ticker
+    const stockPrice = await fetchNSEPrice(YAHOO_SYMBOL);
     
     if (!stockPrice || stockPrice.close === 0) {
       throw new Error('Failed to fetch valid stock price');
@@ -133,6 +134,7 @@ export default async function handler(req, res) {
           error_details: {
             stack: error.stack,
             symbol: STOCK_SYMBOL,
+            yahoo_symbol: YAHOO_SYMBOL,
             timestamp: new Date().toISOString()
           }
         }]);

@@ -1195,22 +1195,37 @@
         }
 
         // ==========================================
-        // DATA FETCHING
+        // DATA FETCHING (paginated to fetch ALL records)
         // ==========================================
+        const PAGE_SIZE = 1000;
+
+        async function fetchAllPages(url, params) {
+            let allData = [];
+            let offset = 0;
+            while (true) {
+                const response = await axios.get(url, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Prefer': 'count=exact'
+                    },
+                    params: { ...params, limit: PAGE_SIZE, offset: offset }
+                });
+                const rows = response.data || [];
+                allData = allData.concat(rows);
+                if (rows.length < PAGE_SIZE) break;
+                offset += PAGE_SIZE;
+            }
+            return allData;
+        }
+
         async function fetchYouTubeData() {
             const config = COMPANY_CONFIG[currentCompany];
             try {
-                const response = await axios.get(
+                return await fetchAllPages(
                     `${SUPABASE_URL}/rest/v1/${config.youtubeTable}`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                        },
-                        params: { select: '*', order: 'date.desc' }
-                    }
+                    { select: '*', order: 'date.desc' }
                 );
-                return response.data || [];
             } catch (error) {
                 console.error('Error fetching YouTube data:', error);
                 return [];
@@ -1220,21 +1235,10 @@
         async function fetchStockPrices() {
             const config = COMPANY_CONFIG[currentCompany];
             try {
-                const response = await axios.get(
+                return await fetchAllPages(
                     `${SUPABASE_URL}/rest/v1/stock_prices`,
-                    {
-                        headers: {
-                            'apikey': SUPABASE_ANON_KEY,
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                        },
-                        params: {
-                            select: '*',
-                            symbol: `eq.${config.stockSymbol}`,
-                            order: 'date.desc'
-                        }
-                    }
+                    { select: '*', symbol: `eq.${config.stockSymbol}`, order: 'date.desc' }
                 );
-                return response.data || [];
             } catch (error) {
                 console.error('Error fetching stock data:', error);
                 return [];
@@ -1242,7 +1246,7 @@
         }
 
         async function fetchData() {
-            console.log('Fetching data for:', currentCompany);
+            console.log('Fetching all data for:', currentCompany, '(paginated, no 1000 row cap)');
 
             const [youtubeData, stockData] = await Promise.all([
                 fetchYouTubeData(),
@@ -1251,6 +1255,8 @@
 
             allYoutubeData = youtubeData;
             allStockData = stockData;
+
+            console.log(`Fetched ${youtubeData.length} YouTube records, ${stockData.length} stock records (all pages)`);
 
             updateDataStatus();
             updateStats();

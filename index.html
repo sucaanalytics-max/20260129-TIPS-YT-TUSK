@@ -2585,6 +2585,7 @@
         }
 
         function calculateMaxDrawdown(closes) {
+            if (!closes || closes.length === 0) return { maxDrawdownPct: 0, currentDrawdownPct: 0, drawdownSeries: [] };
             let peak = closes[0];
             let maxDD = 0;
             const ddSeries = [];
@@ -2654,14 +2655,14 @@
             // Max drawdown & current drawdown
             const { maxDrawdownPct, currentDrawdownPct } = calculateMaxDrawdown(closes);
             const maxDDEl = document.getElementById('stockKpiMaxDD');
-            maxDDEl.textContent = maxDrawdownPct.toFixed(1) + '%';
-            maxDDEl.style.color = 'var(--accent-red)';
-            document.getElementById('stockKpiMaxDDCtx').textContent = 'peak-to-trough in period';
+            if (maxDDEl) { maxDDEl.textContent = maxDrawdownPct.toFixed(1) + '%'; maxDDEl.style.color = 'var(--accent-red)'; }
+            const maxDDCtxEl = document.getElementById('stockKpiMaxDDCtx');
+            if (maxDDCtxEl) maxDDCtxEl.textContent = 'peak-to-trough in period';
 
             const currDDEl = document.getElementById('stockKpiCurrDD');
-            currDDEl.textContent = currentDrawdownPct.toFixed(1) + '%';
-            currDDEl.style.color = currentDrawdownPct < -5 ? 'var(--accent-red)' : 'var(--accent-amber)';
-            document.getElementById('stockKpiCurrDDCtx').textContent = 'current vs running peak';
+            if (currDDEl) { currDDEl.textContent = currentDrawdownPct.toFixed(1) + '%'; currDDEl.style.color = currentDrawdownPct < -5 ? 'var(--accent-red)' : 'var(--accent-amber)'; }
+            const currDDCtxEl = document.getElementById('stockKpiCurrDDCtx');
+            if (currDDCtxEl) currDDCtxEl.textContent = 'current vs running peak';
         }
 
         // ==========================================
@@ -2680,6 +2681,9 @@
                     const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
                     renderStockCandlestickChart(filteredStock);
                 });
+                // Sync initial visual state from JS state (avoids HTML/JS drift)
+                const key = btn.getAttribute('data-overlay');
+                btn.classList.toggle('active', !!stockOverlays[key]);
             });
         }
 

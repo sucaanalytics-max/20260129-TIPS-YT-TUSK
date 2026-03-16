@@ -1271,6 +1271,19 @@
             }
         }
 
+        async function fetchChannelBreakdown() {
+            const config = COMPANY_CONFIG[currentCompany];
+            try {
+                return await fetchAllPages(
+                    `${SUPABASE_URL}/rest/v1/channel_latest_stats`,
+                    { select: '*', company: `eq.${config.stockSymbol}`, order: 'daily_views.desc.nullslast' }
+                );
+            } catch (error) {
+                console.error('Error fetching channel breakdown:', error);
+                return [];
+            }
+        }
+
         async function fetchData() {
             console.log('Fetching all data for:', currentCompany, '(paginated, no 1000 row cap)');
 

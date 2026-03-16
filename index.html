@@ -1105,6 +1105,62 @@
             z-index: 99;
         }
 
+        /* === STOCK SECTION === */
+        .toggle-btn {
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .toggle-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .toggle-btn.active {
+            background: rgba(59,130,246,0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .stock-chart-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .stock-charts-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stock-chart-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 20px 22px;
+            border-radius: var(--radius-md);
+            transition: border-color 0.3s;
+        }
+        .stock-chart-card:hover { border-color: var(--border-hover); }
+
+        .stock-chart-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+
+        [data-theme="light"] .stock-chart-card { backdrop-filter: none; box-shadow: var(--shadow-sm); }
+
         /* Desktop: hide mobile elements */
         @media (min-width: 769px) {
             .mobile-header, .mobile-bottom-nav { display: none !important; }
@@ -1551,7 +1607,92 @@
 
         <!-- Section: Stock Analysis -->
         <div class="section-content hidden" id="section-stock">
-            <p class="coming-soon">Stock Analysis &#8212; Coming Soon</p>
+
+            <!-- Stock KPI Cards -->
+            <div class="kpi-grid" style="margin-bottom:20px;">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Current Price</span>
+                        <span class="kpi-icon">&#128200;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiPrice">--</div>
+                    <div class="kpi-context" id="stockKpiPriceCtx">--</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">52W High</span>
+                        <span class="kpi-icon">&#8679;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiHigh52">--</div>
+                    <div class="kpi-context" id="stockKpiHigh52Ctx">52-week high</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">52W Low</span>
+                        <span class="kpi-icon">&#8681;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiLow52">--</div>
+                    <div class="kpi-context" id="stockKpiLow52Ctx">52-week low</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">ATR (14d)</span>
+                        <span class="kpi-icon">&#128200;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiATR">--</div>
+                    <div class="kpi-context">avg true range</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Max Drawdown</span>
+                        <span class="kpi-icon">&#128203;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiMaxDD">--</div>
+                    <div class="kpi-context" id="stockKpiMaxDDCtx">from peak</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Current Drawdown</span>
+                        <span class="kpi-icon">&#128202;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiCurrDD">--</div>
+                    <div class="kpi-context" id="stockKpiCurrDDCtx">from recent peak</div>
+                </div>
+            </div>
+
+            <!-- Chart stack -->
+            <div class="stock-charts-col">
+
+                <!-- Candlestick (close price + overlays) -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Price (Candlestick)</div>
+                    <div class="stock-chart-controls">
+                        <button class="toggle-btn active" data-overlay="sma20">SMA 20</button>
+                        <button class="toggle-btn active" data-overlay="sma50">SMA 50</button>
+                        <button class="toggle-btn" data-overlay="bb">Bollinger Bands</button>
+                    </div>
+                    <canvas id="stockCandlestickChart"></canvas>
+                </div>
+
+                <!-- RSI -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">RSI (14)</div>
+                    <canvas id="stockRsiChart"></canvas>
+                </div>
+
+                <!-- MACD -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">MACD (12, 26, 9)</div>
+                    <canvas id="stockMacdChart"></canvas>
+                </div>
+
+                <!-- Drawdown -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Drawdown from Peak</div>
+                    <canvas id="stockDrawdownChart"></canvas>
+                </div>
+
+            </div>
         </div>
 
         <!-- Section: Content Analytics -->
@@ -2346,6 +2487,526 @@
         }
 
         // ==========================================
+        // STOCK ANALYSIS UTILITIES
+        // ==========================================
+
+        function calculateSMA(closes, period) {
+            return closes.map((_, i) => {
+                if (i < period - 1) return null;
+                const slice = closes.slice(i - period + 1, i + 1);
+                return slice.reduce((a, b) => a + b, 0) / period;
+            });
+        }
+
+        function calculateEMA(closes, period) {
+            const k = 2 / (period + 1);
+            const ema = [];
+            let prev = null;
+            for (let i = 0; i < closes.length; i++) {
+                if (prev === null) {
+                    // Seed with SMA of first `period` values
+                    if (i < period - 1) { ema.push(null); continue; }
+                    const seed = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                    prev = seed;
+                    ema.push(seed);
+                } else {
+                    prev = closes[i] * k + prev * (1 - k);
+                    ema.push(prev);
+                }
+            }
+            return ema;
+        }
+
+        function calculateRSI(closes, period = 14) {
+            const rsi = new Array(closes.length).fill(null);
+            if (closes.length <= period) return rsi;
+
+            let avgGain = 0, avgLoss = 0;
+            for (let i = 1; i <= period; i++) {
+                const diff = closes[i] - closes[i - 1];
+                if (diff > 0) avgGain += diff;
+                else avgLoss += Math.abs(diff);
+            }
+            avgGain /= period;
+            avgLoss /= period;
+
+            const rs0 = avgLoss === 0 ? 100 : avgGain / avgLoss;
+            rsi[period] = 100 - 100 / (1 + rs0);
+
+            for (let i = period + 1; i < closes.length; i++) {
+                const diff = closes[i] - closes[i - 1];
+                const gain = diff > 0 ? diff : 0;
+                const loss = diff < 0 ? Math.abs(diff) : 0;
+                avgGain = (avgGain * (period - 1) + gain) / period;
+                avgLoss = (avgLoss * (period - 1) + loss) / period;
+                const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                rsi[i] = 100 - 100 / (1 + rs);
+            }
+            return rsi;
+        }
+
+        function calculateMACD(closes, fast = 12, slow = 26, signal = 9) {
+            const emaFast = calculateEMA(closes, fast);
+            const emaSlow = calculateEMA(closes, slow);
+            const macdLine = closes.map((_, i) => {
+                if (emaFast[i] === null || emaSlow[i] === null) return null;
+                return emaFast[i] - emaSlow[i];
+            });
+
+            // Signal: EMA of macdLine (only where non-null)
+            // We need to compute EMA on the non-null segment
+            const signalLine = new Array(closes.length).fill(null);
+            const firstValid = macdLine.findIndex(v => v !== null);
+            if (firstValid === -1) return macdLine.map(() => ({ macd: null, signal: null, histogram: null }));
+
+            const validMacd = macdLine.slice(firstValid);
+            const emaSignal = calculateEMA(validMacd, signal);
+
+            for (let i = 0; i < emaSignal.length; i++) {
+                signalLine[firstValid + i] = emaSignal[i];
+            }
+
+            return closes.map((_, i) => ({
+                macd: macdLine[i],
+                signal: signalLine[i],
+                histogram: (macdLine[i] !== null && signalLine[i] !== null) ? macdLine[i] - signalLine[i] : null
+            }));
+        }
+
+        function calculateBollingerBands(closes, period = 20, stdMult = 2) {
+            return closes.map((_, i) => {
+                if (i < period - 1) return null;
+                const slice = closes.slice(i - period + 1, i + 1);
+                const mean = slice.reduce((a, b) => a + b, 0) / period;
+                const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / period;
+                const std = Math.sqrt(variance);
+                return { upper: mean + stdMult * std, middle: mean, lower: mean - stdMult * std };
+            });
+        }
+
+        function calculateMaxDrawdown(closes) {
+            let peak = closes[0];
+            let maxDD = 0;
+            const ddSeries = [];
+            for (let i = 0; i < closes.length; i++) {
+                if (closes[i] > peak) peak = closes[i];
+                const dd = peak > 0 ? ((closes[i] - peak) / peak) * 100 : 0;
+                if (dd < maxDD) maxDD = dd;
+                ddSeries.push(dd);
+            }
+            const currentDD = ddSeries[ddSeries.length - 1];
+            return { maxDrawdownPct: maxDD, currentDrawdownPct: currentDD, drawdownSeries: ddSeries };
+        }
+
+        // ==========================================
+        // STOCK SECTION: KPI CARDS
+        // ==========================================
+        function updateStockKPICards(data) {
+            if (!data || data.length === 0) {
+                ['stockKpiPrice','stockKpiHigh52','stockKpiLow52','stockKpiATR','stockKpiMaxDD','stockKpiCurrDD'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '--';
+                });
+                return;
+            }
+
+            const closes = data.map(d => parseFloat(d.close));
+
+            // Current price (last entry = most recent since data is asc)
+            const latest = data[data.length - 1];
+            const prev = data.length >= 2 ? data[data.length - 2] : null;
+            document.getElementById('stockKpiPrice').textContent = formatCurrency(latest.close);
+            if (prev) {
+                const change = latest.close - prev.close;
+                const changePct = ((change / prev.close) * 100).toFixed(2);
+                const ctxEl = document.getElementById('stockKpiPriceCtx');
+                ctxEl.textContent = `${change >= 0 ? '+' : ''}${formatCurrency(change)} (${change >= 0 ? '+' : ''}${changePct}%)`;
+                ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
+            }
+
+            // 52W High/Low — last 365 days from dataset
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 365);
+            const cutoffStr = cutoff.toISOString().split('T')[0];
+            const last52 = data.filter(d => d.date >= cutoffStr);
+            if (last52.length) {
+                const high52 = Math.max(...last52.map(d => parseFloat(d.high || d.close)));
+                const low52 = Math.min(...last52.map(d => parseFloat(d.low || d.close)));
+                document.getElementById('stockKpiHigh52').textContent = formatCurrency(high52);
+                document.getElementById('stockKpiLow52').textContent = formatCurrency(low52);
+                const pctFromHigh = (((latest.close - high52) / high52) * 100).toFixed(1);
+                const pctFromLow = (((latest.close - low52) / low52) * 100).toFixed(1);
+                const highCtx = document.getElementById('stockKpiHigh52Ctx');
+                highCtx.textContent = `${pctFromHigh}% from 52W high`;
+                highCtx.className = 'kpi-context ' + (pctFromHigh >= 0 ? 'positive' : 'negative');
+                const lowCtx = document.getElementById('stockKpiLow52Ctx');
+                lowCtx.textContent = `+${pctFromLow}% from 52W low`;
+                lowCtx.className = 'kpi-context positive';
+            }
+
+            // ATR 14d
+            if (data.length >= 15) {
+                const atrVals = calculateATR(data, 14);
+                const latestATR = atrVals[atrVals.length - 1];
+                document.getElementById('stockKpiATR').textContent = formatCurrency(latestATR);
+            }
+
+            // Max drawdown & current drawdown
+            const { maxDrawdownPct, currentDrawdownPct } = calculateMaxDrawdown(closes);
+            const maxDDEl = document.getElementById('stockKpiMaxDD');
+            maxDDEl.textContent = maxDrawdownPct.toFixed(1) + '%';
+            maxDDEl.style.color = 'var(--accent-red)';
+            document.getElementById('stockKpiMaxDDCtx').textContent = 'peak-to-trough in period';
+
+            const currDDEl = document.getElementById('stockKpiCurrDD');
+            currDDEl.textContent = currentDrawdownPct.toFixed(1) + '%';
+            currDDEl.style.color = currentDrawdownPct < -5 ? 'var(--accent-red)' : 'var(--accent-amber)';
+            document.getElementById('stockKpiCurrDDCtx').textContent = 'current vs running peak';
+        }
+
+        // ==========================================
+        // STOCK SECTION: OVERLAY STATE
+        // ==========================================
+        let stockOverlays = { sma20: true, sma50: true, bb: false };
+
+        function wireStockToggleButtons() {
+            const btns = document.querySelectorAll('#section-stock .toggle-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.getAttribute('data-overlay');
+                    stockOverlays[key] = !stockOverlays[key];
+                    btn.classList.toggle('active', stockOverlays[key]);
+                    // Re-render just the candlestick chart
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderStockCandlestickChart(filteredStock);
+                });
+            });
+        }
+
+        // ==========================================
+        // STOCK SECTION: CHART RENDERING
+        // ==========================================
+        function renderStockSection(data) {
+            if (!data || data.length === 0) return;
+            updateStockKPICards(data);
+            renderStockCandlestickChart(data);
+            renderStockRsiChart(data);
+            renderStockMacdChart(data);
+            renderStockDrawdownChart(data);
+        }
+
+        function getStockChartTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                gridColor: isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)',
+                textColor: isDark ? '#94a3b8' : '#6b7280'
+            };
+        }
+
+        function renderStockCandlestickChart(data) {
+            if (charts['stockCandlestick']) { charts['stockCandlestick'].destroy(); delete charts['stockCandlestick']; }
+            const canvas = document.getElementById('stockCandlestickChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+
+            const datasets = [{
+                label: 'Close Price',
+                data: closes,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                order: 10
+            }];
+
+            if (stockOverlays.sma20) {
+                datasets.push({
+                    label: 'SMA 20',
+                    data: calculateSMA(closes, 20),
+                    borderColor: '#10b981',
+                    borderWidth: 1.5,
+                    borderDash: [6, 3],
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 5
+                });
+            }
+
+            if (stockOverlays.sma50) {
+                datasets.push({
+                    label: 'SMA 50',
+                    data: calculateSMA(closes, 50),
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderDash: [2, 4],
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 4
+                });
+            }
+
+            if (stockOverlays.bb) {
+                const bb = calculateBollingerBands(closes, 20, 2);
+                datasets.push({
+                    label: 'BB Upper',
+                    data: bb.map(v => v ? v.upper : null),
+                    borderColor: 'rgba(139,92,246,0.7)',
+                    borderWidth: 1,
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 3
+                });
+                datasets.push({
+                    label: 'BB Lower',
+                    data: bb.map(v => v ? v.lower : null),
+                    borderColor: 'rgba(139,92,246,0.7)',
+                    borderWidth: 1,
+                    fill: '-1',
+                    backgroundColor: 'rgba(139,92,246,0.07)',
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 2
+                });
+            }
+
+            charts['stockCandlestick'] = new Chart(canvas, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    if (ctx.dataset.label === 'Close Price') {
+                                        const d = data[ctx.dataIndex];
+                                        return [
+                                            `Close: ${formatCurrency(d.close)}`,
+                                            d.open ? `Open: ${formatCurrency(d.open)}` : null,
+                                            d.high ? `High: ${formatCurrency(d.high)}` : null,
+                                            d.low ? `Low: ${formatCurrency(d.low)}` : null
+                                        ].filter(Boolean);
+                                    }
+                                    return `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : '--'}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor, callback: v => formatCurrency(v), font: { size: 10 } }, grid: { color: gridColor }, beginAtZero: false }
+                    }
+                }
+            });
+        }
+
+        function renderStockRsiChart(data) {
+            if (charts['stockRsi']) { charts['stockRsi'].destroy(); delete charts['stockRsi']; }
+            const canvas = document.getElementById('stockRsiChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+            const rsi = calculateRSI(closes, 14);
+
+            // Overbought/oversold reference lines as flat datasets
+            const ob = labels.map(() => 70);
+            const os = labels.map(() => 30);
+
+            charts['stockRsi'] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'RSI (14)',
+                            data: rsi,
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.25,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            order: 10
+                        },
+                        {
+                            label: 'Overbought (70)',
+                            data: ob,
+                            borderColor: 'rgba(239,68,68,0.5)',
+                            borderWidth: 1,
+                            borderDash: [4, 4],
+                            fill: false,
+                            pointRadius: 0,
+                            order: 5
+                        },
+                        {
+                            label: 'Oversold (30)',
+                            data: os,
+                            borderColor: 'rgba(16,185,129,0.5)',
+                            borderWidth: 1,
+                            borderDash: [4, 4],
+                            fill: false,
+                            pointRadius: 0,
+                            order: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 3.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: {
+                            min: 0, max: 100,
+                            ticks: { color: textColor, font: { size: 10 }, stepSize: 20 },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStockMacdChart(data) {
+            if (charts['stockMacd']) { charts['stockMacd'].destroy(); delete charts['stockMacd']; }
+            const canvas = document.getElementById('stockMacdChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+            const macdData = calculateMACD(closes, 12, 26, 9);
+
+            const histColors = macdData.map(d =>
+                d.histogram === null ? 'transparent' :
+                d.histogram >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'
+            );
+
+            charts['stockMacd'] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Histogram',
+                            data: macdData.map(d => d.histogram),
+                            backgroundColor: histColors,
+                            borderWidth: 0,
+                            borderRadius: 1,
+                            order: 5
+                        },
+                        {
+                            type: 'line',
+                            label: 'MACD',
+                            data: macdData.map(d => d.macd),
+                            borderColor: '#3b82f6',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 0,
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Signal',
+                            data: macdData.map(d => d.signal),
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 0,
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 3.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+                    }
+                }
+            });
+        }
+
+        function renderStockDrawdownChart(data) {
+            if (charts['stockDrawdown']) { charts['stockDrawdown'].destroy(); delete charts['stockDrawdown']; }
+            const canvas = document.getElementById('stockDrawdownChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+            const { drawdownSeries } = calculateMaxDrawdown(closes);
+
+            charts['stockDrawdown'] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Drawdown %',
+                        data: drawdownSeries,
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        fill: 'origin',
+                        backgroundColor: 'rgba(239,68,68,0.2)',
+                        tension: 0.15,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 3.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } },
+                        tooltip: {
+                            callbacks: { label: ctx => `Drawdown: ${ctx.parsed.y.toFixed(2)}%` }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: {
+                            ticks: { color: textColor, font: { size: 10 }, callback: v => v.toFixed(1) + '%' },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
         // CHART COLOR PALETTES
         // ==========================================
         const COLORS = {
@@ -2374,6 +3035,10 @@
             renderCorrelationChart(filteredYT, filteredStock);
             renderVolumeChart(filteredStock);
             renderDistributionChart(filteredYT);
+
+            // Stock Analysis section charts (renders even if section is hidden,
+            // so they're ready when navigated to)
+            renderStockSection(filteredStock);
         }
 
         function renderOverviewViewsChart(ytData) {
@@ -3080,6 +3745,14 @@
                 setTimeout(() => { renderAllCharts(); }, 50);
             }
 
+            // Re-render stock charts when navigating to stock section
+            if (section === 'stock') {
+                setTimeout(() => {
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderStockSection(filteredStock);
+                }, 50);
+            }
+
             // Close mobile sidebar
             closeSidebar();
             return false;
@@ -3105,6 +3778,7 @@
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Dashboard initialized');
+            wireStockToggleButtons();
             fetchData();
         });
     </script>

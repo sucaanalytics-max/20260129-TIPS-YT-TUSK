@@ -1,14 +1,27 @@
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const CRON_SECRET = process.env.CRON_SECRET;
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
 
-  try {
-    const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.supabase.co';
-    const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
+  // Require CRON_SECRET to prevent unauthorised backfill triggers
+  const authHeader = req.headers.authorization;
+  const providedSecret = authHeader?.replace('Bearer ', '');
 
-    if (!SUPABASE_KEY) {
+  if (!CRON_SECRET || providedSecret !== CRON_SECRET) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+
+  try {
+    if (!SUPABASE_SERVICE_KEY) {
       return res.status(500).json({ success: false, error: 'SUPABASE_SERVICE_KEY not configured' });
     }
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     const startDate = req.query.start || '2023-01-01';
     const endDate = req.query.end || new Date().toISOString().split('T')[0];
@@ -30,10 +43,7 @@ export default async function handler(req, res) {
     const result = yahooData.chart?.result?.[0];
 
     if (!result) {
-      return res.status(404).json({
-        success: false,
-        message: 'No data from Yahoo Finance'
-      });
+      return res.status(404).json({ success: false, message: 'No data from Yahoo Finance' });
     }
 
     const timestamps = result.timestamp || [];
@@ -45,7 +55,7 @@ export default async function handler(req, res) {
       if (quotes.close?.[i]) {
         records.push({
           symbol: dbSymbol,
-          date: date,
+          date,
           open: quotes.open?.[i] || 0,
           high: quotes.high?.[i] || 0,
           low: quotes.low?.[i] || 0,
@@ -62,25 +72,14 @@ export default async function handler(req, res) {
 
     for (const record of records) {
       try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/stock_prices`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify(record)
-        });
+        const { error } = await supabase
+          .from('stock_prices')
+          .upsert(record, { onConflict: 'symbol,date' });
 
-        if (response.ok) {
-          successCount++;
-          details.push({ date: record.date, close: record.close, status: 'ok' });
-        } else {
-          failCount++;
-          details.push({ date: record.date, status: 'fail', error: await response.text() });
-        }
+        if (error) throw error;
 
+        successCount++;
+        details.push({ date: record.date, close: record.close, status: 'ok' });
       } catch (error) {
         failCount++;
         details.push({ date: record.date, status: 'fail', error: error.message });
@@ -101,9 +100,6 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    return res.status(500).json({ success: false, error: error.message });
   }
 }

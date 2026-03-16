@@ -886,6 +886,31 @@
                 </div>
             </div>
 
+
+            <!-- Channel Breakdown -->
+            <div class="channel-breakdown" id="channelBreakdown">
+                <div class="channel-breakdown-header">
+                    <h2 class="section-title">Channel Breakdown</h2>
+                    <span class="channel-breakdown-sub">Latest available day per channel, sorted by daily views</span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="channel-table" aria-label="Channel breakdown table">
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th>Subscribers</th>
+                                <th>Total Views</th>
+                                <th>Daily Views</th>
+                                <th>Daily Subs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="channelTableBody">
+                            <tr><td colspan="5" style="text-align:center;padding:16px;opacity:0.6">Loading channels...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Charts -->
             <div class="charts-grid">
                 <!-- Daily Views Chart -->
@@ -1045,14 +1070,14 @@
         const COMPANY_CONFIG = {
             tips: {
                 name: 'Tips Music',
-                youtubeTable: 'tips_youtube_data',
+                youtubeTable: 'tips_youtube_data_v2',
                 stockSymbol: 'TIPSMUSIC',
                 stockName: 'NSE: TIPSMUSIC',
                 channelUrl: 'https://www.youtube.com/@tipsofficial'
             },
             saregama: {
                 name: 'Saregama Music',
-                youtubeTable: 'saregama_youtube_data',
+                youtubeTable: 'saregama_youtube_data_v2',
                 stockSymbol: 'SAREGAMA',
                 stockName: 'NSE: SAREGAMA',
                 channelUrl: 'https://www.youtube.com/@saregamamusic'
@@ -1064,6 +1089,7 @@
         // ==========================================
         let allYoutubeData = [];
         let allStockData = [];
+        let allChannelData = [];
         let currentPage = 1;
         const rowsPerPage = 50;
         let charts = {};
@@ -1248,13 +1274,15 @@
         async function fetchData() {
             console.log('Fetching all data for:', currentCompany, '(paginated, no 1000 row cap)');
 
-            const [youtubeData, stockData] = await Promise.all([
+            const [youtubeData, stockData, channelData] = await Promise.all([
                 fetchYouTubeData(),
-                fetchStockPrices()
+                fetchStockPrices(),
+                fetchChannelBreakdown()
             ]);
 
             allYoutubeData = youtubeData;
             allStockData = stockData;
+            allChannelData = channelData;
 
             console.log(`Fetched ${youtubeData.length} YouTube records, ${stockData.length} stock records (all pages)`);
 
@@ -1263,6 +1291,7 @@
             updatePeriodSummary();
             renderAllCharts();
             renderTable();
+            renderChannelTable();
             updateLastUpdated();
         }
 
@@ -1427,6 +1456,43 @@
             // Days count and range
             document.getElementById('periodDays').textContent = filtered.length;
             document.getElementById('periodDateRange').textContent = `${oldest.date} to ${newest.date}`;
+        }
+
+
+        // ==========================================
+        // CHANNEL BREAKDOWN TABLE
+        // ==========================================
+        function renderChannelTable() {
+            const tbody = document.getElementById('channelTableBody');
+            if (!tbody) return;
+
+            if (!allChannelData || allChannelData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;opacity:0.6">No channel data available yet</td></tr>';
+                return;
+            }
+
+            const config = COMPANY_CONFIG[currentCompany];
+            const channels = allChannelData.filter(c => c.company === config.stockSymbol);
+
+            if (channels.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px;opacity:0.6">No channels found for ' + config.name + '</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = channels.map(ch => {
+                const subChange = ch.daily_subscribers;
+                const subChangeStr = subChange != null
+                    ? `<span class="${subChange >= 0 ? 'positive' : 'negative'}">${subChange >= 0 ? '+' : ''}${subChange.toLocaleString()}</span>`
+                    : '<span style="opacity:0.4">--</span>';
+
+                return `<tr>
+                    <td><strong>${ch.channel_name}</strong></td>
+                    <td>${ch.subscribers != null ? formatNumber(ch.subscribers) : '--'}</td>
+                    <td>${ch.total_views != null ? formatNumber(ch.total_views) : '--'}</td>
+                    <td>${ch.daily_views != null ? formatNumber(ch.daily_views) : '--'}</td>
+                    <td>${subChangeStr}</td>
+                </tr>`;
+            }).join('');
         }
 
         // ==========================================

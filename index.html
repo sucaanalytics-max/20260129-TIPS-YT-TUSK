@@ -3103,7 +3103,7 @@
         // CONTENT ANALYTICS UTILITIES
         // ==========================================
 
-        function calculateViewVelocity(ytData) {
+        function calculateViewVelocity(ytData, windowDays = 7) {
             // ytData sorted ascending by date
             // Returns array of {date, velocity} — one per day
             // velocity[i] = (sum of views in days i-6..i  vs  days i-13..i-7) / prev_7d * 100

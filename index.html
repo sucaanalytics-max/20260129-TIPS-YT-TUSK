@@ -1366,6 +1366,82 @@
         /* Content Analytics: channel mix chart shorter */
         .content-channel-mix-card canvas { max-height: 350px; }
 
+        /* ============================================================
+           TASK 8: CSS POLISH
+           ============================================================ */
+
+        /* --- 1. Typography improvements --- */
+        /* Section title: bump to 18px */
+        .section-title { font-size: 18px; }
+
+        /* letter-spacing consistency for labels */
+        .kpi-label { letter-spacing: 0.02em; }
+        .stat-label { letter-spacing: 0.02em; }
+        th, #mainDataTable th, #anomalyTable th { letter-spacing: 0.02em; }
+
+        /* --- 3. KPI card: correlation significant green border accent --- */
+        .kpi-card.kpi-correlation--significant {
+            border-left: 3px solid var(--accent-green);
+        }
+
+        /* --- 4. Chart container: border-top accent + padding + canvas max-height --- */
+        .chart-card { padding: 16px; border-top: 2px solid var(--accent-blue); }
+        .stock-chart-card { padding: 16px; border-top: 2px solid var(--accent-blue); }
+
+        .chart-card canvas:not([style*="max-height"]),
+        .stock-chart-card canvas { max-height: 400px; }
+
+        /* --- 5. Mobile bottom nav polish --- */
+        :root { --bottom-nav-height: 56px; }
+
+        .mobile-bottom-nav { height: 56px; }
+
+        .mobile-nav-item {
+            font-size: 10px;
+            justify-content: center;
+            padding: 4px 10px;
+        }
+        .mobile-nav-item small {
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 768px) {
+            .main-wrapper { padding-bottom: 70px; }
+        }
+
+        /* --- 6. Scrollbar styling (webkit) --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* --- 7. Section entry animation --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .section-enter { animation: fadeIn 0.2s ease both; }
+
+        /* --- 8. Stats panel: stat-item min-width --- */
+        .stat-item { min-width: 100px; }
+
+        /* --- 9. Table readability: alternating rows + sticky header on base table --- */
+        thead { position: sticky; top: 0; z-index: 2; background: var(--bg-elevated); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+        [data-theme="light"] tbody tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+
+        /* --- 10. Spacing consistency --- */
+        .section-content { padding: 24px; }
+        @media (max-width: 768px) { .section-content { padding: 12px; } }
+
+        .charts-grid { gap: 24px; margin-bottom: 24px; }
+        .kpi-grid { gap: 16px; }
+
+        /* gap handles inter-chart spacing; no extra bottom margin needed */
+        .stock-charts-col { gap: 24px; margin-bottom: 24px; }
+
         /* Desktop: hide mobile elements */
         @media (min-width: 769px) {
             .mobile-header, .mobile-bottom-nav { display: none !important; }
@@ -2660,6 +2736,9 @@
             const ctxEl = document.getElementById('kpiCorrelationSig');
             ctxEl.textContent = isSignificant ? `p < 0.05 ✓ significant (n=${pairs.length})` : `p = ${p.toFixed(2)} (not significant)`;
             ctxEl.className = 'kpi-context ' + (isSignificant ? 'significant' : '');
+            // Green left border accent on significant correlation card
+            const corrCard = document.getElementById('kpiCorrelation')?.closest('.kpi-card');
+            if (corrCard) corrCard.classList.toggle('kpi-correlation--significant', isSignificant);
             // Sparkline: rolling 30d r over time (last 60d windows)
             const rollingR = [];
             const allPairs = allYoutubeData.map(yt => {
@@ -5366,7 +5445,14 @@
             document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
             // Show target section
             const el = document.getElementById('section-' + section);
-            if (el) el.classList.remove('hidden');
+            if (el) {
+                el.classList.remove('hidden');
+                // Trigger entry animation
+                el.classList.remove('section-enter');
+                void el.offsetWidth; // force reflow
+                el.classList.add('section-enter');
+                el.addEventListener('animationend', () => el.classList.remove('section-enter'), { once: true });
+            }
 
             // Update nav active states
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));

@@ -5593,9 +5593,10 @@
             }
 
             const fragment = document.createDocumentFragment();
+            const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
             displayRows.forEach(row => {
                 const tr = document.createElement('tr');
-                let cells = `<td>${row.date || '--'}</td>`;
+                let cells = `<td>${escHtml(row.date || '--')}</td>`;
                 if (showYT) {
                     cells += `<td>${row.views !== null ? formatNumber(row.views) : '--'}</td>`;
                     cells += `<td>${row.daily_views !== null ? formatNumber(row.daily_views) : '--'}</td>`;
@@ -5692,11 +5693,19 @@
                     if (showYT) headers.push('Views', 'Daily Views', 'Subscribers', 'Daily Subs');
                     if (showStock) headers.push('Stock Close', 'Stock Volume');
 
+                    const csvEscape = v => {
+                        const s = v == null ? '' : String(v);
+                        // Quote cells that contain comma, newline, double-quote, or start with formula chars
+                        if (/[,\n"=+\-@]/.test(s.charAt(0)) || /[,\n"]/.test(s)) {
+                            return '"' + s.replace(/"/g, '""') + '"';
+                        }
+                        return s;
+                    };
                     const csvRows = rows.map(row => {
                         const vals = [row.date];
                         if (showYT) vals.push(row.views, row.daily_views, row.subscribers, row.daily_subscribers);
                         if (showStock) vals.push(row.close, row.volume);
-                        return vals.join(',');
+                        return vals.map(csvEscape).join(',');
                     });
 
                     const csv = [headers.join(','), ...csvRows].join('\n');

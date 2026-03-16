@@ -28,8 +28,8 @@ const CHANNELS = [
   { channel_id: 'UC9h5YEjla8WeIIsifbf84_Q', channel_name: 'Volume',                    company: 'TIPSMUSIC', handle: 'volume' },
   { channel_id: 'UCF8Ar7alYrtOI5SF6b7T0xA', channel_name: 'Tips Punjabi',              company: 'TIPSMUSIC', handle: 'tipspunjabi' },
   { channel_id: 'UC2V5vzgmEmoiWqXfM2jN5_w', channel_name: 'Tips Telugu',               company: 'TIPSMUSIC', handle: 'tipstelugu' },
-  { channel_id: 'UCFNHLC4euNaQGDmIokMugiA', channel_name: 'Tips Jhankaar Gaane',       company: 'TIPSMUSIC', handle: 'tipsjhankaar' },
-  { channel_id: 'UCOn5Bj5jcQkVpx7pzxP3PDw', channel_name: 'Evergreen Bollywood Hits',  company: 'TIPSMUSIC', handle: 'evergreenbollywoodhits' },
+  { channel_id: 'UCFNHLC4euNaQGDmIokMugiA', channel_name: 'Tips Jhankaar Gaane',       company: 'TIPSMUSIC', handle: 'jhankargaane' },
+  { channel_id: 'UCOn5Bj5jcQkVpx7pzxP3PDw', channel_name: 'Evergreen Bollywood Hits',  company: 'TIPSMUSIC', handle: 'evergreenbollywoodhitss' },
   { channel_id: 'UCCbmKsQJ92JV-L8jYJ4u9Yg', channel_name: 'Tips Bhakti Prem',          company: 'TIPSMUSIC', handle: 'tipsbhaktiprem' },
   { channel_id: 'UCqXO3ktBw0D0sw1z5hZFeDg', channel_name: 'Tips Films',                company: 'TIPSMUSIC', handle: 'tipsfilms' },
   { channel_id: 'UCwhvGgGNRm18Gv9cHSbwNtw', channel_name: 'Bollywood Sadabahar',       company: 'TIPSMUSIC', handle: 'bollywoodsadabahar' },
@@ -40,7 +40,7 @@ const CHANNELS = [
   { channel_id: 'UCdKTnvHFf67M1UrW3qbe-Dg', channel_name: 'Tips Marathi',              company: 'TIPSMUSIC', handle: 'tipsmarathi' },
 
   // --- SAREGAMA (23 channels) ---
-  { channel_id: 'UC_A7K2dXFsTMAciGmnNxy-Q', channel_name: 'Saregama',                          company: 'SAREGAMA', handle: 'saregama' },
+  { channel_id: 'UC_A7K2dXFsTMAciGmnNxy-Q', channel_name: 'Saregama',                          company: 'SAREGAMA', handle: 'saregamamusic' },
   { channel_id: 'UC0J8BQahplvTY6LjlnLf_NQ', channel_name: 'Saregama Bhojpuri',                 company: 'SAREGAMA', handle: 'saregamahumbhojpuri' },
   { channel_id: 'UCtrovMbRR6h_XLMfdbhqb1A', channel_name: 'Saregama TV Shows Tamil',            company: 'SAREGAMA', handle: 'saregamatvshowstamil' },
   { channel_id: 'UC68nKdrLbLL0Vj7ilVkLmmg', channel_name: 'Saregama Telugu',                   company: 'SAREGAMA', handle: 'saregamatelugu' },

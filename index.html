@@ -3155,6 +3155,7 @@
             // Avg Daily Views
             const avgDaily = Math.round(totalViews / data.length);
             document.getElementById('contentKpiAvgDaily').textContent = formatNumber(avgDaily);
+            document.getElementById('contentKpiAvgDailyCtx').textContent = `${data.length}-day avg`;
 
             // Peak Day
             let peakRow = data[0];
@@ -3203,10 +3204,8 @@
                 const ma30 = calculateMovingAverage(views, 30);
                 const maxViews = Math.max(...views.filter(v => v > 0), 1);
 
-                // Scatter dots for upload days
-                const uploadDots = data.map((d, i) => (d.daily_videos && d.daily_videos > 0)
-                    ? { x: d.date, y: maxViews * 0.97 }
-                    : null);
+                // Scatter dots for upload days — use null array aligned to category labels
+                const uploadDots = data.map(d => (d.daily_videos && d.daily_videos > 0) ? maxViews * 0.97 : null);
 
                 charts['contentViews'] = new Chart(canvas, {
                     type: 'bar',
@@ -3235,12 +3234,16 @@
                             },
                             {
                                 label: 'Upload Day',
-                                type: 'scatter',
+                                type: 'line',
                                 data: uploadDots,
                                 backgroundColor: 'rgba(249,115,22,0.85)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
                                 pointRadius: 4,
                                 pointStyle: 'circle',
-                                parsing: false,
+                                fill: false,
+                                spanGaps: false,
+                                showLine: false,
                                 yAxisID: 'y',
                             }
                         ]
@@ -3281,6 +3284,11 @@
                 const deltas = data.map((d, i) => {
                     if (d.daily_subscribers != null) return d.daily_subscribers;
                     if (i === 0) return 0;
+                    // Only diff consecutive calendar days to avoid inflated values across gaps
+                    const prevDate = new Date(data[i - 1].date);
+                    const currDate = new Date(d.date);
+                    const dayGap = Math.round((currDate - prevDate) / 86400000);
+                    if (dayGap !== 1) return null; // skip non-consecutive — gap in data
                     return (d.subscribers || 0) - (data[i - 1].subscribers || 0);
                 });
                 const ma30 = calculateMovingAverage(deltas, 30);

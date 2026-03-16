@@ -4267,19 +4267,28 @@
                     return stRaw.map(v => v !== null ? ((v - min) / (max - min)) * 100 : null);
                 })();
 
-                // Build anomaly dot datasets (null everywhere except anomaly positions)
+                // Build anomaly dot datasets — respect anomMetric and anomSevFilter
+                const showYT = anomMetric === 'all' || anomMetric === 'youtube';
+                const showSt = anomMetric === 'all' || anomMetric === 'stock';
+                const showNotable = anomSevFilter.has('notable');
+                const showExtreme = anomSevFilter.has('extreme');
+
                 const anomYTDateSet = new Set();
                 const anomYTExtremeSet = new Set();
-                anomYTViews.concat(anomYTSubs).forEach(a => {
-                    anomYTDateSet.add(a.date);
-                    if (a.isExtreme) anomYTExtremeSet.add(a.date);
-                });
+                if (showYT) {
+                    anomYTViews.concat(anomYTSubs).forEach(a => {
+                        if (a.isExtreme && showExtreme) { anomYTDateSet.add(a.date); anomYTExtremeSet.add(a.date); }
+                        else if (!a.isExtreme && showNotable) { anomYTDateSet.add(a.date); }
+                    });
+                }
                 const anomStDateSet = new Set();
                 const anomStExtremeSet = new Set();
-                anomStock.forEach(a => {
-                    anomStDateSet.add(a.date);
-                    if (a.isExtreme) anomStExtremeSet.add(a.date);
-                });
+                if (showSt) {
+                    anomStock.forEach(a => {
+                        if (a.isExtreme && showExtreme) { anomStDateSet.add(a.date); anomStExtremeSet.add(a.date); }
+                        else if (!a.isExtreme && showNotable) { anomStDateSet.add(a.date); }
+                    });
+                }
 
                 // YT notable dots (|z|>2 but not extreme)
                 const ytNotableDots = labels.map((date, i) =>

@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/update-youtube-stats",
-      "schedule": "0 6 * * *"
+      "schedule": "30 0 * * *"
     }
   ],
   "rewrites": [

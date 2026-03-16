@@ -2089,7 +2089,7 @@
             const recent7 = yt.slice(0, 7).reduce((s,d)=>s+(d.daily_views||0), 0);
             const prev7 = yt.slice(7, 14).reduce((s,d)=>s+(d.daily_views||0), 0);
             const velocity = prev7 > 0 ? ((recent7 - prev7) / prev7) * 100 : 0;
-            document.getElementById('kpiVelocity').textContent = `${velocity >= 0 ? '+' : ''}${velocity.toFixed(1)}%`;
+            document.getElementById('kpiVelocity').textContent = `${velocity >= 0 ? '+' : ''}${velocity.toFixed(1)}%/wk`;
             document.getElementById('kpiVelocityContext').textContent = 'weekly rate of change';
             const velocities = [];
             for (let i = 7; i < Math.min(yt.length - 7, 37); i++) {
@@ -2396,14 +2396,14 @@
             .filter(d => stMap.has(d.date) && d.daily_views)
             .map(d => ({ date: d.date, views: d.daily_views, close: stMap.get(d.date) }));
 
-          const labels = [], rValues = [], sigValues = [];
+          const labels = [], rValues = [], insigValues = [];
           for (let i = 29; i < paired.length; i++) {
             const window = paired.slice(i - 29, i + 1);
             const r = pearsonCorrelation(window.map(p=>p.views), window.map(p=>p.close));
             const p = correlationPValue(r, window.length);
             labels.push(paired[i].date);
             rValues.push(r);
-            sigValues.push(p < 0.05 ? r : null); // null where not significant
+            insigValues.push(p > 0.05 ? r : null); // null where significant (p <= 0.05)
           }
 
           const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -2419,19 +2419,20 @@
                   label: '30d Rolling r',
                   data: rValues,
                   borderColor: '#06b6d4',
-                  borderWidth: 2,
+                  borderWidth: 1.5,
                   pointRadius: 0,
                   tension: 0.3,
                   fill: false,
                 },
                 {
-                  label: 'Significant (p<0.05)',
-                  data: sigValues,
-                  borderColor: '#3b82f6',
-                  borderWidth: 3,
+                  label: 'Not significant (p>0.05)',
+                  data: insigValues,
+                  borderColor: 'transparent',
+                  borderWidth: 0,
                   pointRadius: 0,
                   tension: 0.3,
-                  fill: false,
+                  fill: 'origin',
+                  backgroundColor: 'rgba(239,68,68,0.15)',
                   spanGaps: false,
                 }
               ]

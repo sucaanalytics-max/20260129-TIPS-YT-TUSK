@@ -356,7 +356,7 @@
         .stat-card .subtitle.negative { color: var(--accent-red); }
 
         /* Section headings */
-        .section-title {
+        .section-heading {
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--text-primary);
@@ -366,7 +366,7 @@
             gap: 10px;
         }
 
-        .section-title .icon {
+        .section-heading .icon {
             width: 32px; height: 32px;
             display: flex;
             align-items: center;
@@ -744,54 +744,401 @@
         [data-theme="light"] .table-card { backdrop-filter: none; box-shadow: var(--shadow-sm); }
         [data-theme="light"] .tab-button.active { box-shadow: 0 4px 12px rgba(59,130,246,0.25); }
         [data-theme="light"] tbody tr:hover { background: rgba(59,130,246,0.03); }
+
+        /* === SIDEBAR LAYOUT === */
+        :root {
+            --sidebar-width: 220px;
+            --header-height: 56px;
+            --bottom-nav-height: 60px;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --surface: var(--bg-surface);
+            --elevated: var(--bg-elevated);
+            --accent-blue: #3b82f6;
+        }
+
+        body {
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            z-index: 100;
+            transition: transform 0.25s ease, width 0.25s ease;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .company-btn span:last-child,
+        .sidebar.collapsed .company-switcher {
+            display: none;
+        }
+
+        .company-switcher {
+            padding: 16px 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .company-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            width: 100%;
+            text-align: left;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        .company-btn.active {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+        }
+        .company-btn:hover:not(.active) {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+        .company-icon { font-size: 16px; }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+        .nav-item.active { background: rgba(59,130,246,0.15); color: var(--accent-blue); font-weight: 600; }
+        .nav-icon { font-size: 16px; min-width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-collapse-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+        }
+        .sidebar-collapse-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+        .sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
+
+        /* === MAIN WRAPPER === */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: margin-left 0.25s ease;
+        }
+        .sidebar.collapsed ~ .main-wrapper {
+            margin-left: 60px;
+        }
+
+        /* === GLOBAL HEADER === */
+        .global-header {
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            flex-shrink: 0;
+        }
+        .global-header-left { display: flex; align-items: center; gap: 12px; }
+        .global-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .data-freshness { font-size: 11px; color: var(--text-muted); }
+
+        .period-picker {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .period-picker select {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .period-picker input[type="date"] {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 8px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .period-label { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--accent-blue); }
+
+        /* === SECTIONS === */
+        .section-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .section-content.hidden { display: none !important; }
+
+        .coming-soon {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 80px 20px;
+            font-size: 16px;
+        }
+
+        /* Override old theme-toggle fixed positioning — now lives in sidebar */
+        .theme-toggle {
+            position: static;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            box-shadow: none;
+        }
+
+        /* === MOBILE === */
+        .mobile-header {
+            display: none;
+            height: var(--header-height);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+        }
+        .mobile-title { font-weight: 700; font-size: 15px; }
+        .hamburger { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-primary); }
+        .theme-toggle-mobile { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-primary); }
+
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--bottom-nav-height);
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border);
+            z-index: 200;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s;
+        }
+        .mobile-nav-item small { font-size: 10px; font-weight: 500; }
+        .mobile-nav-item.active { color: var(--accent-blue); }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        /* Desktop: hide mobile elements */
+        @media (min-width: 769px) {
+            .mobile-header, .mobile-bottom-nav { display: none !important; }
+            .sidebar-overlay { display: none !important; }
+        }
+
+        /* Mobile: show mobile elements, hide sidebar */
+        @media (max-width: 768px) {
+            .mobile-header { display: flex; }
+            .mobile-bottom-nav { display: flex; }
+            .main-wrapper {
+                margin-left: 0 !important;
+                margin-top: var(--header-height);
+                padding-bottom: var(--bottom-nav-height);
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 150;
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .sidebar.mobile-open ~ .sidebar-overlay {
+                display: block !important;
+            }
+            .section-content { padding: 12px; }
+            .global-header { display: none; }
+        }
     </style>
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#section-overview" class="skip-link">Skip to main content</a>
 
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme" id="themeToggle">&#9790;</button>
+    <!-- Mobile Header (hidden on desktop) -->
+    <div class="mobile-header">
+        <button class="hamburger" onclick="toggleSidebar()" aria-label="Open navigation">&#9776;</button>
+        <span class="mobile-title">Music Analytics</span>
+        <button class="theme-toggle-mobile" onclick="toggleTheme()">&#9728;</button>
+    </div>
 
-    <div class="app">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-badge">
-                <span class="pulse"></span>
-                Live Analytics
-            </div>
-            <h1>Music Stock Analytics Dashboard</h1>
-            <p>YouTube Channel Metrics vs NSE Stock Price Correlation</p>
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Company Switcher -->
+        <div class="company-switcher">
+            <button class="company-btn active" id="btn-tips" onclick="switchCompany('tips')">
+                <span class="company-icon">&#127925;</span> Tips Music
+            </button>
+            <button class="company-btn" id="btn-saregama" onclick="switchCompany('saregama')">
+                <span class="company-icon">&#127926;</span> Saregama
+            </button>
         </div>
 
-        <!-- Tab Navigation -->
-        <nav class="tabs" role="tablist" aria-label="Company selection">
-            <button class="tab-button active" role="tab" aria-selected="true" onclick="switchCompany('tips', this)">
-                Tips Music
-            </button>
-            <button class="tab-button" role="tab" aria-selected="false" onclick="switchCompany('saregama', this)">
-                Saregama India
-            </button>
+        <!-- Nav Items -->
+        <nav class="sidebar-nav">
+            <a class="nav-item active" id="nav-overview" onclick="return navigateTo('overview')" href="#">
+                <span class="nav-icon">&#128202;</span><span class="nav-label">Overview</span>
+            </a>
+            <a class="nav-item" id="nav-stock" onclick="return navigateTo('stock')" href="#">
+                <span class="nav-icon">&#128200;</span><span class="nav-label">Stock Analysis</span>
+            </a>
+            <a class="nav-item" id="nav-content" onclick="return navigateTo('content')" href="#">
+                <span class="nav-icon">&#128250;</span><span class="nav-label">Content Analytics</span>
+            </a>
+            <a class="nav-item" id="nav-correlation" onclick="return navigateTo('correlation')" href="#">
+                <span class="nav-icon">&#128279;</span><span class="nav-label">Correlation</span>
+            </a>
+            <a class="nav-item" id="nav-anomalies" onclick="return navigateTo('anomalies')" href="#">
+                <span class="nav-icon">&#128680;</span><span class="nav-label">Anomalies</span>
+            </a>
+            <a class="nav-item" id="nav-datatable" onclick="return navigateTo('datatable')" href="#">
+                <span class="nav-icon">&#128203;</span><span class="nav-label">Data Table</span>
+            </a>
         </nav>
 
-        <!-- Main Content -->
-        <main id="main-content" class="content">
-            <!-- Controls -->
-            <div class="controls">
-                <label for="timePeriod">Period:</label>
-                <select id="timePeriod" onchange="handleTimePeriodChange()">
-                    <option value="30">Last 30 Days</option>
-                    <option value="90" selected>Last 90 Days</option>
-                    <option value="180">Last 6 Months</option>
-                    <option value="365">Last 1 Year</option>
-                    <option value="all">All Time</option>
-                    <option value="custom">Custom Range</option>
-                </select>
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle theme">&#9790;</button>
+            <button class="sidebar-collapse-btn" onclick="toggleSidebar()">&#9664;</button>
+        </div>
+    </nav>
 
-                <input type="date" id="startDate" class="hidden" aria-label="Start date">
-                <input type="date" id="endDate" class="hidden" aria-label="End date">
-
-                <button class="btn" onclick="fetchData()" aria-label="Refresh data">Refresh</button>
-                <button class="btn btn-outline" id="exportBtn" onclick="exportCSV()" aria-label="Export data as CSV">Export CSV</button>
+    <!-- Main Content -->
+    <div class="main-wrapper" id="mainWrapper">
+        <!-- Global Header -->
+        <div class="global-header">
+            <div class="global-header-left">
+                <span class="section-title" id="sectionTitle">Overview</span>
+                <span class="data-freshness" id="lastUpdatedHeader"></span>
             </div>
+            <div class="global-header-right">
+                <!-- Period Picker -->
+                <div class="period-picker">
+                    <span class="period-label">Period:</span>
+                    <select id="timePeriod" onchange="handleTimePeriodChange()">
+                        <option value="30">Last 30 Days</option>
+                        <option value="90" selected>Last 90 Days</option>
+                        <option value="180">Last 6 Months</option>
+                        <option value="365">Last 1 Year</option>
+                        <option value="all">All Time</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                    <div id="customDateInputs" style="display:none; gap:8px; align-items:center;">
+                        <input type="date" id="startDate" onchange="handleCustomDateChange()">
+                        <span>to</span>
+                        <input type="date" id="endDate" onchange="handleCustomDateChange()">
+                    </div>
+                </div>
+                <button class="btn btn-sm" onclick="fetchData()" aria-label="Refresh data">&#8635; Refresh</button>
+                <button class="btn btn-sm btn-secondary" onclick="exportCSV()">&#11015; Export</button>
+            </div>
+        </div>
+
+        <!-- Section: Overview -->
+        <div class="section-content" id="section-overview">
 
             <!-- Data Status -->
             <div class="data-status" id="dataStatus" role="status" aria-live="polite">
@@ -851,7 +1198,7 @@
             <!-- Period Summary - reacts to date range selection -->
             <div class="period-summary" id="periodSummary">
                 <div class="period-summary-header">
-                    <h2 class="section-title">Period Summary</h2>
+                    <h2 class="section-heading">Period Summary</h2>
                     <span class="period-range" id="periodRangeLabel">Last 90 Days</span>
                 </div>
                 <div class="period-summary-grid">
@@ -890,7 +1237,7 @@
             <!-- Channel Breakdown -->
             <div class="channel-breakdown" id="channelBreakdown">
                 <div class="channel-breakdown-header">
-                    <h2 class="section-title">Channel Breakdown</h2>
+                    <h2 class="section-heading">Channel Breakdown</h2>
                     <span class="channel-breakdown-sub">Latest available day per channel, sorted by daily views</span>
                 </div>
                 <div class="table-wrapper">
@@ -1010,7 +1357,7 @@
 
             <!-- Data Table -->
             <div class="table-section">
-                <h2 class="section-title">Daily Channel & Stock Metrics</h2>
+                <h2 class="section-heading">Daily Channel & Stock Metrics</h2>
                 <div class="table-card">
                     <div class="table-wrapper">
                         <table id="dataTable">
@@ -1049,14 +1396,60 @@
                     </div>
                 </div>
             </div>
-        </main>
 
-        <!-- Footer -->
-        <div class="footer">
-            <p>Last updated: <span id="lastUpdated">--</span></p>
-            <p>Data: Supabase PostgreSQL | Stock: <span id="footerStock">NSE TIPSMUSIC</span> via Yahoo Finance</p>
+            <!-- Footer -->
+            <div class="footer">
+                <p>Last updated: <span id="lastUpdated">--</span></p>
+                <p>Data: Supabase PostgreSQL | Stock: <span id="footerStock">NSE TIPSMUSIC</span> via Yahoo Finance</p>
+            </div>
+
+        </div><!-- /section-overview -->
+
+        <!-- Section: Stock Analysis -->
+        <div class="section-content hidden" id="section-stock">
+            <p class="coming-soon">Stock Analysis &#8212; Coming Soon</p>
         </div>
-    </div>
+
+        <!-- Section: Content Analytics -->
+        <div class="section-content hidden" id="section-content">
+            <p class="coming-soon">Content Analytics &#8212; Coming Soon</p>
+        </div>
+
+        <!-- Section: Correlation -->
+        <div class="section-content hidden" id="section-correlation">
+            <p class="coming-soon">Correlation Analysis &#8212; Coming Soon</p>
+        </div>
+
+        <!-- Section: Anomalies -->
+        <div class="section-content hidden" id="section-anomalies">
+            <p class="coming-soon">Anomalies &#8212; Coming Soon</p>
+        </div>
+
+        <!-- Section: Data Table -->
+        <div class="section-content hidden" id="section-datatable">
+            <p class="coming-soon">Data Table &#8212; Coming Soon</p>
+        </div>
+
+    </div><!-- /main-wrapper -->
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <a class="mobile-nav-item active" id="mob-nav-overview" onclick="return navigateTo('overview')" href="#">
+            <span>&#128202;</span><small>Overview</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-stock" onclick="return navigateTo('stock')" href="#">
+            <span>&#128200;</span><small>Stock</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-content" onclick="return navigateTo('content')" href="#">
+            <span>&#128250;</span><small>Content</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-correlation" onclick="return navigateTo('correlation')" href="#">
+            <span>&#128279;</span><small>Correlation</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-datatable" onclick="return navigateTo('datatable')" href="#">
+            <span>&#128203;</span><small>Data</small>
+        </a>
+    </nav>
 
     <script>
         // ==========================================
@@ -1124,7 +1517,11 @@
 
         function updateThemeIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            document.getElementById('themeToggle').innerHTML = isDark ? '&#9790;' : '&#9728;';
+            const icon = isDark ? '\u263E' : '\u2600';
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) themeToggle.textContent = icon;
+            const mobileToggle = document.querySelector('.theme-toggle-mobile');
+            if (mobileToggle) mobileToggle.textContent = icon;
         }
 
         function applyChartTheme() {
@@ -1509,18 +1906,16 @@
         }
 
         // ==========================================
-        // TAB SWITCHING
+        // COMPANY SWITCHING
         // ==========================================
-        function switchCompany(company, btn) {
+        function switchCompany(company) {
             currentCompany = company;
             const config = COMPANY_CONFIG[company];
 
-            document.querySelectorAll('.tab-button').forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            btn.classList.add('active');
-            btn.setAttribute('aria-selected', 'true');
+            // Highlight active company button in sidebar
+            document.querySelectorAll('.company-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-' + company);
+            if (activeBtn) activeBtn.classList.add('active');
 
             document.getElementById('viewsChartTitle').textContent = `Daily Views - ${config.name}`;
             document.getElementById('stockChartTitle').textContent = `Stock Price - ${config.stockName}`;
@@ -1532,12 +1927,21 @@
 
         function handleTimePeriodChange() {
             const period = document.getElementById('timePeriod').value;
+            const customInputs = document.getElementById('customDateInputs');
             if (period === 'custom') {
-                document.getElementById('startDate').classList.remove('hidden');
-                document.getElementById('endDate').classList.remove('hidden');
+                if (customInputs) customInputs.style.display = 'flex';
             } else {
-                document.getElementById('startDate').classList.add('hidden');
-                document.getElementById('endDate').classList.add('hidden');
+                if (customInputs) customInputs.style.display = 'none';
+                updatePeriodSummary();
+                renderAllCharts();
+                renderTable();
+            }
+        }
+
+        function handleCustomDateChange() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
                 updatePeriodSummary();
                 renderAllCharts();
                 renderTable();
@@ -1545,9 +1949,12 @@
         }
 
         function updateLastUpdated() {
-            document.getElementById('lastUpdated').textContent = new Date().toLocaleString('en-US', {
+            const timeStr = new Date().toLocaleString('en-US', {
                 year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
+            document.getElementById('lastUpdated').textContent = timeStr;
+            const headerEl = document.getElementById('lastUpdatedHeader');
+            if (headerEl) headerEl.textContent = 'Updated ' + timeStr;
         }
 
         // ==========================================
@@ -2108,6 +2515,67 @@
             a.download = `${COMPANY_CONFIG[currentCompany].name.replace(/\s+/g, '_')}_analytics_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
             URL.revokeObjectURL(url);
+        }
+
+        // ==========================================
+        // SECTION ROUTING
+        // ==========================================
+        let currentSection = 'overview';
+        let sidebarCollapsed = false;
+
+        const SECTION_TITLES = {
+            overview: 'Overview',
+            stock: 'Stock Analysis',
+            content: 'Content Analytics',
+            correlation: 'Correlation Analysis',
+            anomalies: 'Anomalies',
+            datatable: 'Data Table'
+        };
+
+        function navigateTo(section) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            // Show target section
+            const el = document.getElementById('section-' + section);
+            if (el) el.classList.remove('hidden');
+
+            // Update nav active states
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            const navEl = document.getElementById('nav-' + section);
+            const mobNavEl = document.getElementById('mob-nav-' + section);
+            if (navEl) navEl.classList.add('active');
+            if (mobNavEl) mobNavEl.classList.add('active');
+
+            // Update section title in global header
+            const titleEl = document.getElementById('sectionTitle');
+            if (titleEl) titleEl.textContent = SECTION_TITLES[section] || section;
+
+            currentSection = section;
+
+            // Re-render charts when switching to overview (Chart.js needs visible container)
+            if (section === 'overview') {
+                setTimeout(() => { renderAllCharts(); }, 50);
+            }
+
+            // Close mobile sidebar
+            closeSidebar();
+            return false;
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-open');
+            } else {
+                sidebarCollapsed = !sidebarCollapsed;
+                sidebar.classList.toggle('collapsed', sidebarCollapsed);
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('mobile-open');
         }
 
         // ==========================================

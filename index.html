@@ -957,6 +957,96 @@
             font-size: 16px;
         }
 
+        /* === DATA TABLE SECTION === */
+        .table-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        #tableSearchInput {
+            flex-grow: 1;
+            max-width: 300px;
+            padding: 6px 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-family: inherit;
+        }
+        #tableSearchInput:focus { outline: none; border-color: var(--accent-blue); }
+        #tableDatasetSelect {
+            padding: 6px 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        #exportCsvBtn {
+            padding: 6px 14px;
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        #exportCsvBtn:hover { opacity: 0.85; }
+        #dataTableWrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+        }
+        #mainDataTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            font-variant-numeric: tabular-nums;
+        }
+        #mainDataTable thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--bg-elevated);
+        }
+        #mainDataTable th {
+            padding: 8px 12px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        #mainDataTable th.sortable { cursor: pointer; user-select: none; }
+        #mainDataTable th.sortable:hover { color: var(--text-primary); }
+        #mainDataTable th.sort-active { color: var(--accent-blue); }
+        .sort-icon { font-size: 0.7rem; color: var(--text-muted); margin-left: 4px; }
+        th.sort-active .sort-icon { color: var(--accent-blue); }
+        #mainDataTable td {
+            padding: 7px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            white-space: nowrap;
+        }
+        #mainDataTable tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        #mainDataTable tbody tr:hover { background: rgba(59,130,246,0.06); }
+        .dt-row-count {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
         /* === CORRELATION SECTION === */
         .stats-panel {
             display: flex;
@@ -1998,7 +2088,32 @@
 
         <!-- Section: Data Table -->
         <div class="section-content hidden" id="section-datatable">
-            <p class="coming-soon">Data Table &#8212; Coming Soon</p>
+            <div class="table-controls">
+                <button id="exportCsvBtn">Export CSV</button>
+                <input type="text" id="tableSearchInput" placeholder="Filter rows...">
+                <select id="tableDatasetSelect">
+                    <option value="combined">Combined (YouTube + Stock)</option>
+                    <option value="youtube">YouTube Only</option>
+                    <option value="stock">Stock Only</option>
+                </select>
+            </div>
+            <div class="dt-row-count" id="dtRowCount"></div>
+            <div class="table-wrapper" id="dataTableWrapper">
+                <table id="mainDataTable">
+                    <thead>
+                        <tr>
+                            <th data-col="date" class="sortable">Date <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="views" class="sortable">Views <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="daily_views" class="sortable">Daily Views <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="subscribers" class="sortable">Subscribers <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="daily_subscribers" class="sortable">Daily Subs <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="close" class="sortable">Stock Close <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="volume" class="sortable">Stock Volume <span class="sort-icon">&#8645;</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="mainDataTableBody"></tbody>
+                </table>
+            </div>
         </div>
 
     </div><!-- /main-wrapper -->
@@ -4563,6 +4678,9 @@
 
             // Anomalies section
             renderAnomaliesSection(filteredYT, filteredStock);
+
+            // Data Table section
+            renderDataTableSection();
         }
 
         function renderOverviewViewsChart(ytData) {
@@ -5303,6 +5421,11 @@
                 }, 50);
             }
 
+            // Re-render data table section when navigating to datatable
+            if (section === 'datatable') {
+                setTimeout(() => { renderDataTableSection(); }, 50);
+            }
+
             // Close mobile sidebar
             closeSidebar();
             return false;
@@ -5321,6 +5444,273 @@
         function closeSidebar() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar) sidebar.classList.remove('mobile-open');
+        }
+
+        // ==========================================
+        // DATA TABLE SECTION
+        // ==========================================
+        let tableSortKey = 'date';
+        let tableSortDir = 'desc';
+
+        function renderDataTableSection() {
+            const tbody = document.getElementById('mainDataTableBody');
+            if (!tbody) return;
+
+            const dataset = (document.getElementById('tableDatasetSelect') || {}).value || 'combined';
+            const searchRaw = (document.getElementById('tableSearchInput') || {}).value || '';
+            const search = searchRaw.trim().toLowerCase();
+
+            // Build stock lookup map
+            const stockMap = {};
+            allStockData.forEach(s => { stockMap[s.date] = s; });
+
+            // Build youtube lookup map
+            const ytMap = {};
+            allYoutubeData.forEach(y => { ytMap[y.date] = y; });
+
+            // Get filtered YT data (period filtered)
+            const filteredYT = filterDataByTimePeriod([...allYoutubeData]);
+            const filteredStock = filterDataByTimePeriod([...allStockData]);
+
+            // Build combined rows (inner join on date)
+            let rows = [];
+            if (dataset === 'combined') {
+                const ytDates = new Set(filteredYT.map(r => r.date));
+                const stockDates = new Set(filteredStock.map(r => r.date));
+                const allDates = new Set([...ytDates, ...stockDates]);
+                allDates.forEach(date => {
+                    const yt = ytMap[date];
+                    const st = stockMap[date];
+                    rows.push({
+                        date: date,
+                        views: yt ? (yt.total_views || 0) : null,
+                        daily_views: yt ? (yt.daily_views || 0) : null,
+                        subscribers: yt ? (yt.subscribers || 0) : null,
+                        daily_subscribers: yt ? (yt.daily_subscribers || yt.daily_subs || 0) : null,
+                        close: st ? (st.close || null) : null,
+                        volume: st ? (st.volume || null) : null,
+                    });
+                });
+            } else if (dataset === 'youtube') {
+                filteredYT.forEach(yt => {
+                    rows.push({
+                        date: yt.date,
+                        views: yt.total_views || 0,
+                        daily_views: yt.daily_views || 0,
+                        subscribers: yt.subscribers || 0,
+                        daily_subscribers: yt.daily_subscribers || yt.daily_subs || 0,
+                        close: null,
+                        volume: null,
+                    });
+                });
+            } else if (dataset === 'stock') {
+                filteredStock.forEach(st => {
+                    rows.push({
+                        date: st.date,
+                        views: null,
+                        daily_views: null,
+                        subscribers: null,
+                        daily_subscribers: null,
+                        close: st.close || null,
+                        volume: st.volume || null,
+                    });
+                });
+            }
+
+            // Apply text search
+            if (search) {
+                rows = rows.filter(row => {
+                    return [
+                        row.date,
+                        row.views, row.daily_views,
+                        row.subscribers, row.daily_subscribers,
+                        row.close, row.volume
+                    ].some(val => val !== null && String(val).toLowerCase().includes(search));
+                });
+            }
+
+            // Sort
+            rows.sort((a, b) => {
+                let av = a[tableSortKey], bv = b[tableSortKey];
+                if (tableSortKey === 'date') {
+                    av = av || '';
+                    bv = bv || '';
+                    if (av < bv) return tableSortDir === 'asc' ? -1 : 1;
+                    if (av > bv) return tableSortDir === 'asc' ? 1 : -1;
+                    return 0;
+                }
+                av = av === null ? -Infinity : Number(av);
+                bv = bv === null ? -Infinity : Number(bv);
+                return tableSortDir === 'asc' ? av - bv : bv - av;
+            });
+
+            const totalRows = rows.length;
+            const displayRows = rows.slice(0, 500);
+
+            // Update row count
+            const countEl = document.getElementById('dtRowCount');
+            if (countEl) {
+                countEl.textContent = `Showing ${displayRows.length} of ${totalRows} rows`;
+            }
+
+            // Update sort icons in header
+            document.querySelectorAll('#mainDataTable th.sortable').forEach(th => {
+                const col = th.getAttribute('data-col');
+                const icon = th.querySelector('.sort-icon');
+                th.classList.remove('sort-active');
+                if (col === tableSortKey) {
+                    th.classList.add('sort-active');
+                    icon.textContent = tableSortDir === 'asc' ? '\u25B2' : '\u25BC';
+                } else {
+                    icon.textContent = '\u21C5';
+                }
+            });
+
+            // Determine which columns to show
+            const showYT = dataset === 'combined' || dataset === 'youtube';
+            const showStock = dataset === 'combined' || dataset === 'stock';
+
+            // Show/hide column headers
+            const colMap = {
+                views: 1, daily_views: 2, subscribers: 3, daily_subscribers: 4,
+                close: 5, volume: 6
+            };
+            document.querySelectorAll('#mainDataTable thead th').forEach(th => {
+                const col = th.getAttribute('data-col');
+                if (!col || col === 'date') return;
+                const isYTCol = ['views','daily_views','subscribers','daily_subscribers'].includes(col);
+                const isStockCol = ['close','volume'].includes(col);
+                if (isYTCol) th.style.display = showYT ? '' : 'none';
+                if (isStockCol) th.style.display = showStock ? '' : 'none';
+            });
+
+            // Render rows
+            tbody.innerHTML = '';
+            if (!displayRows.length) {
+                const colCount = 1 + (showYT ? 4 : 0) + (showStock ? 2 : 0);
+                tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:30px;color:var(--text-muted)">No data available</td></tr>`;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            displayRows.forEach(row => {
+                const tr = document.createElement('tr');
+                let cells = `<td>${row.date || '--'}</td>`;
+                if (showYT) {
+                    cells += `<td>${row.views !== null ? formatNumber(row.views) : '--'}</td>`;
+                    cells += `<td>${row.daily_views !== null ? formatNumber(row.daily_views) : '--'}</td>`;
+                    cells += `<td>${row.subscribers !== null ? formatNumber(row.subscribers) : '--'}</td>`;
+                    cells += `<td>${row.daily_subscribers !== null ? formatNumber(row.daily_subscribers) : '--'}</td>`;
+                }
+                if (showStock) {
+                    cells += `<td>${row.close !== null ? formatCurrency(row.close) : '--'}</td>`;
+                    cells += `<td>${row.volume !== null ? formatNumber(row.volume) : '--'}</td>`;
+                }
+                tr.innerHTML = cells;
+                fragment.appendChild(tr);
+            });
+            tbody.appendChild(fragment);
+        }
+
+        function wireDataTableSection() {
+            // Sort headers
+            document.querySelectorAll('#mainDataTable th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.getAttribute('data-col');
+                    if (col === tableSortKey) {
+                        tableSortDir = tableSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        tableSortKey = col;
+                        tableSortDir = 'desc';
+                    }
+                    renderDataTableSection();
+                });
+            });
+
+            // Search input
+            const searchInput = document.getElementById('tableSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => renderDataTableSection());
+            }
+
+            // Dataset select
+            const datasetSelect = document.getElementById('tableDatasetSelect');
+            if (datasetSelect) {
+                datasetSelect.addEventListener('change', () => renderDataTableSection());
+            }
+
+            // Export CSV
+            const exportBtn = document.getElementById('exportCsvBtn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    const dataset = (document.getElementById('tableDatasetSelect') || {}).value || 'combined';
+                    const searchRaw = (document.getElementById('tableSearchInput') || {}).value || '';
+                    const search = searchRaw.trim().toLowerCase();
+
+                    const stockMap = {};
+                    allStockData.forEach(s => { stockMap[s.date] = s; });
+                    const ytMap = {};
+                    allYoutubeData.forEach(y => { ytMap[y.date] = y; });
+
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData]);
+                    const filteredStock = filterDataByTimePeriod([...allStockData]);
+
+                    let rows = [];
+                    if (dataset === 'combined') {
+                        const allDates = new Set([...filteredYT.map(r=>r.date), ...filteredStock.map(r=>r.date)]);
+                        allDates.forEach(date => {
+                            const yt = ytMap[date];
+                            const st = stockMap[date];
+                            rows.push({ date, views: yt?yt.total_views:'', daily_views: yt?yt.daily_views:'', subscribers: yt?yt.subscribers:'', daily_subscribers: yt?(yt.daily_subscribers||yt.daily_subs||''):'', close: st?st.close:'', volume: st?st.volume:'' });
+                        });
+                    } else if (dataset === 'youtube') {
+                        filteredYT.forEach(yt => rows.push({ date: yt.date, views: yt.total_views, daily_views: yt.daily_views, subscribers: yt.subscribers, daily_subscribers: yt.daily_subscribers||yt.daily_subs||'', close: '', volume: '' }));
+                    } else {
+                        filteredStock.forEach(st => rows.push({ date: st.date, views: '', daily_views: '', subscribers: '', daily_subscribers: '', close: st.close, volume: st.volume }));
+                    }
+
+                    if (search) {
+                        rows = rows.filter(row => Object.values(row).some(v => String(v).toLowerCase().includes(search)));
+                    }
+
+                    rows.sort((a, b) => {
+                        let av = a[tableSortKey], bv = b[tableSortKey];
+                        if (tableSortKey === 'date') {
+                            av = av || ''; bv = bv || '';
+                            if (av < bv) return tableSortDir === 'asc' ? -1 : 1;
+                            if (av > bv) return tableSortDir === 'asc' ? 1 : -1;
+                            return 0;
+                        }
+                        av = av === '' ? -Infinity : Number(av);
+                        bv = bv === '' ? -Infinity : Number(bv);
+                        return tableSortDir === 'asc' ? av - bv : bv - av;
+                    });
+
+                    const showYT = dataset === 'combined' || dataset === 'youtube';
+                    const showStock = dataset === 'combined' || dataset === 'stock';
+                    const headers = ['Date'];
+                    if (showYT) headers.push('Views', 'Daily Views', 'Subscribers', 'Daily Subs');
+                    if (showStock) headers.push('Stock Close', 'Stock Volume');
+
+                    const csvRows = rows.map(row => {
+                        const vals = [row.date];
+                        if (showYT) vals.push(row.views, row.daily_views, row.subscribers, row.daily_subscribers);
+                        if (showStock) vals.push(row.close, row.volume);
+                        return vals.join(',');
+                    });
+
+                    const csv = [headers.join(','), ...csvRows].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const company = COMPANY_CONFIG[currentCompany] ? COMPANY_CONFIG[currentCompany].name.replace(/\s+/g,'-').toLowerCase() : currentCompany;
+                    const today = new Date().toISOString().split('T')[0];
+                    a.download = `tips-data-${company}-${today}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
         }
 
         // ==========================================
@@ -5357,6 +5747,7 @@
             wireStockToggleButtons();
             wireCorrToggleButtons();
             wireAnomalyButtons();
+            wireDataTableSection();
             fetchData();
         });
     </script>

@@ -1762,15 +1762,53 @@
         // p-value from Pearson r and sample size n
         function correlationPValue(r, n) {
           if (n <= 2) return 1;
-          const t = r * Math.sqrt((n-2)/(1-r*r));
-          // Two-tailed t-test approximation using Abramowitz and Stegun
-          const a = Math.abs(t);
+          if (Math.abs(r) >= 1) return 0;
+          const t = r * Math.sqrt((n - 2) / (1 - r * r));
           const df = n - 2;
-          // Simple approximation for p-value
-          const x = df / (df + a*a);
-          let p = 0.5 * Math.pow(x, df/2);
-          if (a > 0) p = Math.min(1, 2 * p);
-          return p;
+          // Use normal approximation for large df, beta for small df
+          // P-value via regularized incomplete beta: B(df/2, 0.5)
+          const x = df / (df + t * t);
+          // Continued-fraction approximation of regularized incomplete beta
+          function betacf(a, b, x) {
+            const MAXIT = 100, EPS = 3e-7;
+            const qab = a + b, qap = a + 1, qam = a - 1;
+            let c = 1, d = 1 - qab * x / qap;
+            if (Math.abs(d) < 1e-30) d = 1e-30;
+            d = 1 / d; let h = d;
+            for (let m = 1; m <= MAXIT; m++) {
+              const m2 = 2 * m;
+              let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+              d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30;
+              c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+              d = 1 / d; h *= d * c;
+              aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+              d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30;
+              c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+              d = 1 / d; const del = d * c; h *= del;
+              if (Math.abs(del - 1) < EPS) break;
+            }
+            return h;
+          }
+          function ibeta(a, b, x) {
+            if (x < 0 || x > 1) return NaN;
+            if (x === 0) return 0; if (x === 1) return 1;
+            const lbeta = lgamma(a) + lgamma(b) - lgamma(a + b);
+            const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lbeta) / a;
+            if (x < (a + 1) / (a + b + 2)) return front * betacf(a, b, x);
+            return 1 - (Math.exp(Math.log(1-x) * b + Math.log(x) * a - lbeta) / b) * betacf(b, a, 1-x);
+          }
+          function lgamma(z) {
+            const g = 7, c = [0.99999999999980993,676.5203681218851,-1259.1392167224028,
+              771.32342877765313,-176.61502916214059,12.507343278686905,
+              -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+            if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+            z -= 1;
+            let x = c[0];
+            for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+            const t = z + g + 0.5;
+            return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+          }
+          return ibeta(df / 2, 0.5, x);
         }
 
         // ATR (Average True Range)
@@ -1781,7 +1819,7 @@
             const high = sortedData[i].high;
             const low = sortedData[i].low;
             const prevClose = sortedData[i-1].close;
-            if (high == null || low == null) { trs.push(0); continue; }
+            if (high == null || low == null || prevClose == null) { trs.push(0); continue; }
             trs.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
           }
           const atrs = [];
@@ -1897,7 +1935,6 @@
             updateKPICards();
             updatePeriodSummary();
             renderAllCharts();
-            updateKPICards();
             renderTable();
             renderChannelTable();
             updateLastUpdated();
@@ -2143,11 +2180,19 @@
           });
           ctx.stroke();
 
-          // Fill area below
-          ctx.lineTo(w - pad, h);
-          ctx.lineTo(pad, h);
+          // Fill area below — start a fresh path to avoid geometric artifacts
+          ctx.beginPath();
+          const pts2 = data.map((v, i) => {
+            const x2 = pad + (i / (data.length - 1)) * (w - 2 * pad);
+            const y2 = h - pad - ((v - minVal) / range) * (h - pad * 2);
+            return [x2, y2];
+          });
+          ctx.moveTo(pts2[0][0], pts2[0][1]);
+          for (let i = 1; i < pts2.length; i++) ctx.lineTo(pts2[i][0], pts2[i][1]);
+          ctx.lineTo(pts2[pts2.length - 1][0], h);
+          ctx.lineTo(pts2[0][0], h);
           ctx.closePath();
-          ctx.fillStyle = color + '20'; // 12% opacity
+          ctx.fillStyle = color + '20';
           ctx.fill();
         }
 
@@ -2334,7 +2379,7 @@
         function renderOverviewViewsChart(ytData) {
           const canvas = document.getElementById('overviewViewsChart');
           if (!canvas) return;
-          if (charts['overviewViews']) { charts['overviewViews'].destroy(); }
+          if (charts['overviewViews']) { charts['overviewViews'].destroy(); delete charts['overviewViews']; }
 
           const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
           const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
@@ -2387,7 +2432,7 @@
         function renderOverviewCorrelationChart(ytData, stData) {
           const canvas = document.getElementById('overviewCorrelationChart');
           if (!canvas) return;
-          if (charts['overviewCorrelation']) { charts['overviewCorrelation'].destroy(); }
+          if (charts['overviewCorrelation']) { charts['overviewCorrelation'].destroy(); delete charts['overviewCorrelation']; }
 
           // Build rolling 30-day correlation
           // Pair by date

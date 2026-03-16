@@ -966,6 +966,89 @@
             box-shadow: none;
         }
 
+        /* KPI Grid */
+        .kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        @media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+
+        .kpi-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: 14px 16px 10px;
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .kpi-card--highlight { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.05); }
+        .kpi-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 3px;
+          background: var(--primary-gradient);
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .kpi-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+        .kpi-label {
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--text-muted);
+        }
+        .kpi-icon { font-size: 14px; opacity: 0.7; }
+
+        .kpi-value {
+          font-size: 22px;
+          font-weight: 700;
+          color: var(--text-primary);
+          font-variant-numeric: tabular-nums;
+          line-height: 1.2;
+          margin-bottom: 3px;
+        }
+
+        .kpi-context {
+          font-size: 11px;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+          min-height: 14px;
+        }
+        .kpi-context.positive { color: var(--accent-green); }
+        .kpi-context.negative { color: var(--accent-red); }
+        .kpi-context.significant { color: var(--accent-blue); font-weight: 600; }
+
+        .kpi-sparkline {
+          display: block;
+          width: 100%;
+          height: 28px;
+          opacity: 0.7;
+        }
+
+        /* Summary charts row */
+        .summary-charts-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        @media (max-width: 900px) { .summary-charts-row { grid-template-columns: 1fr; } }
+
+        .summary-chart .chart-wrapper canvas { max-height: 180px; }
+
         /* === MOBILE === */
         .mobile-header {
             display: none;
@@ -1161,38 +1244,73 @@
                 </div>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Subscribers</h3>
-                    <div class="value" id="totalSubs">--</div>
-                    <div class="subtitle" id="subsChange">Loading...</div>
+            <!-- KPI Cards Row -->
+            <div class="kpi-grid">
+              <!-- Stock Price -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Stock Price</span>
+                  <span class="kpi-icon">📈</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Total Views</h3>
-                    <div class="value" id="totalViews">--</div>
-                    <div class="subtitle" id="viewsGrowth">Loading...</div>
+                <div class="kpi-value" id="kpiStockPrice">--</div>
+                <div class="kpi-context" id="kpiStockChange">--</div>
+                <canvas class="kpi-sparkline" id="sparkStockPrice" width="80" height="28"></canvas>
+              </div>
+
+              <!-- Daily Views -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Daily Views</span>
+                  <span class="kpi-icon">👁</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Daily Views (Latest)</h3>
-                    <div class="value" id="dailyViews">--</div>
-                    <div class="subtitle" id="dailyViewsChange">Loading...</div>
+                <div class="kpi-value" id="kpiDailyViews">--</div>
+                <div class="kpi-context" id="kpiDailyViewsChange">--</div>
+                <canvas class="kpi-sparkline" id="sparkDailyViews" width="80" height="28"></canvas>
+              </div>
+
+              <!-- Subscribers -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Subscribers</span>
+                  <span class="kpi-icon">👥</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Stock Price</h3>
-                    <div class="value" id="stockPrice">--</div>
-                    <div class="subtitle" id="stockChange">Loading...</div>
+                <div class="kpi-value" id="kpiSubscribers">--</div>
+                <div class="kpi-context" id="kpiSubsChange">--</div>
+                <canvas class="kpi-sparkline" id="sparkSubscribers" width="80" height="28"></canvas>
+              </div>
+
+              <!-- 30-Day Correlation -->
+              <div class="kpi-card kpi-card--highlight">
+                <div class="kpi-header">
+                  <span class="kpi-label">30-Day Correlation</span>
+                  <span class="kpi-icon">🔗</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Stock Volume</h3>
-                    <div class="value" id="stockVolume">--</div>
-                    <div class="subtitle" id="volumeChange">Loading...</div>
+                <div class="kpi-value" id="kpiCorrelation">--</div>
+                <div class="kpi-context" id="kpiCorrelationSig">--</div>
+                <canvas class="kpi-sparkline" id="sparkCorrelation" width="80" height="28"></canvas>
+              </div>
+
+              <!-- View Velocity -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">View Velocity</span>
+                  <span class="kpi-icon">⚡</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Avg Daily Views (30d)</h3>
-                    <div class="value" id="avgDailyViews">--</div>
-                    <div class="subtitle" id="avgViewsTrend">Loading...</div>
+                <div class="kpi-value" id="kpiVelocity">--</div>
+                <div class="kpi-context" id="kpiVelocityContext">vs 30d avg</div>
+                <canvas class="kpi-sparkline" id="sparkVelocity" width="80" height="28"></canvas>
+              </div>
+
+              <!-- Stock ATR -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Stock ATR (14d)</span>
+                  <span class="kpi-icon">📊</span>
                 </div>
+                <div class="kpi-value" id="kpiATR">--</div>
+                <div class="kpi-context" id="kpiATRContext">avg true range</div>
+                <canvas class="kpi-sparkline" id="sparkATR" width="80" height="28"></canvas>
+              </div>
             </div>
 
             <!-- Period Summary - reacts to date range selection -->
@@ -1256,6 +1374,32 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Summary Charts Row -->
+            <div class="summary-charts-row">
+              <div class="chart-card summary-chart">
+                <div class="chart-header">
+                  <div>
+                    <h3 class="chart-title">Daily Views Overview</h3>
+                    <p class="chart-subtitle">Views trend with 30-day moving average</p>
+                  </div>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="overviewViewsChart"></canvas>
+                </div>
+              </div>
+              <div class="chart-card summary-chart">
+                <div class="chart-header">
+                  <div>
+                    <h3 class="chart-title">Rolling 30-Day Correlation</h3>
+                    <p class="chart-subtitle">Views vs Stock Price relationship over time</p>
+                  </div>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="overviewCorrelationChart"></canvas>
+                </div>
+              </div>
             </div>
 
             <!-- Charts -->
@@ -1599,6 +1743,55 @@
             return result;
         }
 
+        // Pearson correlation coefficient
+        function pearsonCorrelation(x, y) {
+          const n = Math.min(x.length, y.length);
+          if (n < 2) return 0;
+          const mx = x.slice(0,n).reduce((a,b)=>a+b,0)/n;
+          const my = y.slice(0,n).reduce((a,b)=>a+b,0)/n;
+          let num = 0, dx = 0, dy = 0;
+          for (let i=0; i<n; i++) {
+            num += (x[i]-mx)*(y[i]-my);
+            dx += (x[i]-mx)**2;
+            dy += (y[i]-my)**2;
+          }
+          const denom = Math.sqrt(dx*dy);
+          return denom === 0 ? 0 : Math.max(-1, Math.min(1, num/denom));
+        }
+
+        // p-value from Pearson r and sample size n
+        function correlationPValue(r, n) {
+          if (n <= 2) return 1;
+          const t = r * Math.sqrt((n-2)/(1-r*r));
+          // Two-tailed t-test approximation using Abramowitz and Stegun
+          const a = Math.abs(t);
+          const df = n - 2;
+          // Simple approximation for p-value
+          const x = df / (df + a*a);
+          let p = 0.5 * Math.pow(x, df/2);
+          if (a > 0) p = Math.min(1, 2 * p);
+          return p;
+        }
+
+        // ATR (Average True Range)
+        function calculateATR(sortedData, period = 14) {
+          // sortedData: array of {high, low, close} in ascending order
+          const trs = [];
+          for (let i = 1; i < sortedData.length; i++) {
+            const high = sortedData[i].high;
+            const low = sortedData[i].low;
+            const prevClose = sortedData[i-1].close;
+            if (high == null || low == null) { trs.push(0); continue; }
+            trs.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+          }
+          const atrs = [];
+          for (let i = period - 1; i < trs.length; i++) {
+            const avg = trs.slice(i - period + 1, i + 1).reduce((a,b)=>a+b,0) / period;
+            atrs.push(avg);
+          }
+          return atrs;
+        }
+
         function filterDataByTimePeriod(data) {
             const period = document.getElementById('timePeriod').value;
 
@@ -1701,8 +1894,10 @@
 
             updateDataStatus();
             updateStats();
+            updateKPICards();
             updatePeriodSummary();
             renderAllCharts();
+            updateKPICards();
             renderTable();
             renderChannelTable();
             updateLastUpdated();
@@ -1745,46 +1940,52 @@
         // ==========================================
         // STATS
         // ==========================================
+        function setElText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function setElClass(id, cls) {
+            const el = document.getElementById(id);
+            if (el) el.className = cls;
+        }
+
         function updateStats() {
             if (allYoutubeData.length > 0) {
                 const latest = allYoutubeData[0];
                 const prev = allYoutubeData.length > 1 ? allYoutubeData[1] : null;
 
-                document.getElementById('totalSubs').textContent = formatNumber(latest.subscribers);
-                document.getElementById('totalViews').textContent = formatNumber(latest.total_views);
-                document.getElementById('dailyViews').textContent = formatNumber(latest.daily_views);
+                setElText('totalSubs', formatNumber(latest.subscribers));
+                setElText('totalViews', formatNumber(latest.total_views));
+                setElText('dailyViews', formatNumber(latest.daily_views));
 
                 if (prev) {
                     const subChange = latest.subscribers - prev.subscribers;
-                    const el = document.getElementById('subsChange');
-                    el.textContent = subChange > 0 ? `+${formatNumberFull(subChange)} today` : 'No change';
-                    el.className = subChange > 0 ? 'subtitle positive' : 'subtitle';
+                    setElText('subsChange', subChange > 0 ? `+${formatNumberFull(subChange)} today` : 'No change');
+                    setElClass('subsChange', subChange > 0 ? 'subtitle positive' : 'subtitle');
 
                     const viewChange = calculatePercentageChange(latest.daily_views, prev.daily_views);
-                    const dvEl = document.getElementById('dailyViewsChange');
-                    dvEl.textContent = formatPercentage(viewChange) + ' vs prev day';
-                    dvEl.className = viewChange >= 0 ? 'subtitle positive' : 'subtitle negative';
+                    setElText('dailyViewsChange', formatPercentage(viewChange) + ' vs prev day');
+                    setElClass('dailyViewsChange', viewChange >= 0 ? 'subtitle positive' : 'subtitle negative');
 
                     const totalViewsGrowth = latest.total_views - prev.total_views;
-                    const vgEl = document.getElementById('viewsGrowth');
-                    vgEl.textContent = `+${formatNumberFull(totalViewsGrowth)} today`;
-                    vgEl.className = 'subtitle positive';
+                    setElText('viewsGrowth', `+${formatNumberFull(totalViewsGrowth)} today`);
+                    setElClass('viewsGrowth', 'subtitle positive');
                 }
 
                 // 30-day average
                 const last30 = allYoutubeData.slice(0, 30);
                 if (last30.length > 0) {
                     const avg = last30.reduce((s, d) => s + (d.daily_views || 0), 0) / last30.length;
-                    document.getElementById('avgDailyViews').textContent = formatNumber(Math.round(avg));
+                    setElText('avgDailyViews', formatNumber(Math.round(avg)));
 
                     // Compare to previous 30 days
                     const prev30 = allYoutubeData.slice(30, 60);
                     if (prev30.length > 0) {
                         const prevAvg = prev30.reduce((s, d) => s + (d.daily_views || 0), 0) / prev30.length;
                         const trend = calculatePercentageChange(avg, prevAvg);
-                        const tEl = document.getElementById('avgViewsTrend');
-                        tEl.textContent = formatPercentage(trend) + ' vs prev 30d';
-                        tEl.className = trend >= 0 ? 'subtitle positive' : 'subtitle negative';
+                        setElText('avgViewsTrend', formatPercentage(trend) + ' vs prev 30d');
+                        setElClass('avgViewsTrend', trend >= 0 ? 'subtitle positive' : 'subtitle negative');
                     }
                 }
             }
@@ -1793,22 +1994,161 @@
                 const latestStock = allStockData[0];
                 const prevStock = allStockData.length > 1 ? allStockData[1] : null;
 
-                document.getElementById('stockPrice').textContent = formatCurrency(latestStock.close);
-                document.getElementById('stockVolume').textContent = formatNumber(latestStock.volume);
+                setElText('stockPrice', formatCurrency(latestStock.close));
+                setElText('stockVolume', formatNumber(latestStock.volume));
 
                 if (prevStock) {
                     const change = latestStock.close - prevStock.close;
                     const changePercent = calculatePercentageChange(latestStock.close, prevStock.close);
-                    const scEl = document.getElementById('stockChange');
-                    scEl.textContent = `${change > 0 ? '+' : ''}${formatCurrency(change)} (${formatPercentage(changePercent)})`;
-                    scEl.className = change >= 0 ? 'subtitle positive' : 'subtitle negative';
+                    setElText('stockChange', `${change > 0 ? '+' : ''}${formatCurrency(change)} (${formatPercentage(changePercent)})`);
+                    setElClass('stockChange', change >= 0 ? 'subtitle positive' : 'subtitle negative');
 
                     const volChange = calculatePercentageChange(latestStock.volume, prevStock.volume);
-                    const vcEl = document.getElementById('volumeChange');
-                    vcEl.textContent = formatPercentage(volChange) + ' vs prev day';
-                    vcEl.className = volChange >= 0 ? 'subtitle positive' : 'subtitle negative';
+                    setElText('volumeChange', formatPercentage(volChange) + ' vs prev day');
+                    setElClass('volumeChange', volChange >= 0 ? 'subtitle positive' : 'subtitle negative');
                 }
             }
+        }
+
+        // ==========================================
+        // KPI CARDS (NEW REDESIGNED)
+        // ==========================================
+        function updateKPICards() {
+          if (!allYoutubeData.length && !allStockData.length) return;
+
+          const yt = allYoutubeData;   // sorted desc by date
+          const st = allStockData;     // sorted desc by date
+
+          // --- Stock Price ---
+          if (st.length >= 2) {
+            const latest = st[0];
+            const prev = st[1];
+            const change = latest.close - prev.close;
+            const changePct = calculatePercentageChange(prev.close, latest.close);
+            document.getElementById('kpiStockPrice').textContent = formatCurrency(latest.close);
+            const ctxEl = document.getElementById('kpiStockChange');
+            const sign = change >= 0 ? '+' : '';
+            ctxEl.textContent = `${sign}${formatCurrency(change)} (${formatPercentage(changePct)}) vs yesterday`;
+            ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
+            renderSparkline('sparkStockPrice', st.slice(0,30).map(d=>d.close).reverse(), change >= 0 ? '#10b981' : '#ef4444');
+          }
+
+          // --- Daily Views ---
+          if (yt.length >= 2) {
+            const latest = yt[0];
+            const prev = yt[1];
+            const change = calculatePercentageChange(prev.daily_views, latest.daily_views);
+            document.getElementById('kpiDailyViews').textContent = formatNumber(latest.daily_views);
+            const ctxEl = document.getElementById('kpiDailyViewsChange');
+            ctxEl.textContent = `${formatPercentage(change)} vs yesterday`;
+            ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
+            renderSparkline('sparkDailyViews', yt.slice(0,30).map(d=>d.daily_views||0).reverse(), '#3b82f6');
+          }
+
+          // --- Subscribers ---
+          if (yt.length >= 2) {
+            const latest = yt[0];
+            const change = latest.daily_subscribers || 0;
+            document.getElementById('kpiSubscribers').textContent = formatNumber(latest.subscribers);
+            const ctxEl = document.getElementById('kpiSubsChange');
+            const sign = change >= 0 ? '+' : '';
+            ctxEl.textContent = change !== 0 ? `${sign}${formatNumber(change)} today` : 'No change today';
+            ctxEl.className = 'kpi-context ' + (change > 0 ? 'positive' : change < 0 ? 'negative' : '');
+            renderSparkline('sparkSubscribers', yt.slice(0,30).map(d=>d.subscribers||0).reverse(), '#8b5cf6');
+          }
+
+          // --- 30-Day Correlation ---
+          const pairs = allYoutubeData.map(yt => {
+            const match = allStockData.find(s => s.date === yt.date);
+            return match ? { x: yt.daily_views, y: match.close } : null;
+          }).filter(Boolean).slice(0, 30);
+
+          if (pairs.length >= 10) {
+            const r = pearsonCorrelation(pairs.map(p=>p.x), pairs.map(p=>p.y));
+            const p = correlationPValue(r, pairs.length);
+            const isSignificant = p < 0.05;
+            document.getElementById('kpiCorrelation').textContent = `r = ${r.toFixed(2)}`;
+            const ctxEl = document.getElementById('kpiCorrelationSig');
+            ctxEl.textContent = isSignificant ? `p < 0.05 ✓ significant (n=${pairs.length})` : `p = ${p.toFixed(2)} (not significant)`;
+            ctxEl.className = 'kpi-context ' + (isSignificant ? 'significant' : '');
+            // Sparkline: rolling 30d r over time (last 60d windows)
+            const rollingR = [];
+            const allPairs = allYoutubeData.map(yt => {
+              const match = allStockData.find(s => s.date === yt.date);
+              return match ? { x: yt.daily_views, y: match.close } : null;
+            }).filter(Boolean);
+            for (let i = 29; i < Math.min(allPairs.length, 89); i++) {
+              const window = allPairs.slice(i-29, i+1);
+              rollingR.push(pearsonCorrelation(window.map(p=>p.x), window.map(p=>p.y)));
+            }
+            if (rollingR.length) renderSparkline('sparkCorrelation', rollingR.reverse(), '#06b6d4', -1, 1);
+          }
+
+          // --- View Velocity (7-day rate of change) ---
+          if (yt.length >= 14) {
+            const recent7 = yt.slice(0, 7).reduce((s,d)=>s+(d.daily_views||0), 0);
+            const prev7 = yt.slice(7, 14).reduce((s,d)=>s+(d.daily_views||0), 0);
+            const velocity = prev7 > 0 ? ((recent7 - prev7) / prev7) * 100 : 0;
+            document.getElementById('kpiVelocity').textContent = `${velocity >= 0 ? '+' : ''}${velocity.toFixed(1)}%`;
+            document.getElementById('kpiVelocityContext').textContent = 'weekly rate of change';
+            const velocities = [];
+            for (let i = 7; i < Math.min(yt.length - 7, 37); i++) {
+              const cur = yt.slice(i-7, i).reduce((s,d)=>s+(d.daily_views||0), 0);
+              const prv = yt.slice(i, i+7).reduce((s,d)=>s+(d.daily_views||0), 0);
+              velocities.push(prv > 0 ? ((cur - prv) / prv) * 100 : 0);
+            }
+            renderSparkline('sparkVelocity', velocities.reverse(), velocity >= 0 ? '#10b981' : '#ef4444');
+          }
+
+          // --- ATR (14-day Average True Range) ---
+          if (st.length >= 15) {
+            const sorted = st.slice().reverse(); // asc
+            const atrValues = calculateATR(sorted, 14);
+            const latestATR = atrValues[atrValues.length - 1];
+            document.getElementById('kpiATR').textContent = formatCurrency(latestATR);
+            document.getElementById('kpiATRContext').textContent = '14d avg true range';
+            renderSparkline('sparkATR', atrValues.slice(-30), '#f59e0b');
+          }
+        }
+
+        function renderSparkline(canvasId, data, color, yMin = null, yMax = null) {
+          const canvas = document.getElementById(canvasId);
+          if (!canvas || !data.length) return;
+
+          // Destroy existing if Chart.js instance
+          if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+
+          const ctx = canvas.getContext('2d');
+          const minVal = yMin !== null ? yMin : Math.min(...data);
+          const maxVal = yMax !== null ? yMax : Math.max(...data);
+          const range = maxVal - minVal || 1;
+
+          // Draw mini line chart manually
+          const w = canvas.offsetWidth || 80;
+          const h = canvas.offsetHeight || 28;
+          canvas.width = w;
+          canvas.height = h;
+          ctx.clearRect(0, 0, w, h);
+
+          const pad = 2;
+          ctx.beginPath();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.lineJoin = 'round';
+
+          data.forEach((val, i) => {
+            const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+            const y = h - pad - ((val - minVal) / range) * (h - pad * 2);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          // Fill area below
+          ctx.lineTo(w - pad, h);
+          ctx.lineTo(pad, h);
+          ctx.closePath();
+          ctx.fillStyle = color + '20'; // 12% opacity
+          ctx.fill();
         }
 
         // ==========================================
@@ -1980,6 +2320,8 @@
             const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
             const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
 
+            renderOverviewViewsChart(filteredYT);
+            renderOverviewCorrelationChart(filteredYT, filteredStock);
             renderViewsChart(filteredYT);
             renderStockChart(filteredStock);
             renderSubscriberChart(filteredYT);
@@ -1987,6 +2329,137 @@
             renderCorrelationChart(filteredYT, filteredStock);
             renderVolumeChart(filteredStock);
             renderDistributionChart(filteredYT);
+        }
+
+        function renderOverviewViewsChart(ytData) {
+          const canvas = document.getElementById('overviewViewsChart');
+          if (!canvas) return;
+          if (charts['overviewViews']) { charts['overviewViews'].destroy(); }
+
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+          const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+          const labels = ytData.map(d => d.date).reverse();
+          const views = ytData.map(d => d.daily_views || 0).reverse();
+          const ma30 = calculateMovingAverage(views, 30);
+
+          charts['overviewViews'] = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Daily Views',
+                  data: views,
+                  borderColor: 'rgba(59,130,246,0.5)',
+                  borderWidth: 1.5,
+                  pointRadius: 0,
+                  fill: true,
+                  backgroundColor: 'rgba(59,130,246,0.08)',
+                  tension: 0.2,
+                },
+                {
+                  label: '30d MA',
+                  data: ma30,
+                  borderColor: '#10b981',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  fill: false,
+                  tension: 0.3,
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              aspectRatio: 2.5,
+              animation: { duration: 400 },
+              plugins: { legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } } },
+              scales: {
+                x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                y: { ticks: { color: textColor, callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: gridColor } }
+              }
+            }
+          });
+        }
+
+        function renderOverviewCorrelationChart(ytData, stData) {
+          const canvas = document.getElementById('overviewCorrelationChart');
+          if (!canvas) return;
+          if (charts['overviewCorrelation']) { charts['overviewCorrelation'].destroy(); }
+
+          // Build rolling 30-day correlation
+          // Pair by date
+          const stMap = new Map(stData.map(d => [d.date, d.close]));
+          const paired = ytData
+            .filter(d => stMap.has(d.date) && d.daily_views)
+            .map(d => ({ date: d.date, views: d.daily_views, close: stMap.get(d.date) }));
+
+          const labels = [], rValues = [], sigValues = [];
+          for (let i = 29; i < paired.length; i++) {
+            const window = paired.slice(i - 29, i + 1);
+            const r = pearsonCorrelation(window.map(p=>p.views), window.map(p=>p.close));
+            const p = correlationPValue(r, window.length);
+            labels.push(paired[i].date);
+            rValues.push(r);
+            sigValues.push(p < 0.05 ? r : null); // null where not significant
+          }
+
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+          const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+          charts['overviewCorrelation'] = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: '30d Rolling r',
+                  data: rValues,
+                  borderColor: '#06b6d4',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.3,
+                  fill: false,
+                },
+                {
+                  label: 'Significant (p<0.05)',
+                  data: sigValues,
+                  borderColor: '#3b82f6',
+                  borderWidth: 3,
+                  pointRadius: 0,
+                  tension: 0.3,
+                  fill: false,
+                  spanGaps: false,
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              aspectRatio: 2.5,
+              animation: { duration: 400 },
+              plugins: {
+                legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => `r = ${ctx.parsed.y.toFixed(3)}`
+                  }
+                }
+              },
+              scales: {
+                x: { ticks: { color: textColor, maxTicksLimit: 6, font: { size: 10 } }, grid: { color: gridColor } },
+                y: {
+                  min: -1, max: 1,
+                  ticks: { color: textColor, font: { size: 10 } },
+                  grid: { color: gridColor },
+                  title: { display: true, text: 'r', color: textColor, font: { size: 10 } }
+                }
+              }
+            }
+          });
         }
 
         function destroyChart(name) {

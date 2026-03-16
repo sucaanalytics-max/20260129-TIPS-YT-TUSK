@@ -3253,7 +3253,7 @@
                     const curr7 = ytData.slice(i - 6, i + 1).reduce((s, d) => s + (d.daily_views || 0), 0);
                     const prev7 = ytData.slice(i - 13, i - 6).reduce((s, d) => s + (d.daily_views || 0), 0);
                     const avgVelocity = prev7 === 0 ? curr7 : (curr7 + prev7) / 2 || 1;
-                    velocity = curr7 / avgVelocity;
+                    velocity = avgVelocity === 0 ? 1 : curr7 / avgVelocity;
                 }
 
                 const rawScore = (views / avgViews * 0.4) + (subs / avgSubs * 0.3) + (uploads * 0.2) + (velocity * 0.1);
@@ -3764,14 +3764,18 @@
             // lag < 0: views at t vs close at t+|lag| (stock leads views)
             const result = [];
             const absLag = Math.abs(lag);
-            for (let i = absLag; i < pairs.length; i++) {
-                if (lag > 0) {
-                    result.push({ views: pairs[i - lag].views, close: pairs[i].close });
-                } else if (lag < 0) {
-                    if (i + absLag < pairs.length) {
-                        result.push({ views: pairs[i].views, close: pairs[i + absLag].close });
-                    }
-                } else {
+            if (lag > 0) {
+                // views leads stock: pair views[i] with close[i+lag]
+                for (let i = 0; i + lag < pairs.length; i++) {
+                    result.push({ views: pairs[i].views, close: pairs[i + lag].close });
+                }
+            } else if (lag < 0) {
+                // stock leads views: pair views[i+|lag|] with close[i]
+                for (let i = 0; i + absLag < pairs.length; i++) {
+                    result.push({ views: pairs[i + absLag].views, close: pairs[i].close });
+                }
+            } else {
+                for (let i = 0; i < pairs.length; i++) {
                     result.push({ views: pairs[i].views, close: pairs[i].close });
                 }
             }
@@ -3807,10 +3811,9 @@
             (function() {
                 const canvas = document.getElementById('corrRollingChart');
                 if (!canvas) return;
-                if (charts['corrRolling']) { charts['corrRolling'].destroy(); delete charts['corrRolling']; }
-
                 const win = corrWindow;
                 if (pairs.length < win) return;
+                if (charts['corrRolling']) { charts['corrRolling'].destroy(); delete charts['corrRolling']; }
 
                 const rolling = rollingCorrelation(pairs, win);
                 const labels = rolling.map(r => r.date);

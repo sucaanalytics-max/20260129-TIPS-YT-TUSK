@@ -1210,6 +1210,69 @@
 
         [data-theme="light"] .stock-chart-card { backdrop-filter: none; box-shadow: var(--shadow-sm); }
 
+        /* === ANOMALIES SECTION === */
+        .anom-filter-btn, .anom-sev-btn {
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .anom-filter-btn:hover, .anom-sev-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .anom-filter-btn.active {
+            background: rgba(59,130,246,0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .anom-sev-btn.active[data-sev="notable"] {
+            background: rgba(245,158,11,0.15);
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .anom-sev-btn.active[data-sev="extreme"] {
+            background: rgba(239,68,68,0.15);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        #anomalyTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+        #anomalyTable th {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+        }
+        #anomalyTable th:hover { color: var(--accent-blue); }
+        #anomalyTable td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        #anomalyTable tbody tr:nth-child(even) { background: var(--bg-glass); }
+        #anomalyTable tbody tr:hover { background: rgba(59,130,246,0.06); }
+        .anom-zscore-extreme { color: #ef4444; font-weight: 700; }
+        .anom-zscore-notable { color: #f59e0b; font-weight: 600; }
+        .anom-dir-up { color: #10b981; font-weight: 700; }
+        .anom-dir-down { color: #ef4444; font-weight: 700; }
+        .sort-indicator { font-size: 0.65rem; margin-left: 2px; }
+
         /* Content Analytics: channel mix chart shorter */
         .content-channel-mix-card canvas { max-height: 350px; }
 
@@ -1889,7 +1952,48 @@
 
         <!-- Section: Anomalies -->
         <div class="section-content hidden" id="section-anomalies">
-            <p class="coming-soon">Anomalies &#8212; Coming Soon</p>
+
+            <!-- Filter controls row -->
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+                <div class="chart-controls">
+                    <button class="anom-filter-btn active" data-metric="all">All</button>
+                    <button class="anom-filter-btn" data-metric="youtube">YouTube</button>
+                    <button class="anom-filter-btn" data-metric="stock">Stock</button>
+                </div>
+                <div class="chart-controls">
+                    <button class="anom-sev-btn active" data-sev="notable">Notable (|z|&gt;2)</button>
+                    <button class="anom-sev-btn active" data-sev="extreme">Extreme (|z|&gt;3)</button>
+                </div>
+            </div>
+
+            <!-- Anomaly Timeline Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title">Anomaly Timeline</div>
+                <canvas id="anomTimelineChart"></canvas>
+            </div>
+
+            <!-- Anomaly Table -->
+            <div class="stock-chart-card">
+                <div class="stock-chart-title">Anomaly Details</div>
+                <div style="overflow-x:auto;">
+                    <table id="anomalyTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="date">Date <span class="sort-indicator"></span></th>
+                                <th data-sort="metricName">Metric <span class="sort-indicator"></span></th>
+                                <th data-sort="value">Value <span class="sort-indicator"></span></th>
+                                <th data-sort="zScore">Z-Score <span class="sort-indicator"></span></th>
+                                <th data-sort="pctVsMean">% vs 30d Avg <span class="sort-indicator"></span></th>
+                                <th data-sort="direction">Direction <span class="sort-indicator"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalyTableBody">
+                            <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Loading anomalies...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
 
         <!-- Section: Data Table -->
@@ -1965,6 +2069,12 @@
         // Correlation section state
         let corrWindow = 30;
         let corrWindow_type = 'pearson'; // 'pearson' | 'spearman'
+
+        // Anomalies section state
+        let anomMetric = 'all'; // 'all' | 'youtube' | 'stock'
+        let anomSevFilter = new Set(['notable', 'extreme']); // active severity levels
+        let anomSortKey = 'zScore';
+        let anomSortDir = 'desc';
 
         // ==========================================
         // THEME SYSTEM
@@ -4050,6 +4160,374 @@
         // ==========================================
         // CHART RENDERING
         // ==========================================
+        // ==========================================
+        // ANOMALIES SECTION
+        // ==========================================
+
+        function detectAnomalies(values, dates, metricName, windowSize) {
+            windowSize = windowSize || 30;
+            const results = [];
+            for (let i = windowSize; i < values.length; i++) {
+                const window = values.slice(i - windowSize, i);
+                const mean = window.reduce((s, v) => s + v, 0) / windowSize;
+                const variance = window.reduce((s, v) => s + (v - mean) * (v - mean), 0) / windowSize;
+                const std = Math.sqrt(variance);
+                if (std === 0) continue;
+                const val = values[i];
+                const zScore = (val - mean) / std;
+                const absZ = Math.abs(zScore);
+                if (absZ <= 2) continue;
+                const isExtreme = absZ > 3;
+                const pctVsMean = mean !== 0 ? ((val - mean) / mean) * 100 : 0;
+                results.push({
+                    date: dates[i],
+                    value: val,
+                    zScore: zScore,
+                    mean: mean,
+                    pctVsMean: pctVsMean,
+                    metricName: metricName,
+                    isExtreme: isExtreme,
+                    direction: zScore > 0 ? 'up' : 'down'
+                });
+            }
+            return results;
+        }
+
+        function renderAnomaliesSection(ytData, stData) {
+            if (!ytData || !stData) return;
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            // Sort data ascending by date
+            const ytAsc = [...ytData].sort((a, b) => a.date < b.date ? -1 : 1);
+            const stAsc = [...stData].sort((a, b) => a.date < b.date ? -1 : 1);
+
+            // Detect anomalies for each metric
+            const ytViewVals = ytAsc.map(d => d.daily_views || 0);
+            const ytViewDates = ytAsc.map(d => d.date);
+            const ytSubVals = ytAsc.map(d => d.daily_subscribers || 0);
+            const stCloseVals = stAsc.map(d => parseFloat(d.close) || 0);
+            const stCloseDates = stAsc.map(d => d.date);
+
+            const anomYTViews = detectAnomalies(ytViewVals, ytViewDates, 'YT Daily Views');
+            const anomYTSubs  = detectAnomalies(ytSubVals, ytViewDates, 'YT Daily Subs');
+            const anomStock   = detectAnomalies(stCloseVals, stCloseDates, 'Stock Close');
+
+            // Tag source
+            anomYTViews.forEach(a => { a.source = 'youtube'; });
+            anomYTSubs.forEach(a => { a.source = 'youtube'; });
+            anomStock.forEach(a => { a.source = 'stock'; });
+
+            const allAnomalies = [...anomYTViews, ...anomYTSubs, ...anomStock];
+
+            // Apply metric filter
+            let filtered = allAnomalies;
+            if (anomMetric !== 'all') {
+                filtered = filtered.filter(a => a.source === anomMetric);
+            }
+
+            // Apply severity filter
+            filtered = filtered.filter(a => {
+                if (a.isExtreme) return anomSevFilter.has('extreme');
+                return anomSevFilter.has('notable');
+            });
+
+            // ---- Chart ----
+            (function() {
+                const canvas = document.getElementById('anomTimelineChart');
+                if (!canvas) return;
+                if (charts['anomTimeline']) { charts['anomTimeline'].destroy(); delete charts['anomTimeline']; }
+
+                // Build aligned dataset using joined dates
+                const stockMap = {};
+                stAsc.forEach(s => { stockMap[s.date] = parseFloat(s.close) || 0; });
+
+                // Use YT dates as labels (ascending)
+                const labels = ytAsc.map(d => d.date);
+
+                // Normalize helper (0–100)
+                function normalize(arr) {
+                    const min = Math.min(...arr.filter(v => v > 0));
+                    const max = Math.max(...arr);
+                    if (max === min) return arr.map(() => 50);
+                    return arr.map(v => ((v - min) / (max - min)) * 100);
+                }
+
+                const ytRaw = ytAsc.map(d => d.daily_views || 0);
+                const ytNorm = normalize(ytRaw);
+
+                const stRaw = labels.map(date => stockMap[date] !== undefined ? stockMap[date] : null);
+                const stNormFull = (function() {
+                    const valid = stRaw.filter(v => v !== null && v > 0);
+                    const min = Math.min(...valid);
+                    const max = Math.max(...valid);
+                    if (max === min) return stRaw.map(v => v !== null ? 50 : null);
+                    return stRaw.map(v => v !== null ? ((v - min) / (max - min)) * 100 : null);
+                })();
+
+                // Build anomaly dot datasets (null everywhere except anomaly positions)
+                const anomYTDateSet = new Set();
+                const anomYTExtremeSet = new Set();
+                anomYTViews.concat(anomYTSubs).forEach(a => {
+                    anomYTDateSet.add(a.date);
+                    if (a.isExtreme) anomYTExtremeSet.add(a.date);
+                });
+                const anomStDateSet = new Set();
+                const anomStExtremeSet = new Set();
+                anomStock.forEach(a => {
+                    anomStDateSet.add(a.date);
+                    if (a.isExtreme) anomStExtremeSet.add(a.date);
+                });
+
+                // YT notable dots (|z|>2 but not extreme)
+                const ytNotableDots = labels.map((date, i) =>
+                    (anomYTDateSet.has(date) && !anomYTExtremeSet.has(date)) ? ytNorm[i] : null
+                );
+                // YT extreme dots (|z|>3)
+                const ytExtremeDots = labels.map((date, i) =>
+                    anomYTExtremeSet.has(date) ? ytNorm[i] : null
+                );
+                // Stock notable dots
+                const stNotableDots = labels.map((date, i) =>
+                    (anomStDateSet.has(date) && !anomStExtremeSet.has(date)) ? stNormFull[i] : null
+                );
+                // Stock extreme dots
+                const stExtremeDots = labels.map((date, i) =>
+                    anomStExtremeSet.has(date) ? stNormFull[i] : null
+                );
+
+                charts['anomTimeline'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'YT Views (norm)',
+                                data: ytNorm,
+                                borderColor: 'rgba(59,130,246,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Stock Close (norm)',
+                                data: stNormFull,
+                                borderColor: 'rgba(16,185,129,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                yAxisID: 'y',
+                                spanGaps: true,
+                            },
+                            {
+                                label: 'YT Notable Anomaly',
+                                data: ytNotableDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(245,158,11,0.9)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 5,
+                                pointStyle: 'circle',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'YT Extreme Anomaly',
+                                data: ytExtremeDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(239,68,68,0.9)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 6,
+                                pointStyle: 'circle',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Stock Notable Anomaly',
+                                data: stNotableDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(245,158,11,0.7)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 5,
+                                pointStyle: 'rectRot',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Stock Extreme Anomaly',
+                                data: stExtremeDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(239,68,68,0.7)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 6,
+                                pointStyle: 'rectRot',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: textColor, font: { size: 11 }, boxWidth: 12 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const dsLabel = ctx.dataset.label;
+                                        if (dsLabel.includes('Anomaly') && ctx.parsed.y !== null) {
+                                            const date = labels[ctx.dataIndex];
+                                            const match = allAnomalies.find(a => a.date === date && dsLabel.includes(a.source === 'youtube' ? 'YT' : 'Stock'));
+                                            if (match) return `${dsLabel}: z=${match.zScore.toFixed(2)} (${match.metricName})`;
+                                        }
+                                        return `${dsLabel}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) : 'n/a'}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } },
+                                grid: { color: gridColor }
+                            },
+                            y: {
+                                min: 0, max: 100,
+                                ticks: { color: textColor, font: { size: 10 }, callback: v => v + '%' },
+                                grid: { color: gridColor },
+                                title: { display: true, text: 'Normalized (0–100)', color: textColor, font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            })();
+
+            // ---- Table ----
+            renderAnomalyTable(filtered);
+        }
+
+        function renderAnomalyTable(anomalies) {
+            const tbody = document.getElementById('anomalyTableBody');
+            if (!tbody) return;
+
+            // Sort
+            const sorted = [...anomalies].sort((a, b) => {
+                let av, bv;
+                if (anomSortKey === 'zScore') {
+                    av = Math.abs(a.zScore);
+                    bv = Math.abs(b.zScore);
+                } else if (anomSortKey === 'pctVsMean') {
+                    av = Math.abs(a.pctVsMean);
+                    bv = Math.abs(b.pctVsMean);
+                } else if (anomSortKey === 'value') {
+                    av = a.value;
+                    bv = b.value;
+                } else {
+                    av = a[anomSortKey];
+                    bv = b[anomSortKey];
+                }
+                if (av === undefined) av = '';
+                if (bv === undefined) bv = '';
+                if (typeof av === 'string') {
+                    return anomSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+                }
+                return anomSortDir === 'asc' ? av - bv : bv - av;
+            });
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No anomalies found for current filters.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sorted.map(a => {
+                const zClass = a.isExtreme ? 'anom-zscore-extreme' : 'anom-zscore-notable';
+                const dirClass = a.direction === 'up' ? 'anom-dir-up' : 'anom-dir-down';
+                const dirSymbol = a.direction === 'up' ? '&#9650;' : '&#9660;';
+                const pct = (a.pctVsMean > 0 ? '+' : '') + a.pctVsMean.toFixed(1) + '%';
+                const formattedVal = formatNumber(Math.round(a.value));
+                return `<tr>
+                    <td>${a.date}</td>
+                    <td>${a.metricName}</td>
+                    <td>${formattedVal}</td>
+                    <td class="${zClass}">${a.zScore > 0 ? '+' : ''}${a.zScore.toFixed(2)}</td>
+                    <td>${pct}</td>
+                    <td class="${dirClass}">${dirSymbol}</td>
+                </tr>`;
+            }).join('');
+
+            // Update sort indicators in headers
+            document.querySelectorAll('#anomalyTable th .sort-indicator').forEach(el => el.textContent = '');
+            const activeHeader = document.querySelector(`#anomalyTable th[data-sort="${anomSortKey}"] .sort-indicator`);
+            if (activeHeader) activeHeader.textContent = anomSortDir === 'asc' ? ' ▲' : ' ▼';
+        }
+
+        function wireAnomalyButtons() {
+            // Metric filter buttons
+            document.querySelectorAll('.anom-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    anomMetric = btn.getAttribute('data-metric');
+                    document.querySelectorAll('.anom-filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                });
+            });
+
+            // Severity toggle buttons (multi-select)
+            document.querySelectorAll('.anom-sev-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sev = btn.getAttribute('data-sev');
+                    if (anomSevFilter.has(sev)) {
+                        // Don't allow deselecting if it's the only active one
+                        if (anomSevFilter.size > 1) {
+                            anomSevFilter.delete(sev);
+                            btn.classList.remove('active');
+                        }
+                    } else {
+                        anomSevFilter.add(sev);
+                        btn.classList.add('active');
+                    }
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                });
+            });
+
+            // Table sort headers
+            document.querySelectorAll('#anomalyTable th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const key = th.getAttribute('data-sort');
+                    if (anomSortKey === key) {
+                        anomSortDir = anomSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        anomSortKey = key;
+                        anomSortDir = key === 'zScore' ? 'desc' : 'asc';
+                    }
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                });
+            });
+        }
+
         function renderAllCharts() {
             const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
             const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
@@ -4073,6 +4551,9 @@
 
             // Correlation section
             renderCorrelationSection(filteredYT, filteredStock);
+
+            // Anomalies section
+            renderAnomaliesSection(filteredYT, filteredStock);
         }
 
         function renderOverviewViewsChart(ytData) {
@@ -4804,6 +5285,15 @@
                 }, 50);
             }
 
+            // Re-render anomalies section when navigating to anomalies
+            if (section === 'anomalies') {
+                setTimeout(() => {
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                }, 50);
+            }
+
             // Close mobile sidebar
             closeSidebar();
             return false;
@@ -4857,6 +5347,7 @@
             console.log('Dashboard initialized');
             wireStockToggleButtons();
             wireCorrToggleButtons();
+            wireAnomalyButtons();
             fetchData();
         });
     </script>

@@ -356,7 +356,7 @@
         .stat-card .subtitle.negative { color: var(--accent-red); }
 
         /* Section headings */
-        .section-title {
+        .section-heading {
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--text-primary);
@@ -366,7 +366,7 @@
             gap: 10px;
         }
 
-        .section-title .icon {
+        .section-heading .icon {
             width: 32px; height: 32px;
             display: flex;
             align-items: center;
@@ -744,54 +744,821 @@
         [data-theme="light"] .table-card { backdrop-filter: none; box-shadow: var(--shadow-sm); }
         [data-theme="light"] .tab-button.active { box-shadow: 0 4px 12px rgba(59,130,246,0.25); }
         [data-theme="light"] tbody tr:hover { background: rgba(59,130,246,0.03); }
+
+        /* === SIDEBAR LAYOUT === */
+        :root {
+            --sidebar-width: 220px;
+            --header-height: 56px;
+            --bottom-nav-height: 60px;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --surface: var(--bg-surface);
+            --elevated: var(--bg-elevated);
+            --accent-blue: #3b82f6;
+        }
+
+        body {
+            display: flex;
+            flex-direction: row;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* === SIDEBAR === */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            z-index: 100;
+            transition: transform 0.25s ease, width 0.25s ease;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        .sidebar.collapsed .nav-label,
+        .sidebar.collapsed .company-btn span:last-child,
+        .sidebar.collapsed .company-switcher {
+            display: none;
+        }
+
+        .company-switcher {
+            padding: 16px 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .company-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            width: 100%;
+            text-align: left;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+        .company-btn.active {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+        }
+        .company-btn:hover:not(.active) {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+        .company-icon { font-size: 16px; }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+        .nav-item:hover { background: var(--bg-elevated); color: var(--text-primary); }
+        .nav-item.active { background: rgba(59,130,246,0.15); color: var(--accent-blue); font-weight: 600; }
+        .nav-icon { font-size: 16px; min-width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-collapse-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            transition: all 0.15s;
+        }
+        .sidebar-collapse-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+        .sidebar.collapsed .sidebar-collapse-btn { transform: rotate(180deg); }
+
+        /* === MAIN WRAPPER === */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: margin-left 0.25s ease;
+        }
+        .sidebar.collapsed ~ .main-wrapper {
+            margin-left: 60px;
+        }
+
+        /* === GLOBAL HEADER === */
+        .global-header {
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            flex-shrink: 0;
+        }
+        .global-header-left { display: flex; align-items: center; gap: 12px; }
+        .global-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .data-freshness { font-size: 11px; color: var(--text-muted); }
+
+        .period-picker {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .period-picker select {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .period-picker input[type="date"] {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 8px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+        .period-label { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--accent-blue); }
+
+        /* === SECTIONS === */
+        .section-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .section-content.hidden { display: none !important; }
+
+        .coming-soon {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 80px 20px;
+            font-size: 16px;
+        }
+
+        /* === DATA TABLE SECTION === */
+        .table-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        #tableSearchInput {
+            flex-grow: 1;
+            max-width: 300px;
+            padding: 6px 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-family: inherit;
+        }
+        #tableSearchInput:focus { outline: none; border-color: var(--accent-blue); }
+        #tableDatasetSelect {
+            padding: 6px 10px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        #exportCsvBtn {
+            padding: 6px 14px;
+            background: var(--accent-blue);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        #exportCsvBtn:hover { opacity: 0.85; }
+        #dataTableWrapper {
+            overflow-x: auto;
+            max-height: 600px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+        }
+        #mainDataTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            font-variant-numeric: tabular-nums;
+        }
+        #mainDataTable thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--bg-elevated);
+        }
+        #mainDataTable th {
+            padding: 8px 12px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        #mainDataTable th.sortable { cursor: pointer; user-select: none; }
+        #mainDataTable th.sortable:hover { color: var(--text-primary); }
+        #mainDataTable th.sort-active { color: var(--accent-blue); }
+        .sort-icon { font-size: 0.7rem; color: var(--text-muted); margin-left: 4px; }
+        th.sort-active .sort-icon { color: var(--accent-blue); }
+        #mainDataTable td {
+            padding: 7px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            white-space: nowrap;
+        }
+        #mainDataTable tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        #mainDataTable tbody tr:hover { background: rgba(59,130,246,0.06); }
+        .dt-row-count {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        /* === CORRELATION SECTION === */
+        .stats-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 90px;
+            flex: 1;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .corr-window-btn, .corr-type-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .corr-window-btn.active, .corr-type-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+        .corr-window-btn:hover:not(.active), .corr-type-btn:hover:not(.active) {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        /* Override old theme-toggle fixed positioning — now lives in sidebar */
+        .theme-toggle {
+            position: static;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            box-shadow: none;
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(6, 1fr);
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        @media (max-width: 1400px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
+
+        .kpi-card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: 14px 16px 10px;
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .kpi-card--highlight { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.05); }
+        .kpi-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 3px;
+          background: var(--primary-gradient);
+          border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .kpi-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+        .kpi-label {
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--text-muted);
+        }
+        .kpi-icon { font-size: 14px; opacity: 0.7; }
+
+        .kpi-value {
+          font-size: 22px;
+          font-weight: 700;
+          color: var(--text-primary);
+          font-variant-numeric: tabular-nums;
+          line-height: 1.2;
+          margin-bottom: 3px;
+        }
+
+        .kpi-context {
+          font-size: 11px;
+          color: var(--text-muted);
+          margin-bottom: 8px;
+          min-height: 14px;
+        }
+        .kpi-context.positive { color: var(--accent-green); }
+        .kpi-context.negative { color: var(--accent-red); }
+        .kpi-context.significant { color: var(--accent-blue); font-weight: 600; }
+
+        .kpi-sparkline {
+          display: block;
+          width: 100%;
+          height: 28px;
+          opacity: 0.7;
+        }
+
+        /* Summary charts row */
+        .summary-charts-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        @media (max-width: 900px) { .summary-charts-row { grid-template-columns: 1fr; } }
+
+        .summary-chart .chart-wrapper canvas { max-height: 180px; }
+
+        /* === MOBILE === */
+        .mobile-header {
+            display: none;
+            height: var(--header-height);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+        }
+        .mobile-title { font-weight: 700; font-size: 15px; }
+        .hamburger { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-primary); }
+        .theme-toggle-mobile { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-primary); }
+
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--bottom-nav-height);
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border);
+            z-index: 200;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 12px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: color 0.15s;
+        }
+        .mobile-nav-item small { font-size: 10px; font-weight: 500; }
+        .mobile-nav-item.active { color: var(--accent-blue); }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        /* === STOCK SECTION === */
+        .toggle-btn {
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .toggle-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .toggle-btn.active {
+            background: rgba(59,130,246,0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .stock-chart-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .stock-charts-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stock-chart-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 20px 22px;
+            border-radius: var(--radius-md);
+            transition: border-color 0.3s;
+        }
+        .stock-chart-card:hover { border-color: var(--border-hover); }
+
+        .stock-chart-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+
+        [data-theme="light"] .stock-chart-card { backdrop-filter: none; box-shadow: var(--shadow-sm); }
+
+        /* === ANOMALIES SECTION === */
+        .anom-filter-btn, .anom-sev-btn {
+            padding: 5px 14px;
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .anom-filter-btn:hover, .anom-sev-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .anom-filter-btn.active {
+            background: rgba(59,130,246,0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .anom-sev-btn.active[data-sev="notable"] {
+            background: rgba(245,158,11,0.15);
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .anom-sev-btn.active[data-sev="extreme"] {
+            background: rgba(239,68,68,0.15);
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        #anomalyTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+        #anomalyTable th {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+        }
+        #anomalyTable th:hover { color: var(--accent-blue); }
+        #anomalyTable td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        #anomalyTable tbody tr:nth-child(even) { background: var(--bg-glass); }
+        #anomalyTable tbody tr:hover { background: rgba(59,130,246,0.06); }
+        .anom-zscore-extreme { color: #ef4444; font-weight: 700; }
+        .anom-zscore-notable { color: #f59e0b; font-weight: 600; }
+        .anom-dir-up { color: #10b981; font-weight: 700; }
+        .anom-dir-down { color: #ef4444; font-weight: 700; }
+        .sort-indicator { font-size: 0.65rem; margin-left: 2px; }
+
+        /* Content Analytics: channel mix chart shorter */
+        .content-channel-mix-card canvas { max-height: 350px; }
+
+        /* ============================================================
+           TASK 8: CSS POLISH
+           ============================================================ */
+
+        /* --- 1. Typography improvements --- */
+        /* Section title: bump to 18px */
+        .section-title { font-size: 18px; }
+
+        /* letter-spacing consistency for labels */
+        .kpi-label { letter-spacing: 0.02em; }
+        .stat-label { letter-spacing: 0.02em; }
+        th, #mainDataTable th, #anomalyTable th { letter-spacing: 0.02em; }
+
+        /* --- 3. KPI card: correlation significant green border accent --- */
+        .kpi-card.kpi-correlation--significant {
+            border-left: 3px solid var(--accent-green);
+        }
+
+        /* --- 4. Chart container: border-top accent + padding + canvas max-height --- */
+        .chart-card { padding: 16px; border-top: 2px solid var(--accent-blue); }
+        .stock-chart-card { padding: 16px; border-top: 2px solid var(--accent-blue); }
+
+        .chart-card canvas:not([style*="max-height"]),
+        .stock-chart-card canvas { max-height: 400px; }
+
+        /* --- 5. Mobile bottom nav polish --- */
+        :root { --bottom-nav-height: 56px; }
+
+        .mobile-bottom-nav { height: 56px; }
+
+        .mobile-nav-item {
+            font-size: 10px;
+            justify-content: center;
+            padding: 4px 10px;
+        }
+        .mobile-nav-item small {
+            font-size: 10px;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 768px) {
+            .main-wrapper { padding-bottom: 70px; }
+        }
+
+        /* --- 6. Scrollbar styling (webkit) --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-surface); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* --- 7. Section entry animation --- */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .section-enter { animation: fadeIn 0.2s ease both; }
+
+        /* --- 8. Stats panel: stat-item min-width --- */
+        .stat-item { min-width: 100px; }
+
+        /* --- 9. Table readability: alternating rows + sticky header on base table --- */
+        thead { position: sticky; top: 0; z-index: 2; background: var(--bg-elevated); }
+        tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+        [data-theme="light"] tbody tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+
+        /* --- 10. Spacing consistency --- */
+        .section-content { padding: 24px; }
+        @media (max-width: 768px) { .section-content { padding: 12px; } }
+
+        .charts-grid { gap: 24px; margin-bottom: 24px; }
+        .kpi-grid { gap: 16px; }
+
+        /* gap handles inter-chart spacing; no extra bottom margin needed */
+        .stock-charts-col { gap: 24px; margin-bottom: 24px; }
+
+        /* Desktop: hide mobile elements */
+        @media (min-width: 769px) {
+            .mobile-header, .mobile-bottom-nav { display: none !important; }
+            .sidebar-overlay { display: none !important; }
+        }
+
+        /* Mobile: show mobile elements, hide sidebar */
+        @media (max-width: 768px) {
+            .mobile-header { display: flex; }
+            .mobile-bottom-nav { display: flex; }
+            .main-wrapper {
+                margin-left: 0 !important;
+                margin-top: var(--header-height);
+                padding-bottom: var(--bottom-nav-height);
+            }
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 150;
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            .sidebar.mobile-open ~ .sidebar-overlay {
+                display: block !important;
+            }
+            .section-content { padding: 12px; }
+            .global-header { display: none; }
+        }
     </style>
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#section-overview" class="skip-link">Skip to main content</a>
 
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme" id="themeToggle">&#9790;</button>
+    <!-- Mobile Header (hidden on desktop) -->
+    <div class="mobile-header">
+        <button class="hamburger" onclick="toggleSidebar()" aria-label="Open navigation">&#9776;</button>
+        <span class="mobile-title">Music Analytics</span>
+        <button class="theme-toggle-mobile" onclick="toggleTheme()">&#9728;</button>
+    </div>
 
-    <div class="app">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-badge">
-                <span class="pulse"></span>
-                Live Analytics
-            </div>
-            <h1>Music Stock Analytics Dashboard</h1>
-            <p>YouTube Channel Metrics vs NSE Stock Price Correlation</p>
+    <!-- Sidebar overlay for mobile -->
+    <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Company Switcher -->
+        <div class="company-switcher">
+            <button class="company-btn active" id="btn-tips" onclick="switchCompany('tips')">
+                <span class="company-icon">&#127925;</span> Tips Music
+            </button>
+            <button class="company-btn" id="btn-saregama" onclick="switchCompany('saregama')">
+                <span class="company-icon">&#127926;</span> Saregama
+            </button>
         </div>
 
-        <!-- Tab Navigation -->
-        <nav class="tabs" role="tablist" aria-label="Company selection">
-            <button class="tab-button active" role="tab" aria-selected="true" onclick="switchCompany('tips', this)">
-                Tips Music
-            </button>
-            <button class="tab-button" role="tab" aria-selected="false" onclick="switchCompany('saregama', this)">
-                Saregama India
-            </button>
+        <!-- Nav Items -->
+        <nav class="sidebar-nav">
+            <a class="nav-item active" id="nav-overview" onclick="return navigateTo('overview')" href="#">
+                <span class="nav-icon">&#128202;</span><span class="nav-label">Overview</span>
+            </a>
+            <a class="nav-item" id="nav-stock" onclick="return navigateTo('stock')" href="#">
+                <span class="nav-icon">&#128200;</span><span class="nav-label">Stock Analysis</span>
+            </a>
+            <a class="nav-item" id="nav-content" onclick="return navigateTo('content')" href="#">
+                <span class="nav-icon">&#128250;</span><span class="nav-label">Content Analytics</span>
+            </a>
+            <a class="nav-item" id="nav-correlation" onclick="return navigateTo('correlation')" href="#">
+                <span class="nav-icon">&#128279;</span><span class="nav-label">Correlation</span>
+            </a>
+            <a class="nav-item" id="nav-anomalies" onclick="return navigateTo('anomalies')" href="#">
+                <span class="nav-icon">&#128680;</span><span class="nav-label">Anomalies</span>
+            </a>
+            <a class="nav-item" id="nav-datatable" onclick="return navigateTo('datatable')" href="#">
+                <span class="nav-icon">&#128203;</span><span class="nav-label">Data Table</span>
+            </a>
         </nav>
 
-        <!-- Main Content -->
-        <main id="main-content" class="content">
-            <!-- Controls -->
-            <div class="controls">
-                <label for="timePeriod">Period:</label>
-                <select id="timePeriod" onchange="handleTimePeriodChange()">
-                    <option value="30">Last 30 Days</option>
-                    <option value="90" selected>Last 90 Days</option>
-                    <option value="180">Last 6 Months</option>
-                    <option value="365">Last 1 Year</option>
-                    <option value="all">All Time</option>
-                    <option value="custom">Custom Range</option>
-                </select>
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" aria-label="Toggle dark/light mode" title="Toggle theme">&#9790;</button>
+            <button class="sidebar-collapse-btn" onclick="toggleSidebar()">&#9664;</button>
+        </div>
+    </nav>
 
-                <input type="date" id="startDate" class="hidden" aria-label="Start date">
-                <input type="date" id="endDate" class="hidden" aria-label="End date">
-
-                <button class="btn" onclick="fetchData()" aria-label="Refresh data">Refresh</button>
-                <button class="btn btn-outline" id="exportBtn" onclick="exportCSV()" aria-label="Export data as CSV">Export CSV</button>
+    <!-- Main Content -->
+    <div class="main-wrapper" id="mainWrapper">
+        <!-- Global Header -->
+        <div class="global-header">
+            <div class="global-header-left">
+                <span class="section-title" id="sectionTitle">Overview</span>
+                <span class="data-freshness" id="lastUpdatedHeader"></span>
             </div>
+            <div class="global-header-right">
+                <!-- Period Picker -->
+                <div class="period-picker">
+                    <span class="period-label">Period:</span>
+                    <select id="timePeriod" onchange="handleTimePeriodChange()">
+                        <option value="30">Last 30 Days</option>
+                        <option value="90" selected>Last 90 Days</option>
+                        <option value="180">Last 6 Months</option>
+                        <option value="365">Last 1 Year</option>
+                        <option value="all">All Time</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                    <div id="customDateInputs" style="display:none; gap:8px; align-items:center;">
+                        <input type="date" id="startDate" onchange="handleCustomDateChange()">
+                        <span>to</span>
+                        <input type="date" id="endDate" onchange="handleCustomDateChange()">
+                    </div>
+                </div>
+                <button class="btn btn-sm" onclick="fetchData()" aria-label="Refresh data">&#8635; Refresh</button>
+                <button class="btn btn-sm btn-secondary" onclick="exportCSV()">&#11015; Export</button>
+            </div>
+        </div>
+
+        <!-- Section: Overview -->
+        <div class="section-content" id="section-overview">
 
             <!-- Data Status -->
             <div class="data-status" id="dataStatus" role="status" aria-live="polite">
@@ -814,44 +1581,79 @@
                 </div>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Subscribers</h3>
-                    <div class="value" id="totalSubs">--</div>
-                    <div class="subtitle" id="subsChange">Loading...</div>
+            <!-- KPI Cards Row -->
+            <div class="kpi-grid">
+              <!-- Stock Price -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Stock Price</span>
+                  <span class="kpi-icon">📈</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Total Views</h3>
-                    <div class="value" id="totalViews">--</div>
-                    <div class="subtitle" id="viewsGrowth">Loading...</div>
+                <div class="kpi-value" id="kpiStockPrice">--</div>
+                <div class="kpi-context" id="kpiStockChange">--</div>
+                <canvas class="kpi-sparkline" id="sparkStockPrice" width="80" height="28"></canvas>
+              </div>
+
+              <!-- Daily Views -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Daily Views</span>
+                  <span class="kpi-icon">👁</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Daily Views (Latest)</h3>
-                    <div class="value" id="dailyViews">--</div>
-                    <div class="subtitle" id="dailyViewsChange">Loading...</div>
+                <div class="kpi-value" id="kpiDailyViews">--</div>
+                <div class="kpi-context" id="kpiDailyViewsChange">--</div>
+                <canvas class="kpi-sparkline" id="sparkDailyViews" width="80" height="28"></canvas>
+              </div>
+
+              <!-- Subscribers -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Subscribers</span>
+                  <span class="kpi-icon">👥</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Stock Price</h3>
-                    <div class="value" id="stockPrice">--</div>
-                    <div class="subtitle" id="stockChange">Loading...</div>
+                <div class="kpi-value" id="kpiSubscribers">--</div>
+                <div class="kpi-context" id="kpiSubsChange">--</div>
+                <canvas class="kpi-sparkline" id="sparkSubscribers" width="80" height="28"></canvas>
+              </div>
+
+              <!-- 30-Day Correlation -->
+              <div class="kpi-card kpi-card--highlight">
+                <div class="kpi-header">
+                  <span class="kpi-label">30-Day Correlation</span>
+                  <span class="kpi-icon">🔗</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Stock Volume</h3>
-                    <div class="value" id="stockVolume">--</div>
-                    <div class="subtitle" id="volumeChange">Loading...</div>
+                <div class="kpi-value" id="kpiCorrelation">--</div>
+                <div class="kpi-context" id="kpiCorrelationSig">--</div>
+                <canvas class="kpi-sparkline" id="sparkCorrelation" width="80" height="28"></canvas>
+              </div>
+
+              <!-- View Velocity -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">View Velocity</span>
+                  <span class="kpi-icon">⚡</span>
                 </div>
-                <div class="stat-card">
-                    <h3>Avg Daily Views (30d)</h3>
-                    <div class="value" id="avgDailyViews">--</div>
-                    <div class="subtitle" id="avgViewsTrend">Loading...</div>
+                <div class="kpi-value" id="kpiVelocity">--</div>
+                <div class="kpi-context" id="kpiVelocityContext">vs 30d avg</div>
+                <canvas class="kpi-sparkline" id="sparkVelocity" width="80" height="28"></canvas>
+              </div>
+
+              <!-- Stock ATR -->
+              <div class="kpi-card">
+                <div class="kpi-header">
+                  <span class="kpi-label">Stock ATR (14d)</span>
+                  <span class="kpi-icon">📊</span>
                 </div>
+                <div class="kpi-value" id="kpiATR">--</div>
+                <div class="kpi-context" id="kpiATRContext">avg true range</div>
+                <canvas class="kpi-sparkline" id="sparkATR" width="80" height="28"></canvas>
+              </div>
             </div>
 
             <!-- Period Summary - reacts to date range selection -->
             <div class="period-summary" id="periodSummary">
                 <div class="period-summary-header">
-                    <h2 class="section-title">Period Summary</h2>
+                    <h2 class="section-heading">Period Summary</h2>
                     <span class="period-range" id="periodRangeLabel">Last 90 Days</span>
                 </div>
                 <div class="period-summary-grid">
@@ -890,7 +1692,7 @@
             <!-- Channel Breakdown -->
             <div class="channel-breakdown" id="channelBreakdown">
                 <div class="channel-breakdown-header">
-                    <h2 class="section-title">Channel Breakdown</h2>
+                    <h2 class="section-heading">Channel Breakdown</h2>
                     <span class="channel-breakdown-sub">Latest available day per channel, sorted by daily views</span>
                 </div>
                 <div class="table-wrapper">
@@ -909,6 +1711,32 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Summary Charts Row -->
+            <div class="summary-charts-row">
+              <div class="chart-card summary-chart">
+                <div class="chart-header">
+                  <div>
+                    <h3 class="chart-title">Daily Views Overview</h3>
+                    <p class="chart-subtitle">Views trend with 30-day moving average</p>
+                  </div>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="overviewViewsChart"></canvas>
+                </div>
+              </div>
+              <div class="chart-card summary-chart">
+                <div class="chart-header">
+                  <div>
+                    <h3 class="chart-title">Rolling 30-Day Correlation</h3>
+                    <p class="chart-subtitle">Views vs Stock Price relationship over time</p>
+                  </div>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="overviewCorrelationChart"></canvas>
+                </div>
+              </div>
             </div>
 
             <!-- Charts -->
@@ -1010,7 +1838,7 @@
 
             <!-- Data Table -->
             <div class="table-section">
-                <h2 class="section-title">Daily Channel & Stock Metrics</h2>
+                <h2 class="section-heading">Daily Channel & Stock Metrics</h2>
                 <div class="table-card">
                     <div class="table-wrapper">
                         <table id="dataTable">
@@ -1049,14 +1877,344 @@
                     </div>
                 </div>
             </div>
-        </main>
 
-        <!-- Footer -->
-        <div class="footer">
-            <p>Last updated: <span id="lastUpdated">--</span></p>
-            <p>Data: Supabase PostgreSQL | Stock: <span id="footerStock">NSE TIPSMUSIC</span> via Yahoo Finance</p>
+            <!-- Footer -->
+            <div class="footer">
+                <p>Last updated: <span id="lastUpdated">--</span></p>
+                <p>Data: Supabase PostgreSQL | Stock: <span id="footerStock">NSE TIPSMUSIC</span> via Yahoo Finance</p>
+            </div>
+
+        </div><!-- /section-overview -->
+
+        <!-- Section: Stock Analysis -->
+        <div class="section-content hidden" id="section-stock">
+
+            <!-- Stock KPI Cards -->
+            <div class="kpi-grid" style="margin-bottom:20px;">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Current Price</span>
+                        <span class="kpi-icon">&#128200;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiPrice">--</div>
+                    <div class="kpi-context" id="stockKpiPriceCtx">--</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">52W High</span>
+                        <span class="kpi-icon">&#8679;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiHigh52">--</div>
+                    <div class="kpi-context" id="stockKpiHigh52Ctx">52-week high</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">52W Low</span>
+                        <span class="kpi-icon">&#8681;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiLow52">--</div>
+                    <div class="kpi-context" id="stockKpiLow52Ctx">52-week low</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">ATR (14d)</span>
+                        <span class="kpi-icon">&#128200;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiATR">--</div>
+                    <div class="kpi-context">avg true range</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Max Drawdown</span>
+                        <span class="kpi-icon">&#128203;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiMaxDD">--</div>
+                    <div class="kpi-context" id="stockKpiMaxDDCtx">from peak</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Current Drawdown</span>
+                        <span class="kpi-icon">&#128202;</span>
+                    </div>
+                    <div class="kpi-value" id="stockKpiCurrDD">--</div>
+                    <div class="kpi-context" id="stockKpiCurrDDCtx">from recent peak</div>
+                </div>
+            </div>
+
+            <!-- Chart stack -->
+            <div class="stock-charts-col">
+
+                <!-- Candlestick (close price + overlays) -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Price (Candlestick)</div>
+                    <div class="chart-controls">
+                        <button class="toggle-btn active" data-overlay="sma20">SMA 20</button>
+                        <button class="toggle-btn active" data-overlay="sma50">SMA 50</button>
+                        <button class="toggle-btn" data-overlay="bb">Bollinger Bands</button>
+                    </div><!-- /.chart-controls -->
+                    <canvas id="stockCandlestickChart"></canvas>
+                </div>
+
+                <!-- RSI -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">RSI (14)</div>
+                    <canvas id="stockRsiChart"></canvas>
+                </div>
+
+                <!-- MACD -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">MACD (12, 26, 9)</div>
+                    <canvas id="stockMacdChart"></canvas>
+                </div>
+
+                <!-- Drawdown -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Drawdown from Peak</div>
+                    <canvas id="stockDrawdownChart"></canvas>
+                </div>
+
+            </div>
         </div>
-    </div>
+
+        <!-- Section: Content Analytics -->
+        <div class="section-content hidden" id="section-content">
+
+            <!-- Content KPI Cards -->
+            <div class="kpi-grid" style="margin-bottom:20px;">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Total Views</span>
+                        <span class="kpi-icon">&#128065;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiTotalViews">--</div>
+                    <div class="kpi-context" id="contentKpiTotalViewsCtx">in selected period</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Avg Daily Views</span>
+                        <span class="kpi-icon">&#128200;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiAvgDaily">--</div>
+                    <div class="kpi-context" id="contentKpiAvgDailyCtx">per day average</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Peak Day</span>
+                        <span class="kpi-icon">&#127942;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiPeakDay">--</div>
+                    <div class="kpi-context" id="contentKpiPeakDayCtx">highest single day</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">View Velocity Score</span>
+                        <span class="kpi-icon">&#9889;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiVelocity">--</div>
+                    <div class="kpi-context" id="contentKpiVelocityCtx">0–100 momentum score</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Active Channels</span>
+                        <span class="kpi-icon">&#128253;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiActiveChannels">--</div>
+                    <div class="kpi-context" id="contentKpiActiveChannelsCtx">with views in period</div>
+                </div>
+            </div>
+
+            <!-- Content Charts -->
+            <div class="stock-charts-col">
+
+                <!-- Views + Upload Activity -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Views + Upload Activity</div>
+                    <canvas id="contentViewsChart"></canvas>
+                </div>
+
+                <!-- Subscriber Daily Change -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Subscriber Daily Change</div>
+                    <canvas id="contentSubsChart"></canvas>
+                </div>
+
+                <!-- View Velocity (Weekly Rate) -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">View Velocity (Weekly Rate)</div>
+                    <canvas id="contentVelocityChart"></canvas>
+                </div>
+
+                <!-- Channel Mix -->
+                <div class="stock-chart-card content-channel-mix-card">
+                    <div class="stock-chart-title">Channel Mix (Top 5 vs Other)</div>
+                    <canvas id="contentChannelMixChart"></canvas>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Section: Correlation -->
+        <div class="section-content hidden" id="section-correlation">
+
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <span class="stat-label">Pearson r</span>
+                    <span class="stat-value" id="corrStatR">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Spearman &#961;</span>
+                    <span class="stat-value" id="corrStatRho">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">p-value</span>
+                    <span class="stat-value" id="corrStatP">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">R&#178;</span>
+                    <span class="stat-value" id="corrStatR2">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sample n</span>
+                    <span class="stat-value" id="corrStatN">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Best Lag</span>
+                    <span class="stat-value" id="corrStatBestLag">--</span>
+                </div>
+            </div>
+
+            <!-- Rolling Correlation Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title">Rolling Correlation (r over time)</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                    <div class="chart-controls">
+                        <button class="corr-window-btn active" data-window="30">30d</button>
+                        <button class="corr-window-btn" data-window="14">14d</button>
+                        <button class="corr-window-btn" data-window="60">60d</button>
+                        <button class="corr-window-btn" data-window="90">90d</button>
+                    </div>
+                    <div class="chart-controls">
+                        <button class="corr-type-btn active" data-type="pearson">Pearson</button>
+                        <button class="corr-type-btn" data-type="spearman">Spearman</button>
+                    </div>
+                </div>
+                <canvas id="corrRollingChart"></canvas>
+            </div>
+
+            <!-- Lead-Lag Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title">Lead-Lag Analysis (r vs lag offset)</div>
+                <canvas id="corrLeadLagChart"></canvas>
+            </div>
+
+            <!-- Content Impact Score Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title" id="corrImpactTitle">Content Impact Score vs Next-Day Stock Return</div>
+                <canvas id="corrImpactChart"></canvas>
+            </div>
+
+        </div>
+
+        <!-- Section: Anomalies -->
+        <div class="section-content hidden" id="section-anomalies">
+
+            <!-- Filter controls row -->
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+                <div class="chart-controls">
+                    <button class="anom-filter-btn active" data-metric="all">All</button>
+                    <button class="anom-filter-btn" data-metric="youtube">YouTube</button>
+                    <button class="anom-filter-btn" data-metric="stock">Stock</button>
+                </div>
+                <div class="chart-controls">
+                    <button class="anom-sev-btn active" data-sev="notable">Notable (|z|&gt;2)</button>
+                    <button class="anom-sev-btn active" data-sev="extreme">Extreme (|z|&gt;3)</button>
+                </div>
+            </div>
+
+            <!-- Anomaly Timeline Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title">Anomaly Timeline</div>
+                <canvas id="anomTimelineChart"></canvas>
+            </div>
+
+            <!-- Anomaly Table -->
+            <div class="stock-chart-card">
+                <div class="stock-chart-title">Anomaly Details</div>
+                <div style="overflow-x:auto;">
+                    <table id="anomalyTable">
+                        <thead>
+                            <tr>
+                                <th data-sort="date">Date <span class="sort-indicator"></span></th>
+                                <th data-sort="metricName">Metric <span class="sort-indicator"></span></th>
+                                <th data-sort="value">Value <span class="sort-indicator"></span></th>
+                                <th data-sort="zScore">Z-Score <span class="sort-indicator"></span></th>
+                                <th data-sort="pctVsMean">% vs 30d Avg <span class="sort-indicator"></span></th>
+                                <th data-sort="direction">Direction <span class="sort-indicator"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalyTableBody">
+                            <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">Loading anomalies...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Section: Data Table -->
+        <div class="section-content hidden" id="section-datatable">
+            <div class="table-controls">
+                <button id="exportCsvBtn">Export CSV</button>
+                <input type="text" id="tableSearchInput" placeholder="Filter rows...">
+                <select id="tableDatasetSelect">
+                    <option value="combined">Combined (YouTube + Stock)</option>
+                    <option value="youtube">YouTube Only</option>
+                    <option value="stock">Stock Only</option>
+                </select>
+            </div>
+            <div class="dt-row-count" id="dtRowCount"></div>
+            <div class="table-wrapper" id="dataTableWrapper">
+                <table id="mainDataTable">
+                    <thead>
+                        <tr>
+                            <th data-col="date" class="sortable">Date <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="views" class="sortable">Views <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="daily_views" class="sortable">Daily Views <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="subscribers" class="sortable">Subscribers <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="daily_subscribers" class="sortable">Daily Subs <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="close" class="sortable">Stock Close <span class="sort-icon">&#8645;</span></th>
+                            <th data-col="volume" class="sortable">Stock Volume <span class="sort-icon">&#8645;</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="mainDataTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /main-wrapper -->
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+        <a class="mobile-nav-item active" id="mob-nav-overview" onclick="return navigateTo('overview')" href="#">
+            <span>&#128202;</span><small>Overview</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-stock" onclick="return navigateTo('stock')" href="#">
+            <span>&#128200;</span><small>Stock</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-content" onclick="return navigateTo('content')" href="#">
+            <span>&#128250;</span><small>Content</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-correlation" onclick="return navigateTo('correlation')" href="#">
+            <span>&#128279;</span><small>Correlation</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-anomalies" onclick="return navigateTo('anomalies')" href="#">
+            <span>&#128680;</span><small>Anomalies</small>
+        </a>
+        <a class="mobile-nav-item" id="mob-nav-datatable" onclick="return navigateTo('datatable')" href="#">
+            <span>&#128203;</span><small>Data</small>
+        </a>
+    </nav>
 
     <script>
         // ==========================================
@@ -1099,6 +2257,16 @@
             dualAxis: 'raw'
         };
 
+        // Correlation section state
+        let corrWindow = 30;
+        let corrWindow_type = 'pearson'; // 'pearson' | 'spearman'
+
+        // Anomalies section state
+        let anomMetric = 'all'; // 'all' | 'youtube' | 'stock'
+        let anomSevFilter = new Set(['notable', 'extreme']); // active severity levels
+        let anomSortKey = 'zScore';
+        let anomSortDir = 'desc';
+
         // ==========================================
         // THEME SYSTEM
         // ==========================================
@@ -1124,7 +2292,11 @@
 
         function updateThemeIcon() {
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            document.getElementById('themeToggle').innerHTML = isDark ? '&#9790;' : '&#9728;';
+            const icon = isDark ? '\u263E' : '\u2600';
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) themeToggle.textContent = icon;
+            const mobileToggle = document.querySelector('.theme-toggle-mobile');
+            if (mobileToggle) mobileToggle.textContent = icon;
         }
 
         function applyChartTheme() {
@@ -1197,6 +2369,93 @@
                 }
             }
             return result;
+        }
+
+        // Pearson correlation coefficient
+        function pearsonCorrelation(x, y) {
+          const n = Math.min(x.length, y.length);
+          if (n < 2) return 0;
+          const mx = x.slice(0,n).reduce((a,b)=>a+b,0)/n;
+          const my = y.slice(0,n).reduce((a,b)=>a+b,0)/n;
+          let num = 0, dx = 0, dy = 0;
+          for (let i=0; i<n; i++) {
+            num += (x[i]-mx)*(y[i]-my);
+            dx += (x[i]-mx)**2;
+            dy += (y[i]-my)**2;
+          }
+          const denom = Math.sqrt(dx*dy);
+          return denom === 0 ? 0 : Math.max(-1, Math.min(1, num/denom));
+        }
+
+        // p-value from Pearson r and sample size n
+        function correlationPValue(r, n) {
+          if (n <= 2) return 1;
+          if (Math.abs(r) >= 1) return 0;
+          const t = r * Math.sqrt((n - 2) / (1 - r * r));
+          const df = n - 2;
+          // Use normal approximation for large df, beta for small df
+          // P-value via regularized incomplete beta: B(df/2, 0.5)
+          const x = df / (df + t * t);
+          // Continued-fraction approximation of regularized incomplete beta
+          function betacf(a, b, x) {
+            const MAXIT = 100, EPS = 3e-7;
+            const qab = a + b, qap = a + 1, qam = a - 1;
+            let c = 1, d = 1 - qab * x / qap;
+            if (Math.abs(d) < 1e-30) d = 1e-30;
+            d = 1 / d; let h = d;
+            for (let m = 1; m <= MAXIT; m++) {
+              const m2 = 2 * m;
+              let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+              d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30;
+              c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+              d = 1 / d; h *= d * c;
+              aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+              d = 1 + aa * d; if (Math.abs(d) < 1e-30) d = 1e-30;
+              c = 1 + aa / c; if (Math.abs(c) < 1e-30) c = 1e-30;
+              d = 1 / d; const del = d * c; h *= del;
+              if (Math.abs(del - 1) < EPS) break;
+            }
+            return h;
+          }
+          function ibeta(a, b, x) {
+            if (x < 0 || x > 1) return NaN;
+            if (x === 0) return 0; if (x === 1) return 1;
+            const lbeta = lgamma(a) + lgamma(b) - lgamma(a + b);
+            const front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lbeta) / a;
+            if (x < (a + 1) / (a + b + 2)) return front * betacf(a, b, x);
+            return 1 - (Math.exp(Math.log(1-x) * b + Math.log(x) * a - lbeta) / b) * betacf(b, a, 1-x);
+          }
+          function lgamma(z) {
+            const g = 7, c = [0.99999999999980993,676.5203681218851,-1259.1392167224028,
+              771.32342877765313,-176.61502916214059,12.507343278686905,
+              -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+            if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+            z -= 1;
+            let x = c[0];
+            for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+            const t = z + g + 0.5;
+            return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+          }
+          return ibeta(df / 2, 0.5, x);
+        }
+
+        // ATR (Average True Range)
+        function calculateATR(sortedData, period = 14) {
+          // sortedData: array of {high, low, close} in ascending order
+          const trs = [];
+          for (let i = 1; i < sortedData.length; i++) {
+            const high = sortedData[i].high;
+            const low = sortedData[i].low;
+            const prevClose = sortedData[i-1].close;
+            if (high == null || low == null || prevClose == null) { trs.push(0); continue; }
+            trs.push(Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose)));
+          }
+          const atrs = [];
+          for (let i = period - 1; i < trs.length; i++) {
+            const avg = trs.slice(i - period + 1, i + 1).reduce((a,b)=>a+b,0) / period;
+            atrs.push(avg);
+          }
+          return atrs;
         }
 
         function filterDataByTimePeriod(data) {
@@ -1301,6 +2560,7 @@
 
             updateDataStatus();
             updateStats();
+            updateKPICards();
             updatePeriodSummary();
             renderAllCharts();
             renderTable();
@@ -1345,46 +2605,52 @@
         // ==========================================
         // STATS
         // ==========================================
+        function setElText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        function setElClass(id, cls) {
+            const el = document.getElementById(id);
+            if (el) el.className = cls;
+        }
+
         function updateStats() {
             if (allYoutubeData.length > 0) {
                 const latest = allYoutubeData[0];
                 const prev = allYoutubeData.length > 1 ? allYoutubeData[1] : null;
 
-                document.getElementById('totalSubs').textContent = formatNumber(latest.subscribers);
-                document.getElementById('totalViews').textContent = formatNumber(latest.total_views);
-                document.getElementById('dailyViews').textContent = formatNumber(latest.daily_views);
+                setElText('totalSubs', formatNumber(latest.subscribers));
+                setElText('totalViews', formatNumber(latest.total_views));
+                setElText('dailyViews', formatNumber(latest.daily_views));
 
                 if (prev) {
                     const subChange = latest.subscribers - prev.subscribers;
-                    const el = document.getElementById('subsChange');
-                    el.textContent = subChange > 0 ? `+${formatNumberFull(subChange)} today` : 'No change';
-                    el.className = subChange > 0 ? 'subtitle positive' : 'subtitle';
+                    setElText('subsChange', subChange > 0 ? `+${formatNumberFull(subChange)} today` : 'No change');
+                    setElClass('subsChange', subChange > 0 ? 'subtitle positive' : 'subtitle');
 
                     const viewChange = calculatePercentageChange(latest.daily_views, prev.daily_views);
-                    const dvEl = document.getElementById('dailyViewsChange');
-                    dvEl.textContent = formatPercentage(viewChange) + ' vs prev day';
-                    dvEl.className = viewChange >= 0 ? 'subtitle positive' : 'subtitle negative';
+                    setElText('dailyViewsChange', formatPercentage(viewChange) + ' vs prev day');
+                    setElClass('dailyViewsChange', viewChange >= 0 ? 'subtitle positive' : 'subtitle negative');
 
                     const totalViewsGrowth = latest.total_views - prev.total_views;
-                    const vgEl = document.getElementById('viewsGrowth');
-                    vgEl.textContent = `+${formatNumberFull(totalViewsGrowth)} today`;
-                    vgEl.className = 'subtitle positive';
+                    setElText('viewsGrowth', `+${formatNumberFull(totalViewsGrowth)} today`);
+                    setElClass('viewsGrowth', 'subtitle positive');
                 }
 
                 // 30-day average
                 const last30 = allYoutubeData.slice(0, 30);
                 if (last30.length > 0) {
                     const avg = last30.reduce((s, d) => s + (d.daily_views || 0), 0) / last30.length;
-                    document.getElementById('avgDailyViews').textContent = formatNumber(Math.round(avg));
+                    setElText('avgDailyViews', formatNumber(Math.round(avg)));
 
                     // Compare to previous 30 days
                     const prev30 = allYoutubeData.slice(30, 60);
                     if (prev30.length > 0) {
                         const prevAvg = prev30.reduce((s, d) => s + (d.daily_views || 0), 0) / prev30.length;
                         const trend = calculatePercentageChange(avg, prevAvg);
-                        const tEl = document.getElementById('avgViewsTrend');
-                        tEl.textContent = formatPercentage(trend) + ' vs prev 30d';
-                        tEl.className = trend >= 0 ? 'subtitle positive' : 'subtitle negative';
+                        setElText('avgViewsTrend', formatPercentage(trend) + ' vs prev 30d');
+                        setElClass('avgViewsTrend', trend >= 0 ? 'subtitle positive' : 'subtitle negative');
                     }
                 }
             }
@@ -1393,22 +2659,172 @@
                 const latestStock = allStockData[0];
                 const prevStock = allStockData.length > 1 ? allStockData[1] : null;
 
-                document.getElementById('stockPrice').textContent = formatCurrency(latestStock.close);
-                document.getElementById('stockVolume').textContent = formatNumber(latestStock.volume);
+                setElText('stockPrice', formatCurrency(latestStock.close));
+                setElText('stockVolume', formatNumber(latestStock.volume));
 
                 if (prevStock) {
                     const change = latestStock.close - prevStock.close;
                     const changePercent = calculatePercentageChange(latestStock.close, prevStock.close);
-                    const scEl = document.getElementById('stockChange');
-                    scEl.textContent = `${change > 0 ? '+' : ''}${formatCurrency(change)} (${formatPercentage(changePercent)})`;
-                    scEl.className = change >= 0 ? 'subtitle positive' : 'subtitle negative';
+                    setElText('stockChange', `${change > 0 ? '+' : ''}${formatCurrency(change)} (${formatPercentage(changePercent)})`);
+                    setElClass('stockChange', change >= 0 ? 'subtitle positive' : 'subtitle negative');
 
                     const volChange = calculatePercentageChange(latestStock.volume, prevStock.volume);
-                    const vcEl = document.getElementById('volumeChange');
-                    vcEl.textContent = formatPercentage(volChange) + ' vs prev day';
-                    vcEl.className = volChange >= 0 ? 'subtitle positive' : 'subtitle negative';
+                    setElText('volumeChange', formatPercentage(volChange) + ' vs prev day');
+                    setElClass('volumeChange', volChange >= 0 ? 'subtitle positive' : 'subtitle negative');
                 }
             }
+        }
+
+        // ==========================================
+        // KPI CARDS (NEW REDESIGNED)
+        // ==========================================
+        function updateKPICards() {
+          if (!allYoutubeData.length && !allStockData.length) return;
+
+          const yt = allYoutubeData;   // sorted desc by date
+          const st = allStockData;     // sorted desc by date
+
+          // --- Stock Price ---
+          if (st.length >= 2) {
+            const latest = st[0];
+            const prev = st[1];
+            const change = latest.close - prev.close;
+            const changePct = calculatePercentageChange(prev.close, latest.close);
+            document.getElementById('kpiStockPrice').textContent = formatCurrency(latest.close);
+            const ctxEl = document.getElementById('kpiStockChange');
+            const sign = change >= 0 ? '+' : '';
+            ctxEl.textContent = `${sign}${formatCurrency(change)} (${formatPercentage(changePct)}) vs yesterday`;
+            ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
+            renderSparkline('sparkStockPrice', st.slice(0,30).map(d=>d.close).reverse(), change >= 0 ? '#10b981' : '#ef4444');
+          }
+
+          // --- Daily Views ---
+          if (yt.length >= 2) {
+            const latest = yt[0];
+            const prev = yt[1];
+            const change = calculatePercentageChange(prev.daily_views, latest.daily_views);
+            document.getElementById('kpiDailyViews').textContent = formatNumber(latest.daily_views);
+            const ctxEl = document.getElementById('kpiDailyViewsChange');
+            ctxEl.textContent = `${formatPercentage(change)} vs yesterday`;
+            ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
+            renderSparkline('sparkDailyViews', yt.slice(0,30).map(d=>d.daily_views||0).reverse(), '#3b82f6');
+          }
+
+          // --- Subscribers ---
+          if (yt.length >= 2) {
+            const latest = yt[0];
+            const change = latest.daily_subscribers || 0;
+            document.getElementById('kpiSubscribers').textContent = formatNumber(latest.subscribers);
+            const ctxEl = document.getElementById('kpiSubsChange');
+            const sign = change >= 0 ? '+' : '';
+            ctxEl.textContent = change !== 0 ? `${sign}${formatNumber(change)} today` : 'No change today';
+            ctxEl.className = 'kpi-context ' + (change > 0 ? 'positive' : change < 0 ? 'negative' : '');
+            renderSparkline('sparkSubscribers', yt.slice(0,30).map(d=>d.subscribers||0).reverse(), '#8b5cf6');
+          }
+
+          // --- 30-Day Correlation ---
+          const pairs = allYoutubeData.map(yt => {
+            const match = allStockData.find(s => s.date === yt.date);
+            return match ? { x: yt.daily_views, y: match.close } : null;
+          }).filter(Boolean).slice(0, 30);
+
+          if (pairs.length >= 10) {
+            const r = pearsonCorrelation(pairs.map(p=>p.x), pairs.map(p=>p.y));
+            const p = correlationPValue(r, pairs.length);
+            const isSignificant = p < 0.05;
+            document.getElementById('kpiCorrelation').textContent = `r = ${r.toFixed(2)}`;
+            const ctxEl = document.getElementById('kpiCorrelationSig');
+            ctxEl.textContent = isSignificant ? `p < 0.05 ✓ significant (n=${pairs.length})` : `p = ${p.toFixed(2)} (not significant)`;
+            ctxEl.className = 'kpi-context ' + (isSignificant ? 'significant' : '');
+            // Green left border accent on significant correlation card
+            const corrCard = document.getElementById('kpiCorrelation')?.closest('.kpi-card');
+            if (corrCard) corrCard.classList.toggle('kpi-correlation--significant', isSignificant);
+            // Sparkline: rolling 30d r over time (last 60d windows)
+            const rollingR = [];
+            const allPairs = allYoutubeData.map(yt => {
+              const match = allStockData.find(s => s.date === yt.date);
+              return match ? { x: yt.daily_views, y: match.close } : null;
+            }).filter(Boolean);
+            for (let i = 29; i < Math.min(allPairs.length, 89); i++) {
+              const window = allPairs.slice(i-29, i+1);
+              rollingR.push(pearsonCorrelation(window.map(p=>p.x), window.map(p=>p.y)));
+            }
+            if (rollingR.length) renderSparkline('sparkCorrelation', rollingR.reverse(), '#06b6d4', -1, 1);
+          }
+
+          // --- View Velocity (7-day rate of change) ---
+          if (yt.length >= 14) {
+            const recent7 = yt.slice(0, 7).reduce((s,d)=>s+(d.daily_views||0), 0);
+            const prev7 = yt.slice(7, 14).reduce((s,d)=>s+(d.daily_views||0), 0);
+            const velocity = prev7 > 0 ? ((recent7 - prev7) / prev7) * 100 : 0;
+            document.getElementById('kpiVelocity').textContent = `${velocity >= 0 ? '+' : ''}${velocity.toFixed(1)}%/wk`;
+            document.getElementById('kpiVelocityContext').textContent = 'weekly rate of change';
+            const velocities = [];
+            for (let i = 7; i < Math.min(yt.length - 7, 37); i++) {
+              const cur = yt.slice(i-7, i).reduce((s,d)=>s+(d.daily_views||0), 0);
+              const prv = yt.slice(i, i+7).reduce((s,d)=>s+(d.daily_views||0), 0);
+              velocities.push(prv > 0 ? ((cur - prv) / prv) * 100 : 0);
+            }
+            renderSparkline('sparkVelocity', velocities.reverse(), velocity >= 0 ? '#10b981' : '#ef4444');
+          }
+
+          // --- ATR (14-day Average True Range) ---
+          if (st.length >= 15) {
+            const sorted = st.slice().reverse(); // asc
+            const atrValues = calculateATR(sorted, 14);
+            const latestATR = atrValues[atrValues.length - 1];
+            document.getElementById('kpiATR').textContent = formatCurrency(latestATR);
+            document.getElementById('kpiATRContext').textContent = '14d avg true range';
+            renderSparkline('sparkATR', atrValues.slice(-30), '#f59e0b');
+          }
+        }
+
+        function renderSparkline(canvasId, data, color, yMin = null, yMax = null) {
+          const canvas = document.getElementById(canvasId);
+          if (!canvas || !data.length) return;
+
+          // Destroy existing if Chart.js instance
+          if (charts[canvasId]) { charts[canvasId].destroy(); delete charts[canvasId]; }
+
+          const ctx = canvas.getContext('2d');
+          const minVal = yMin !== null ? yMin : Math.min(...data);
+          const maxVal = yMax !== null ? yMax : Math.max(...data);
+          const range = maxVal - minVal || 1;
+
+          // Draw mini line chart manually
+          const w = canvas.offsetWidth || 80;
+          const h = canvas.offsetHeight || 28;
+          canvas.width = w;
+          canvas.height = h;
+          ctx.clearRect(0, 0, w, h);
+
+          const pad = 2;
+          ctx.beginPath();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.lineJoin = 'round';
+
+          data.forEach((val, i) => {
+            const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+            const y = h - pad - ((val - minVal) / range) * (h - pad * 2);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          });
+          ctx.stroke();
+
+          // Fill area below — start a fresh path to avoid geometric artifacts
+          ctx.beginPath();
+          const pts2 = data.map((v, i) => {
+            const x2 = pad + (i / (data.length - 1)) * (w - 2 * pad);
+            const y2 = h - pad - ((v - minVal) / range) * (h - pad * 2);
+            return [x2, y2];
+          });
+          ctx.moveTo(pts2[0][0], pts2[0][1]);
+          for (let i = 1; i < pts2.length; i++) ctx.lineTo(pts2[i][0], pts2[i][1]);
+          ctx.lineTo(pts2[pts2.length - 1][0], h);
+          ctx.lineTo(pts2[0][0], h);
+          ctx.closePath();
+          ctx.fillStyle = color + '20';
+          ctx.fill();
         }
 
         // ==========================================
@@ -1509,18 +2925,16 @@
         }
 
         // ==========================================
-        // TAB SWITCHING
+        // COMPANY SWITCHING
         // ==========================================
-        function switchCompany(company, btn) {
+        function switchCompany(company) {
             currentCompany = company;
             const config = COMPANY_CONFIG[company];
 
-            document.querySelectorAll('.tab-button').forEach(b => {
-                b.classList.remove('active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            btn.classList.add('active');
-            btn.setAttribute('aria-selected', 'true');
+            // Highlight active company button in sidebar
+            document.querySelectorAll('.company-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('btn-' + company);
+            if (activeBtn) activeBtn.classList.add('active');
 
             document.getElementById('viewsChartTitle').textContent = `Daily Views - ${config.name}`;
             document.getElementById('stockChartTitle').textContent = `Stock Price - ${config.stockName}`;
@@ -1532,12 +2946,21 @@
 
         function handleTimePeriodChange() {
             const period = document.getElementById('timePeriod').value;
+            const customInputs = document.getElementById('customDateInputs');
             if (period === 'custom') {
-                document.getElementById('startDate').classList.remove('hidden');
-                document.getElementById('endDate').classList.remove('hidden');
+                if (customInputs) customInputs.style.display = 'flex';
             } else {
-                document.getElementById('startDate').classList.add('hidden');
-                document.getElementById('endDate').classList.add('hidden');
+                if (customInputs) customInputs.style.display = 'none';
+                updatePeriodSummary();
+                renderAllCharts();
+                renderTable();
+            }
+        }
+
+        function handleCustomDateChange() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (startDate && endDate) {
                 updatePeriodSummary();
                 renderAllCharts();
                 renderTable();
@@ -1545,9 +2968,608 @@
         }
 
         function updateLastUpdated() {
-            document.getElementById('lastUpdated').textContent = new Date().toLocaleString('en-US', {
+            const timeStr = new Date().toLocaleString('en-US', {
                 year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
             });
+            document.getElementById('lastUpdated').textContent = timeStr;
+            const headerEl = document.getElementById('lastUpdatedHeader');
+            if (headerEl) headerEl.textContent = 'Updated ' + timeStr;
+        }
+
+        // ==========================================
+        // STOCK ANALYSIS UTILITIES
+        // ==========================================
+
+        function calculateSMA(closes, period) {
+            return closes.map((_, i) => {
+                if (i < period - 1) return null;
+                const slice = closes.slice(i - period + 1, i + 1);
+                return slice.reduce((a, b) => a + b, 0) / period;
+            });
+        }
+
+        function calculateEMA(closes, period) {
+            const k = 2 / (period + 1);
+            const ema = [];
+            let prev = null;
+            for (let i = 0; i < closes.length; i++) {
+                if (prev === null) {
+                    // Seed with SMA of first `period` values
+                    if (i < period - 1) { ema.push(null); continue; }
+                    const seed = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+                    prev = seed;
+                    ema.push(seed);
+                } else {
+                    prev = closes[i] * k + prev * (1 - k);
+                    ema.push(prev);
+                }
+            }
+            return ema;
+        }
+
+        function calculateRSI(closes, period = 14) {
+            const rsi = new Array(closes.length).fill(null);
+            if (closes.length <= period) return rsi;
+
+            let avgGain = 0, avgLoss = 0;
+            for (let i = 1; i <= period; i++) {
+                const diff = closes[i] - closes[i - 1];
+                if (diff > 0) avgGain += diff;
+                else avgLoss += Math.abs(diff);
+            }
+            avgGain /= period;
+            avgLoss /= period;
+
+            const rs0 = avgLoss === 0 ? 100 : avgGain / avgLoss;
+            rsi[period] = 100 - 100 / (1 + rs0);
+
+            for (let i = period + 1; i < closes.length; i++) {
+                const diff = closes[i] - closes[i - 1];
+                const gain = diff > 0 ? diff : 0;
+                const loss = diff < 0 ? Math.abs(diff) : 0;
+                avgGain = (avgGain * (period - 1) + gain) / period;
+                avgLoss = (avgLoss * (period - 1) + loss) / period;
+                const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                rsi[i] = 100 - 100 / (1 + rs);
+            }
+            return rsi;
+        }
+
+        function calculateMACD(closes, fast = 12, slow = 26, signal = 9) {
+            const emaFast = calculateEMA(closes, fast);
+            const emaSlow = calculateEMA(closes, slow);
+            const macdLine = closes.map((_, i) => {
+                if (emaFast[i] === null || emaSlow[i] === null) return null;
+                return emaFast[i] - emaSlow[i];
+            });
+
+            // Signal: EMA of macdLine (only where non-null)
+            // We need to compute EMA on the non-null segment
+            const signalLine = new Array(closes.length).fill(null);
+            const firstValid = macdLine.findIndex(v => v !== null);
+            if (firstValid === -1) return macdLine.map(() => ({ macd: null, signal: null, histogram: null }));
+
+            const validMacd = macdLine.slice(firstValid);
+            const emaSignal = calculateEMA(validMacd, signal);
+
+            for (let i = 0; i < emaSignal.length; i++) {
+                signalLine[firstValid + i] = emaSignal[i];
+            }
+
+            return closes.map((_, i) => ({
+                macd: macdLine[i],
+                signal: signalLine[i],
+                histogram: (macdLine[i] !== null && signalLine[i] !== null) ? macdLine[i] - signalLine[i] : null
+            }));
+        }
+
+        function calculateBollingerBands(closes, period = 20, stdMult = 2) {
+            return closes.map((_, i) => {
+                if (i < period - 1) return null;
+                const slice = closes.slice(i - period + 1, i + 1);
+                const mean = slice.reduce((a, b) => a + b, 0) / period;
+                const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / period;
+                const std = Math.sqrt(variance);
+                return { upper: mean + stdMult * std, middle: mean, lower: mean - stdMult * std };
+            });
+        }
+
+        function calculateMaxDrawdown(closes) {
+            if (!closes || closes.length === 0) return { maxDrawdownPct: 0, currentDrawdownPct: 0, drawdownSeries: [] };
+            let peak = closes[0];
+            let maxDD = 0;
+            const ddSeries = [];
+            for (let i = 0; i < closes.length; i++) {
+                if (closes[i] > peak) peak = closes[i];
+                const dd = peak > 0 ? ((closes[i] - peak) / peak) * 100 : 0;
+                if (dd < maxDD) maxDD = dd;
+                ddSeries.push(dd);
+            }
+            const currentDD = ddSeries[ddSeries.length - 1];
+            return { maxDrawdownPct: maxDD, currentDrawdownPct: currentDD, drawdownSeries: ddSeries };
+        }
+
+        // ==========================================
+        // STOCK SECTION: KPI CARDS
+        // ==========================================
+        function updateStockKPICards(data) {
+            if (!data || data.length === 0) {
+                ['stockKpiPrice','stockKpiHigh52','stockKpiLow52','stockKpiATR','stockKpiMaxDD','stockKpiCurrDD'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = '--';
+                });
+                return;
+            }
+
+            const closes = data.map(d => parseFloat(d.close));
+
+            // Current price (last entry = most recent since data is asc)
+            const latest = data[data.length - 1];
+            const prev = data.length >= 2 ? data[data.length - 2] : null;
+            document.getElementById('stockKpiPrice').textContent = formatCurrency(latest.close);
+            if (prev) {
+                const change = latest.close - prev.close;
+                const changePct = ((change / prev.close) * 100).toFixed(2);
+                const ctxEl = document.getElementById('stockKpiPriceCtx');
+                ctxEl.textContent = `${change >= 0 ? '+' : ''}${formatCurrency(change)} (${change >= 0 ? '+' : ''}${changePct}%)`;
+                ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
+            }
+
+            // 52W High/Low — last 365 days from dataset
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 365);
+            const cutoffStr = cutoff.toISOString().split('T')[0];
+            const last52 = data.filter(d => d.date >= cutoffStr);
+            if (last52.length) {
+                const high52 = Math.max(...last52.map(d => parseFloat(d.high || d.close)));
+                const low52 = Math.min(...last52.map(d => parseFloat(d.low || d.close)));
+                document.getElementById('stockKpiHigh52').textContent = formatCurrency(high52);
+                document.getElementById('stockKpiLow52').textContent = formatCurrency(low52);
+                const pctFromHigh = (((latest.close - high52) / high52) * 100).toFixed(1);
+                const pctFromLow = (((latest.close - low52) / low52) * 100).toFixed(1);
+                const highCtx = document.getElementById('stockKpiHigh52Ctx');
+                highCtx.textContent = `${pctFromHigh}% from 52W high`;
+                highCtx.className = 'kpi-context ' + (pctFromHigh >= 0 ? 'positive' : 'negative');
+                const lowCtx = document.getElementById('stockKpiLow52Ctx');
+                lowCtx.textContent = `+${pctFromLow}% from 52W low`;
+                lowCtx.className = 'kpi-context positive';
+            }
+
+            // ATR 14d
+            if (data.length >= 15) {
+                const atrVals = calculateATR(data, 14);
+                const latestATR = atrVals[atrVals.length - 1];
+                document.getElementById('stockKpiATR').textContent = formatCurrency(latestATR);
+            }
+
+            // Max drawdown & current drawdown
+            const { maxDrawdownPct, currentDrawdownPct } = calculateMaxDrawdown(closes);
+            const maxDDEl = document.getElementById('stockKpiMaxDD');
+            if (maxDDEl) { maxDDEl.textContent = maxDrawdownPct.toFixed(1) + '%'; maxDDEl.style.color = 'var(--accent-red)'; }
+            const maxDDCtxEl = document.getElementById('stockKpiMaxDDCtx');
+            if (maxDDCtxEl) maxDDCtxEl.textContent = 'peak-to-trough in period';
+
+            const currDDEl = document.getElementById('stockKpiCurrDD');
+            if (currDDEl) { currDDEl.textContent = currentDrawdownPct.toFixed(1) + '%'; currDDEl.style.color = currentDrawdownPct < -5 ? 'var(--accent-red)' : 'var(--accent-amber)'; }
+            const currDDCtxEl = document.getElementById('stockKpiCurrDDCtx');
+            if (currDDCtxEl) currDDCtxEl.textContent = 'current vs running peak';
+        }
+
+        // ==========================================
+        // STOCK SECTION: OVERLAY STATE
+        // ==========================================
+        let stockOverlays = { sma20: true, sma50: true, bb: false };
+
+        function wireStockToggleButtons() {
+            const btns = document.querySelectorAll('#section-stock .toggle-btn');
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.getAttribute('data-overlay');
+                    stockOverlays[key] = !stockOverlays[key];
+                    btn.classList.toggle('active', stockOverlays[key]);
+                    // Re-render just the candlestick chart
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderStockCandlestickChart(filteredStock);
+                });
+                // Sync initial visual state from JS state (avoids HTML/JS drift)
+                const key = btn.getAttribute('data-overlay');
+                btn.classList.toggle('active', !!stockOverlays[key]);
+            });
+        }
+
+        // ==========================================
+        // STOCK SECTION: CHART RENDERING
+        // ==========================================
+        function renderStockSection(data) {
+            if (!data || data.length === 0) return;
+            updateStockKPICards(data);
+            renderStockCandlestickChart(data);
+            renderStockRsiChart(data);
+            renderStockMacdChart(data);
+            renderStockDrawdownChart(data);
+        }
+
+        function getStockChartTheme() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                gridColor: isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)',
+                textColor: isDark ? '#94a3b8' : '#6b7280'
+            };
+        }
+
+        function renderStockCandlestickChart(data) {
+            if (charts['stockCandlestick']) { charts['stockCandlestick'].destroy(); delete charts['stockCandlestick']; }
+            const canvas = document.getElementById('stockCandlestickChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+
+            const datasets = [{
+                label: 'Close Price',
+                data: closes,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.15,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                order: 10
+            }];
+
+            if (stockOverlays.sma20) {
+                datasets.push({
+                    label: 'SMA 20',
+                    data: calculateSMA(closes, 20),
+                    borderColor: '#10b981',
+                    borderWidth: 1.5,
+                    borderDash: [6, 3],
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 5
+                });
+            }
+
+            if (stockOverlays.sma50) {
+                datasets.push({
+                    label: 'SMA 50',
+                    data: calculateSMA(closes, 50),
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.5,
+                    borderDash: [2, 4],
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 4
+                });
+            }
+
+            if (stockOverlays.bb) {
+                const bb = calculateBollingerBands(closes, 20, 2);
+                datasets.push({
+                    label: 'BB Upper',
+                    data: bb.map(v => v ? v.upper : null),
+                    borderColor: 'rgba(139,92,246,0.7)',
+                    borderWidth: 1,
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 3
+                });
+                datasets.push({
+                    label: 'BB Lower',
+                    data: bb.map(v => v ? v.lower : null),
+                    borderColor: 'rgba(139,92,246,0.7)',
+                    borderWidth: 1,
+                    fill: '-1',
+                    backgroundColor: 'rgba(139,92,246,0.07)',
+                    tension: 0.3,
+                    pointRadius: 0,
+                    order: 2
+                });
+            }
+
+            charts['stockCandlestick'] = new Chart(canvas, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => {
+                                    if (ctx.dataset.label === 'Close Price') {
+                                        const d = data[ctx.dataIndex];
+                                        return [
+                                            `Close: ${formatCurrency(d.close)}`,
+                                            d.open ? `Open: ${formatCurrency(d.open)}` : null,
+                                            d.high ? `High: ${formatCurrency(d.high)}` : null,
+                                            d.low ? `Low: ${formatCurrency(d.low)}` : null
+                                        ].filter(Boolean);
+                                    }
+                                    return `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : '--'}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor, callback: v => formatCurrency(v), font: { size: 10 } }, grid: { color: gridColor }, beginAtZero: false }
+                    }
+                }
+            });
+        }
+
+        function renderStockRsiChart(data) {
+            if (charts['stockRsi']) { charts['stockRsi'].destroy(); delete charts['stockRsi']; }
+            const canvas = document.getElementById('stockRsiChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+            const rsi = calculateRSI(closes, 14);
+
+            // Overbought/oversold reference lines as flat datasets
+            const ob = labels.map(() => 70);
+            const os = labels.map(() => 30);
+
+            charts['stockRsi'] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'RSI (14)',
+                            data: rsi,
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.25,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            order: 10
+                        },
+                        {
+                            label: 'Overbought (70)',
+                            data: ob,
+                            borderColor: 'rgba(239,68,68,0.5)',
+                            borderWidth: 1,
+                            borderDash: [4, 4],
+                            fill: false,
+                            pointRadius: 0,
+                            order: 5
+                        },
+                        {
+                            label: 'Oversold (30)',
+                            data: os,
+                            borderColor: 'rgba(16,185,129,0.5)',
+                            borderWidth: 1,
+                            borderDash: [4, 4],
+                            fill: false,
+                            pointRadius: 0,
+                            order: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 3.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: {
+                            min: 0, max: 100,
+                            ticks: { color: textColor, font: { size: 10 }, stepSize: 20 },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderStockMacdChart(data) {
+            if (charts['stockMacd']) { charts['stockMacd'].destroy(); delete charts['stockMacd']; }
+            const canvas = document.getElementById('stockMacdChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+            const macdData = calculateMACD(closes, 12, 26, 9);
+
+            const histColors = macdData.map(d =>
+                d.histogram === null ? 'transparent' :
+                d.histogram >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'
+            );
+
+            charts['stockMacd'] = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Histogram',
+                            data: macdData.map(d => d.histogram),
+                            backgroundColor: histColors,
+                            borderWidth: 0,
+                            borderRadius: 1,
+                            order: 5
+                        },
+                        {
+                            type: 'line',
+                            label: 'MACD',
+                            data: macdData.map(d => d.macd),
+                            borderColor: '#3b82f6',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 0,
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Signal',
+                            data: macdData.map(d => d.signal),
+                            borderColor: '#f59e0b',
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.2,
+                            pointRadius: 0,
+                            order: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 3.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+                    }
+                }
+            });
+        }
+
+        function renderStockDrawdownChart(data) {
+            if (charts['stockDrawdown']) { charts['stockDrawdown'].destroy(); delete charts['stockDrawdown']; }
+            const canvas = document.getElementById('stockDrawdownChart');
+            if (!canvas || !data.length) return;
+
+            const { gridColor, textColor } = getStockChartTheme();
+            const labels = data.map(d => d.date);
+            const closes = data.map(d => parseFloat(d.close));
+            const { drawdownSeries } = calculateMaxDrawdown(closes);
+
+            charts['stockDrawdown'] = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Drawdown %',
+                        data: drawdownSeries,
+                        borderColor: '#ef4444',
+                        borderWidth: 1.5,
+                        fill: 'origin',
+                        backgroundColor: 'rgba(239,68,68,0.2)',
+                        tension: 0.15,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 3.5,
+                    animation: { duration: 300 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } },
+                        tooltip: {
+                            callbacks: { label: ctx => `Drawdown: ${ctx.parsed.y.toFixed(2)}%` }
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                        y: {
+                            ticks: { color: textColor, font: { size: 10 }, callback: v => v.toFixed(1) + '%' },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // CORRELATION UTILITIES
+        // ==========================================
+
+        function spearmanCorrelation(x, y) {
+            const n = Math.min(x.length, y.length);
+            if (n < 2) return 0;
+            const xs = x.slice(0, n);
+            const ys = y.slice(0, n);
+
+            function rankArray(arr) {
+                const sorted = arr.slice().sort((a, b) => a - b);
+                return arr.map(v => {
+                    const indices = sorted.reduce((acc, sv, i) => sv === v ? acc.concat(i + 1) : acc, []);
+                    return indices.reduce((s, r) => s + r, 0) / indices.length;
+                });
+            }
+
+            const rx = rankArray(xs);
+            const ry = rankArray(ys);
+            return pearsonCorrelation(rx, ry);
+        }
+
+        function rollingCorrelation(pairs, window) {
+            // pairs: array of {date, views, close}
+            const result = [];
+            for (let i = window - 1; i < pairs.length; i++) {
+                const slice = pairs.slice(i - window + 1, i + 1);
+                const xArr = slice.map(p => p.views);
+                const yArr = slice.map(p => p.close);
+                const r = corrWindow_type === 'spearman'
+                    ? spearmanCorrelation(xArr, yArr)
+                    : pearsonCorrelation(xArr, yArr);
+                const pVal = correlationPValue(r, slice.length);
+                result.push({ date: pairs[i].date, r, pValue: pVal });
+            }
+            return result;
+        }
+
+        function calculateContentImpactScore(ytData, window = 30) {
+            if (!ytData || ytData.length === 0) return [];
+            const result = [];
+            for (let i = 0; i < ytData.length; i++) {
+                const slice = ytData.slice(Math.max(0, i - window + 1), i + 1);
+                const views = ytData[i].daily_views || 0;
+                const subs = ytData[i].daily_subscribers || ytData[i].subscribers || 0;
+                const uploads = (ytData[i].daily_videos || 0) > 0 ? 1 : 0;
+
+                const avgViews = slice.reduce((s, d) => s + (d.daily_views || 0), 0) / slice.length || 1;
+                const avgSubs = slice.reduce((s, d) => s + (d.daily_subscribers || d.subscribers || 0), 0) / slice.length || 1;
+
+                // velocity: current week vs prev week
+                let velocity = 1;
+                if (i >= 13) {
+                    const curr7 = ytData.slice(i - 6, i + 1).reduce((s, d) => s + (d.daily_views || 0), 0);
+                    const prev7 = ytData.slice(i - 13, i - 6).reduce((s, d) => s + (d.daily_views || 0), 0);
+                    const avgVelocity = prev7 === 0 ? curr7 : (curr7 + prev7) / 2 || 1;
+                    velocity = avgVelocity === 0 ? 1 : curr7 / avgVelocity;
+                }
+
+                const rawScore = (views / avgViews * 0.4) + (subs / avgSubs * 0.3) + (uploads * 0.2) + (velocity * 0.1);
+                result.push({ date: ytData[i].date, rawScore });
+            }
+
+            // Normalize 0-100
+            const rawScores = result.map(r => r.rawScore);
+            const minS = Math.min(...rawScores);
+            const maxS = Math.max(...rawScores);
+            const range = maxS - minS || 1;
+            return result.map(r => ({ date: r.date, score: ((r.rawScore - minS) / range) * 100 }));
         }
 
         // ==========================================
@@ -1564,12 +3586,1157 @@
         };
 
         // ==========================================
+        // ==========================================
+        // CONTENT ANALYTICS UTILITIES
+        // ==========================================
+
+        function calculateViewVelocity(ytData, windowDays = 7) {
+            // ytData sorted ascending by date
+            // Returns array of {date, velocity} — one per day
+            // velocity[i] = (sum of views in days i-6..i  vs  days i-13..i-7) / prev_7d * 100
+            // Returns null for first 14 days
+            if (!ytData || ytData.length < 14) return [];
+            const result = [];
+            for (let i = 0; i < ytData.length; i++) {
+                if (i < 13) {
+                    result.push({ date: ytData[i].date, velocity: null });
+                    continue;
+                }
+                const curr7 = ytData.slice(i - 6, i + 1).reduce((s, d) => s + (d.daily_views || 0), 0);
+                const prev7 = ytData.slice(i - 13, i - 6).reduce((s, d) => s + (d.daily_views || 0), 0);
+                const velocity = prev7 === 0 ? null : ((curr7 - prev7) / prev7) * 100;
+                result.push({ date: ytData[i].date, velocity });
+            }
+            return result;
+        }
+
+        function calculateContentVelocityScore(ytData, window = 30) {
+            // Normalized 0-100 score based on recent velocity vs trailing std dev
+            if (!ytData || ytData.length < 14) return 50;
+            const velocities = calculateViewVelocity(ytData)
+                .map(v => v.velocity)
+                .filter(v => v !== null);
+            if (velocities.length === 0) return 50;
+            const recent = velocities[velocities.length - 1];
+            const trailing = velocities.slice(-window);
+            const mean = trailing.reduce((s, v) => s + v, 0) / trailing.length;
+            const variance = trailing.reduce((s, v) => s + (v - mean) ** 2, 0) / trailing.length;
+            const stdDev = Math.sqrt(variance);
+            if (stdDev === 0) return 50;
+            const zScore = (recent - mean) / stdDev;
+            return Math.max(0, Math.min(100, Math.round(zScore * 10 + 50)));
+        }
+
+        // ==========================================
+        // CONTENT KPI CARDS
+        // ==========================================
+
+        function updateContentKPICards(data) {
+            if (!data || data.length === 0) return;
+
+            // Total Views: sum of daily_views
+            const totalViews = data.reduce((s, d) => s + (d.daily_views || 0), 0);
+            document.getElementById('contentKpiTotalViews').textContent = formatNumber(totalViews);
+            document.getElementById('contentKpiTotalViewsCtx').textContent = `${data.length} days in period`;
+
+            // Avg Daily Views
+            const avgDaily = Math.round(totalViews / data.length);
+            document.getElementById('contentKpiAvgDaily').textContent = formatNumber(avgDaily);
+            document.getElementById('contentKpiAvgDailyCtx').textContent = `${data.length}-day avg`;
+
+            // Peak Day
+            let peakRow = data[0];
+            for (const d of data) {
+                if ((d.daily_views || 0) > (peakRow.daily_views || 0)) peakRow = d;
+            }
+            document.getElementById('contentKpiPeakDay').textContent = formatNumber(peakRow.daily_views || 0);
+            document.getElementById('contentKpiPeakDayCtx').textContent = peakRow.date || '--';
+
+            // Velocity Score
+            const score = calculateContentVelocityScore(data);
+            document.getElementById('contentKpiVelocity').textContent = score;
+            const velCtx = document.getElementById('contentKpiVelocityCtx');
+            velCtx.textContent = score >= 60 ? 'accelerating' : score <= 40 ? 'decelerating' : 'stable momentum';
+            velCtx.className = 'kpi-context ' + (score >= 60 ? 'positive' : score <= 40 ? 'negative' : '');
+
+            // Active Channels
+            const activeChannels = new Set(data.filter(d => (d.daily_views || 0) > 0).map(d => d.channel_id)).size;
+            document.getElementById('contentKpiActiveChannels').textContent = activeChannels;
+            document.getElementById('contentKpiActiveChannelsCtx').textContent = 'with views in period';
+        }
+
+        // ==========================================
+        // CONTENT SECTION CHARTS
+        // ==========================================
+
+        function renderContentSection(data) {
+            if (!data || data.length === 0) return;
+
+            updateContentKPICards(data);
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            // --------------------------------------------------
+            // Chart 1: Views + Upload Activity (combo)
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentViewsChart');
+                if (!canvas) return;
+                if (charts['contentViews']) { charts['contentViews'].destroy(); delete charts['contentViews']; }
+
+                const labels = data.map(d => d.date);
+                const views = data.map(d => d.daily_views || 0);
+                const ma30 = calculateMovingAverage(views, 30);
+                const maxViews = Math.max(...views.filter(v => v > 0), 1);
+
+                // Scatter dots for upload days — use null array aligned to category labels
+                const uploadDots = data.map(d => (d.daily_videos && d.daily_videos > 0) ? maxViews * 0.97 : null);
+
+                charts['contentViews'] = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Daily Views',
+                                type: 'bar',
+                                data: views,
+                                backgroundColor: 'rgba(59,130,246,0.5)',
+                                borderColor: 'rgba(59,130,246,0.7)',
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: '30d MA',
+                                type: 'line',
+                                data: ma30,
+                                borderColor: '#f59e0b',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.3,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Upload Day',
+                                type: 'line',
+                                data: uploadDots,
+                                backgroundColor: 'rgba(249,115,22,0.85)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 4,
+                                pointStyle: 'circle',
+                                fill: false,
+                                spanGaps: false,
+                                showLine: false,
+                                yAxisID: 'y',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.dataset.label === 'Upload Day') return 'Upload day';
+                                        return `${ctx.dataset.label}: ${formatNumber(ctx.parsed.y)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 2: Subscriber Daily Change
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentSubsChart');
+                if (!canvas) return;
+                if (charts['contentSubs']) { charts['contentSubs'].destroy(); delete charts['contentSubs']; }
+
+                const labels = data.map(d => d.date);
+                // Compute daily subscriber delta
+                const deltas = data.map((d, i) => {
+                    if (d.daily_subscribers != null) return d.daily_subscribers;
+                    if (i === 0) return 0;
+                    // Only diff consecutive calendar days to avoid inflated values across gaps
+                    const prevDate = new Date(data[i - 1].date);
+                    const currDate = new Date(d.date);
+                    const dayGap = Math.round((currDate - prevDate) / 86400000);
+                    if (dayGap !== 1) return null; // skip non-consecutive — gap in data
+                    return (d.subscribers || 0) - (data[i - 1].subscribers || 0);
+                });
+                const ma30 = calculateMovingAverage(deltas, 30);
+
+                const posDeltas = deltas.map(v => v >= 0 ? v : null);
+                const negDeltas = deltas.map(v => v < 0 ? v : null);
+
+                charts['contentSubs'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Gain',
+                                data: posDeltas,
+                                borderColor: 'rgba(16,185,129,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(16,185,129,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Loss',
+                                data: negDeltas,
+                                borderColor: 'rgba(239,68,68,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(239,68,68,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Daily Δ',
+                                data: deltas,
+                                borderColor: 'rgba(148,163,184,0.4)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                            },
+                            {
+                                label: '30d MA',
+                                data: ma30,
+                                borderColor: '#f59e0b',
+                                borderDash: [5, 3],
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.3,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${formatNumber(ctx.parsed.y)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 3: View Velocity (Weekly Rate)
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentVelocityChart');
+                if (!canvas) return;
+                if (charts['contentVelocity']) { charts['contentVelocity'].destroy(); delete charts['contentVelocity']; }
+
+                const velocityData = calculateViewVelocity(data);
+                const labels = velocityData.map(v => v.date);
+                const values = velocityData.map(v => v.velocity);
+
+                const posValues = values.map(v => (v !== null && v >= 0) ? v : null);
+                const negValues = values.map(v => (v !== null && v < 0) ? v : null);
+                const zeroLine = values.map(() => 0);
+                const pos5 = values.map(() => 5);
+                const neg5 = values.map(() => -5);
+
+                charts['contentVelocity'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Positive Velocity',
+                                data: posValues,
+                                borderColor: 'rgba(16,185,129,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(16,185,129,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Negative Velocity',
+                                data: negValues,
+                                borderColor: 'rgba(239,68,68,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(239,68,68,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Velocity %',
+                                data: values,
+                                borderColor: 'rgba(148,163,184,0.5)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Zero',
+                                data: zeroLine,
+                                borderColor: 'rgba(148,163,184,0.4)',
+                                borderDash: [4, 4],
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: '+5%',
+                                data: pos5,
+                                borderColor: 'rgba(16,185,129,0.3)',
+                                borderDash: [4, 4],
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: '-5%',
+                                data: neg5,
+                                borderColor: 'rgba(239,68,68,0.3)',
+                                borderDash: [4, 4],
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, filter: item => !['Zero','+5%','-5%'].includes(item.text) } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '--'}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 4: Channel Mix (Doughnut)
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentChannelMixChart');
+                if (!canvas) return;
+                if (charts['contentChannelMix']) { charts['contentChannelMix'].destroy(); delete charts['contentChannelMix']; }
+
+                // Build channel name lookup from allChannelData
+                const channelNameMap = {};
+                if (allChannelData && allChannelData.length > 0) {
+                    allChannelData.forEach(ch => {
+                        if (ch.channel_id) channelNameMap[ch.channel_id] = ch.channel_name || ch.channel_id;
+                    });
+                }
+
+                // Sum views per channel_id
+                const channelViews = {};
+                data.forEach(d => {
+                    if (!d.channel_id) return;
+                    channelViews[d.channel_id] = (channelViews[d.channel_id] || 0) + (d.daily_views || 0);
+                });
+
+                // Sort channels by views desc
+                const sorted = Object.entries(channelViews).sort((a, b) => b[1] - a[1]);
+
+                const top5 = sorted.slice(0, 5);
+                const otherViews = sorted.slice(5).reduce((s, [, v]) => s + v, 0);
+
+                const labels = top5.map(([id]) => channelNameMap[id] || ('...' + id.slice(-6)));
+                const values = top5.map(([, v]) => v);
+                if (otherViews > 0) {
+                    labels.push('Other');
+                    values.push(otherViews);
+                }
+
+                const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#6b7280'];
+
+                charts['contentChannelMix'] = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: palette.slice(0, labels.length),
+                            borderColor: isDark ? '#1e293b' : '#ffffff',
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'right', labels: { color: textColor, font: { size: 11 }, boxWidth: 14 } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const total = ctx.dataset.data.reduce((s, v) => s + v, 0);
+                                        const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                        return `${ctx.label}: ${formatNumber(ctx.parsed)} (${pct}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })();
+        }
+
+        // ==========================================
+        // CORRELATION SECTION RENDERING
+        // ==========================================
+
+        function updateCorrStats(pairs) {
+            if (!pairs || pairs.length < 5) {
+                ['corrStatR','corrStatRho','corrStatP','corrStatR2','corrStatN','corrStatBestLag'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = 'n/a';
+                });
+                return;
+            }
+            const xArr = pairs.map(p => p.views);
+            const yArr = pairs.map(p => p.close);
+            const r = pearsonCorrelation(xArr, yArr);
+            const rho = spearmanCorrelation(xArr, yArr);
+            const pVal = correlationPValue(r, pairs.length);
+            const r2 = r * r;
+
+            // Best lag from lead-lag analysis
+            const lagOffsets = [-5, -3, -1, 0, 1, 3, 5];
+            let bestLag = 0, bestAbsR = 0;
+            lagOffsets.forEach(lag => {
+                const shifted = lagShiftPairs(pairs, lag);
+                if (shifted.length < 5) return;
+                const lr = pearsonCorrelation(shifted.map(p=>p.views), shifted.map(p=>p.close));
+                if (Math.abs(lr) > bestAbsR) { bestAbsR = Math.abs(lr); bestLag = lag; }
+            });
+
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setEl('corrStatR', r.toFixed(3));
+            setEl('corrStatRho', rho.toFixed(3));
+            setEl('corrStatP', pVal < 0.001 ? '<0.001' : pVal.toFixed(3));
+            setEl('corrStatR2', r2.toFixed(3));
+            setEl('corrStatN', pairs.length);
+            setEl('corrStatBestLag', bestLag === 0 ? '0d' : (bestLag > 0 ? `+${bestLag}d` : `${bestLag}d`));
+        }
+
+        function lagShiftPairs(pairs, lag) {
+            // lag > 0: views at t-lag vs close at t (views leads stock)
+            // lag < 0: views at t vs close at t+|lag| (stock leads views)
+            const result = [];
+            const absLag = Math.abs(lag);
+            if (lag > 0) {
+                // views leads stock: pair views[i] with close[i+lag]
+                for (let i = 0; i + lag < pairs.length; i++) {
+                    result.push({ views: pairs[i].views, close: pairs[i + lag].close });
+                }
+            } else if (lag < 0) {
+                // stock leads views: pair views[i+|lag|] with close[i]
+                for (let i = 0; i + absLag < pairs.length; i++) {
+                    result.push({ views: pairs[i + absLag].views, close: pairs[i].close });
+                }
+            } else {
+                for (let i = 0; i < pairs.length; i++) {
+                    result.push({ views: pairs[i].views, close: pairs[i].close });
+                }
+            }
+            return result;
+        }
+
+        function renderCorrelationSection(ytData, stData) {
+            if (!ytData || !stData || ytData.length === 0 || stData.length === 0) return;
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            // Build date-joined pairs (ascending by date)
+            const stockMap = {};
+            stData.forEach(s => { stockMap[s.date] = parseFloat(s.close); });
+            const pairs = [];
+            // ytData arrives descending from renderAllCharts (reversed), re-sort ascending
+            const ytAsc = [...ytData].sort((a,b) => a.date < b.date ? -1 : 1);
+            ytAsc.forEach(yt => {
+                if (stockMap[yt.date] !== undefined) {
+                    pairs.push({ date: yt.date, views: yt.daily_views || 0, close: stockMap[yt.date] });
+                }
+            });
+
+            if (pairs.length < 10) return;
+
+            updateCorrStats(pairs);
+
+            // --------------------------------------------------
+            // Chart 1: Rolling Correlation
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('corrRollingChart');
+                if (!canvas) return;
+                const win = corrWindow;
+                if (pairs.length < win) return;
+                if (charts['corrRolling']) { charts['corrRolling'].destroy(); delete charts['corrRolling']; }
+
+                const rolling = rollingCorrelation(pairs, win);
+                const labels = rolling.map(r => r.date);
+                const rVals = rolling.map(r => r.r);
+                // Insignificant band: show r where p > 0.05, else null
+                const insigBand = rolling.map(r => r.pValue > 0.05 ? r.r : null);
+
+                charts['corrRolling'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: `Rolling r (${win}d, ${corrWindow_type})`,
+                                data: rVals,
+                                borderColor: '#3b82f6',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                            },
+                            {
+                                label: 'Insignificant (p>0.05)',
+                                data: insigBand,
+                                borderColor: 'transparent',
+                                backgroundColor: 'rgba(239,68,68,0.12)',
+                                pointRadius: 0,
+                                fill: 'origin',
+                                tension: 0.2,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.datasetIndex === 0) {
+                                            const pv = rolling[ctx.dataIndex]?.pValue;
+                                            const sig = pv !== undefined ? (pv < 0.05 ? ' *' : '') : '';
+                                            return `r = ${ctx.parsed.y.toFixed(3)}${sig}`;
+                                        }
+                                        return null;
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    zeroLine: {
+                                        type: 'line', yMin: 0, yMax: 0,
+                                        borderColor: isDark ? 'rgba(148,163,184,0.4)' : 'rgba(0,0,0,0.2)',
+                                        borderWidth: 1, borderDash: [4, 4]
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: {
+                                min: -1, max: 1,
+                                ticks: { color: textColor, font: { size: 10 }, stepSize: 0.5 },
+                                grid: { color: gridColor }
+                            }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 2: Lead-Lag Analysis
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('corrLeadLagChart');
+                if (!canvas) return;
+                if (charts['corrLeadLag']) { charts['corrLeadLag'].destroy(); delete charts['corrLeadLag']; }
+
+                const lagOffsets = [-5, -3, -1, 0, 1, 3, 5];
+                const lagResults = lagOffsets.map(lag => {
+                    const shifted = lagShiftPairs(pairs, lag);
+                    if (shifted.length < 5) return { lag, r: 0, pValue: 1 };
+                    const r = pearsonCorrelation(shifted.map(p=>p.views), shifted.map(p=>p.close));
+                    const pVal = correlationPValue(r, shifted.length);
+                    return { lag, r, pValue: pVal };
+                });
+
+                const labels = lagResults.map(lr => lr.lag === 0 ? '0' : (lr.lag > 0 ? `+${lr.lag}d` : `${lr.lag}d`));
+                const rVals = lagResults.map(lr => lr.r);
+                const bgColors = lagResults.map(lr => lr.r >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)');
+                const borderColors = lagResults.map(lr => lr.r >= 0 ? '#10b981' : '#ef4444');
+
+                charts['corrLeadLag'] = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Pearson r at lag',
+                            data: rVals,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 1.5,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const lr = lagResults[ctx.dataIndex];
+                                        const pStr = lr.pValue < 0.001 ? '<0.001' : lr.pValue.toFixed(3);
+                                        return [`r = ${lr.r.toFixed(3)}`, `p = ${pStr}`];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor },
+                                 title: { display: true, text: 'Lag offset (days, + = views leads stock)', color: textColor, font: { size: 11 } } },
+                            y: {
+                                min: -1, max: 1,
+                                ticks: { color: textColor, font: { size: 10 } },
+                                grid: { color: gridColor }
+                            }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 3: Content Impact Score vs Next-Day Return
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('corrImpactChart');
+                if (!canvas) return;
+                if (charts['corrImpact']) { charts['corrImpact'].destroy(); delete charts['corrImpact']; }
+
+                const impactScores = calculateContentImpactScore(ytAsc, 30);
+                const impactMap = {};
+                impactScores.forEach(d => { impactMap[d.date] = d.score; });
+
+                // Next-day stock return: (close[t+1] - close[t]) / close[t] * 100
+                const stockDatesSorted = Object.keys(stockMap).sort();
+                const nextDayReturnMap = {};
+                for (let i = 0; i < stockDatesSorted.length - 1; i++) {
+                    const d = stockDatesSorted[i];
+                    const dNext = stockDatesSorted[i + 1];
+                    const ret = ((stockMap[dNext] - stockMap[d]) / stockMap[d]) * 100;
+                    nextDayReturnMap[d] = ret;
+                }
+
+                // Only keep days present in pairs + having next-day return
+                const impactPairs = pairs.filter(p => impactMap[p.date] !== undefined && nextDayReturnMap[p.date] !== undefined);
+                if (impactPairs.length < 5) return;
+
+                const labels = impactPairs.map(p => p.date);
+                const scores = impactPairs.map(p => impactMap[p.date]);
+                const returns = impactPairs.map(p => nextDayReturnMap[p.date]);
+                const avgScore = scores.reduce((s, v) => s + v, 0) / scores.length;
+
+                // Compute summary: avg next-day return on high content days
+                const highDays = impactPairs.filter(p => impactMap[p.date] > avgScore);
+                const avgHighReturn = highDays.length > 0
+                    ? highDays.reduce((s, p) => s + nextDayReturnMap[p.date], 0) / highDays.length
+                    : 0;
+
+                const titleEl = document.getElementById('corrImpactTitle');
+                if (titleEl) {
+                    const sign = avgHighReturn >= 0 ? '+' : '';
+                    titleEl.textContent = `Content Impact Score vs Next-Day Stock Return \u2014 High content days \u2192 avg ${sign}${avgHighReturn.toFixed(2)}% next-day return`;
+                }
+
+                const barColors = scores.map(s => s >= avgScore ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.5)');
+
+                charts['corrImpact'] = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Content Impact Score',
+                                type: 'bar',
+                                data: scores,
+                                backgroundColor: barColors,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Next-Day Stock Return (%)',
+                                type: 'line',
+                                data: returns,
+                                borderColor: '#8b5cf6',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                yAxisID: 'y1',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.datasetIndex === 0) return `Impact: ${ctx.parsed.y.toFixed(1)}`;
+                                        return `Next-day return: ${ctx.parsed.y.toFixed(2)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'Impact Score', color: textColor, font: { size: 10 } } },
+                            y1: { position: 'right', ticks: { color: '#8b5cf6', font: { size: 10 }, callback: v => `${v.toFixed(1)}%` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Next-Day Return %', color: '#8b5cf6', font: { size: 10 } } }
+                        }
+                    }
+                });
+            })();
+        }
+
+        // ==========================================
         // CHART RENDERING
         // ==========================================
+        // ==========================================
+        // ANOMALIES SECTION
+        // ==========================================
+
+        function detectAnomalies(values, dates, metricName, windowSize) {
+            windowSize = windowSize || 30;
+            const results = [];
+            for (let i = windowSize; i < values.length; i++) {
+                const window = values.slice(i - windowSize, i);
+                const mean = window.reduce((s, v) => s + v, 0) / windowSize;
+                const variance = window.reduce((s, v) => s + (v - mean) * (v - mean), 0) / windowSize;
+                const std = Math.sqrt(variance);
+                if (std === 0) continue;
+                const val = values[i];
+                const zScore = (val - mean) / std;
+                const absZ = Math.abs(zScore);
+                if (absZ <= 2) continue;
+                const isExtreme = absZ > 3;
+                const pctVsMean = mean !== 0 ? ((val - mean) / mean) * 100 : 0;
+                results.push({
+                    date: dates[i],
+                    value: val,
+                    zScore: zScore,
+                    mean: mean,
+                    pctVsMean: pctVsMean,
+                    metricName: metricName,
+                    isExtreme: isExtreme,
+                    direction: zScore > 0 ? 'up' : 'down'
+                });
+            }
+            return results;
+        }
+
+        function renderAnomaliesSection(ytData, stData) {
+            if (!ytData || !stData) return;
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            // Sort data ascending by date
+            const ytAsc = [...ytData].sort((a, b) => a.date < b.date ? -1 : 1);
+            const stAsc = [...stData].sort((a, b) => a.date < b.date ? -1 : 1);
+
+            // Detect anomalies for each metric
+            const ytViewVals = ytAsc.map(d => d.daily_views || 0);
+            const ytViewDates = ytAsc.map(d => d.date);
+            const ytSubVals = ytAsc.map(d => d.daily_subscribers || 0);
+            const stCloseVals = stAsc.map(d => parseFloat(d.close) || 0);
+            const stCloseDates = stAsc.map(d => d.date);
+
+            const anomYTViews = detectAnomalies(ytViewVals, ytViewDates, 'YT Daily Views');
+            const anomYTSubs  = detectAnomalies(ytSubVals, ytViewDates, 'YT Daily Subs');
+            const anomStock   = detectAnomalies(stCloseVals, stCloseDates, 'Stock Close');
+
+            // Tag source
+            anomYTViews.forEach(a => { a.source = 'youtube'; });
+            anomYTSubs.forEach(a => { a.source = 'youtube'; });
+            anomStock.forEach(a => { a.source = 'stock'; });
+
+            const allAnomalies = [...anomYTViews, ...anomYTSubs, ...anomStock];
+
+            // Apply metric filter
+            let filtered = allAnomalies;
+            if (anomMetric !== 'all') {
+                filtered = filtered.filter(a => a.source === anomMetric);
+            }
+
+            // Apply severity filter
+            filtered = filtered.filter(a => {
+                if (a.isExtreme) return anomSevFilter.has('extreme');
+                return anomSevFilter.has('notable');
+            });
+
+            // ---- Chart ----
+            (function() {
+                const canvas = document.getElementById('anomTimelineChart');
+                if (!canvas) return;
+                if (charts['anomTimeline']) { charts['anomTimeline'].destroy(); delete charts['anomTimeline']; }
+
+                // Build aligned dataset using joined dates
+                const stockMap = {};
+                stAsc.forEach(s => { stockMap[s.date] = parseFloat(s.close) || 0; });
+
+                // Use YT dates as labels (ascending)
+                const labels = ytAsc.map(d => d.date);
+
+                // Normalize helper (0–100)
+                function normalize(arr) {
+                    const min = Math.min(...arr.filter(v => v > 0));
+                    const max = Math.max(...arr);
+                    if (max === min) return arr.map(() => 50);
+                    return arr.map(v => ((v - min) / (max - min)) * 100);
+                }
+
+                const ytRaw = ytAsc.map(d => d.daily_views || 0);
+                const ytNorm = normalize(ytRaw);
+
+                const stRaw = labels.map(date => stockMap[date] !== undefined ? stockMap[date] : null);
+                const stNormFull = (function() {
+                    const valid = stRaw.filter(v => v !== null && v > 0);
+                    const min = Math.min(...valid);
+                    const max = Math.max(...valid);
+                    if (max === min) return stRaw.map(v => v !== null ? 50 : null);
+                    return stRaw.map(v => v !== null ? ((v - min) / (max - min)) * 100 : null);
+                })();
+
+                // Build anomaly dot datasets — respect anomMetric and anomSevFilter
+                const showYT = anomMetric === 'all' || anomMetric === 'youtube';
+                const showSt = anomMetric === 'all' || anomMetric === 'stock';
+                const showNotable = anomSevFilter.has('notable');
+                const showExtreme = anomSevFilter.has('extreme');
+
+                const anomYTDateSet = new Set();
+                const anomYTExtremeSet = new Set();
+                if (showYT) {
+                    anomYTViews.concat(anomYTSubs).forEach(a => {
+                        if (a.isExtreme && showExtreme) { anomYTDateSet.add(a.date); anomYTExtremeSet.add(a.date); }
+                        else if (!a.isExtreme && showNotable) { anomYTDateSet.add(a.date); }
+                    });
+                }
+                const anomStDateSet = new Set();
+                const anomStExtremeSet = new Set();
+                if (showSt) {
+                    anomStock.forEach(a => {
+                        if (a.isExtreme && showExtreme) { anomStDateSet.add(a.date); anomStExtremeSet.add(a.date); }
+                        else if (!a.isExtreme && showNotable) { anomStDateSet.add(a.date); }
+                    });
+                }
+
+                // YT notable dots (|z|>2 but not extreme)
+                const ytNotableDots = labels.map((date, i) =>
+                    (anomYTDateSet.has(date) && !anomYTExtremeSet.has(date)) ? ytNorm[i] : null
+                );
+                // YT extreme dots (|z|>3)
+                const ytExtremeDots = labels.map((date, i) =>
+                    anomYTExtremeSet.has(date) ? ytNorm[i] : null
+                );
+                // Stock notable dots
+                const stNotableDots = labels.map((date, i) =>
+                    (anomStDateSet.has(date) && !anomStExtremeSet.has(date)) ? stNormFull[i] : null
+                );
+                // Stock extreme dots
+                const stExtremeDots = labels.map((date, i) =>
+                    anomStExtremeSet.has(date) ? stNormFull[i] : null
+                );
+
+                charts['anomTimeline'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'YT Views (norm)',
+                                data: ytNorm,
+                                borderColor: 'rgba(59,130,246,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Stock Close (norm)',
+                                data: stNormFull,
+                                borderColor: 'rgba(16,185,129,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                yAxisID: 'y',
+                                spanGaps: true,
+                            },
+                            {
+                                label: 'YT Notable Anomaly',
+                                data: ytNotableDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(245,158,11,0.9)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 5,
+                                pointStyle: 'circle',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'YT Extreme Anomaly',
+                                data: ytExtremeDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(239,68,68,0.9)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 6,
+                                pointStyle: 'circle',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Stock Notable Anomaly',
+                                data: stNotableDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(245,158,11,0.7)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 5,
+                                pointStyle: 'rectRot',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Stock Extreme Anomaly',
+                                data: stExtremeDots,
+                                type: 'line',
+                                backgroundColor: 'rgba(239,68,68,0.7)',
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                pointRadius: 6,
+                                pointStyle: 'rectRot',
+                                showLine: false,
+                                spanGaps: false,
+                                yAxisID: 'y',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: textColor, font: { size: 11 }, boxWidth: 12 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const dsLabel = ctx.dataset.label;
+                                        if (dsLabel.includes('Anomaly') && ctx.parsed.y !== null) {
+                                            const date = labels[ctx.dataIndex];
+                                            const match = allAnomalies.find(a => a.date === date && dsLabel.includes(a.source === 'youtube' ? 'YT' : 'Stock'));
+                                            if (match) return `${dsLabel}: z=${match.zScore.toFixed(2)} (${match.metricName})`;
+                                        }
+                                        return `${dsLabel}: ${ctx.parsed.y !== null ? ctx.parsed.y.toFixed(1) : 'n/a'}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } },
+                                grid: { color: gridColor }
+                            },
+                            y: {
+                                min: 0, max: 100,
+                                ticks: { color: textColor, font: { size: 10 }, callback: v => v + '%' },
+                                grid: { color: gridColor },
+                                title: { display: true, text: 'Normalized (0–100)', color: textColor, font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            })();
+
+            // ---- Table ----
+            renderAnomalyTable(filtered);
+        }
+
+        function renderAnomalyTable(anomalies) {
+            const tbody = document.getElementById('anomalyTableBody');
+            if (!tbody) return;
+
+            // Sort
+            const sorted = [...anomalies].sort((a, b) => {
+                let av, bv;
+                if (anomSortKey === 'zScore') {
+                    av = Math.abs(a.zScore);
+                    bv = Math.abs(b.zScore);
+                } else if (anomSortKey === 'pctVsMean') {
+                    av = Math.abs(a.pctVsMean);
+                    bv = Math.abs(b.pctVsMean);
+                } else if (anomSortKey === 'value') {
+                    av = a.value;
+                    bv = b.value;
+                } else {
+                    av = a[anomSortKey];
+                    bv = b[anomSortKey];
+                }
+                if (av === undefined) av = '';
+                if (bv === undefined) bv = '';
+                if (typeof av === 'string') {
+                    return anomSortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+                }
+                return anomSortDir === 'asc' ? av - bv : bv - av;
+            });
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No anomalies found for current filters.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sorted.map(a => {
+                const zClass = a.isExtreme ? 'anom-zscore-extreme' : 'anom-zscore-notable';
+                const dirClass = a.direction === 'up' ? 'anom-dir-up' : 'anom-dir-down';
+                const dirSymbol = a.direction === 'up' ? '&#9650;' : '&#9660;';
+                const pct = (a.pctVsMean > 0 ? '+' : '') + a.pctVsMean.toFixed(1) + '%';
+                const formattedVal = formatNumber(Math.round(a.value));
+                return `<tr>
+                    <td>${a.date}</td>
+                    <td>${a.metricName}</td>
+                    <td>${formattedVal}</td>
+                    <td class="${zClass}">${a.zScore > 0 ? '+' : ''}${a.zScore.toFixed(2)}</td>
+                    <td>${pct}</td>
+                    <td class="${dirClass}">${dirSymbol}</td>
+                </tr>`;
+            }).join('');
+
+            // Update sort indicators in headers
+            document.querySelectorAll('#anomalyTable th .sort-indicator').forEach(el => el.textContent = '');
+            const activeHeader = document.querySelector(`#anomalyTable th[data-sort="${anomSortKey}"] .sort-indicator`);
+            if (activeHeader) activeHeader.textContent = anomSortDir === 'asc' ? ' ▲' : ' ▼';
+        }
+
+        function wireAnomalyButtons() {
+            // Metric filter buttons
+            document.querySelectorAll('.anom-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    anomMetric = btn.getAttribute('data-metric');
+                    document.querySelectorAll('.anom-filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                });
+            });
+
+            // Severity toggle buttons (multi-select)
+            document.querySelectorAll('.anom-sev-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const sev = btn.getAttribute('data-sev');
+                    if (anomSevFilter.has(sev)) {
+                        // Don't allow deselecting if it's the only active one
+                        if (anomSevFilter.size > 1) {
+                            anomSevFilter.delete(sev);
+                            btn.classList.remove('active');
+                        }
+                    } else {
+                        anomSevFilter.add(sev);
+                        btn.classList.add('active');
+                    }
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                });
+            });
+
+            // Table sort headers
+            document.querySelectorAll('#anomalyTable th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => {
+                    const key = th.getAttribute('data-sort');
+                    if (anomSortKey === key) {
+                        anomSortDir = anomSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        anomSortKey = key;
+                        anomSortDir = key === 'zScore' ? 'desc' : 'asc';
+                    }
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                });
+            });
+        }
+
         function renderAllCharts() {
             const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
             const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
 
+            renderOverviewViewsChart(filteredYT);
+            renderOverviewCorrelationChart(filteredYT, filteredStock);
             renderViewsChart(filteredYT);
             renderStockChart(filteredStock);
             renderSubscriberChart(filteredYT);
@@ -1577,6 +4744,154 @@
             renderCorrelationChart(filteredYT, filteredStock);
             renderVolumeChart(filteredStock);
             renderDistributionChart(filteredYT);
+
+            // Stock Analysis section charts (renders even if section is hidden,
+            // so they're ready when navigated to)
+            renderStockSection(filteredStock);
+
+            // Content Analytics section
+            renderContentSection(filteredYT);
+
+            // Correlation section
+            renderCorrelationSection(filteredYT, filteredStock);
+
+            // Anomalies section
+            renderAnomaliesSection(filteredYT, filteredStock);
+
+            // Data Table section
+            renderDataTableSection();
+        }
+
+        function renderOverviewViewsChart(ytData) {
+          const canvas = document.getElementById('overviewViewsChart');
+          if (!canvas) return;
+          if (charts['overviewViews']) { charts['overviewViews'].destroy(); delete charts['overviewViews']; }
+
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+          const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+          const labels = ytData.map(d => d.date).reverse();
+          const views = ytData.map(d => d.daily_views || 0).reverse();
+          const ma30 = calculateMovingAverage(views, 30);
+
+          charts['overviewViews'] = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Daily Views',
+                  data: views,
+                  borderColor: 'rgba(59,130,246,0.5)',
+                  borderWidth: 1.5,
+                  pointRadius: 0,
+                  fill: true,
+                  backgroundColor: 'rgba(59,130,246,0.08)',
+                  tension: 0.2,
+                },
+                {
+                  label: '30d MA',
+                  data: ma30,
+                  borderColor: '#10b981',
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  fill: false,
+                  tension: 0.3,
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              aspectRatio: 2.5,
+              animation: { duration: 400 },
+              plugins: { legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } } },
+              scales: {
+                x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                y: { ticks: { color: textColor, callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: gridColor } }
+              }
+            }
+          });
+        }
+
+        function renderOverviewCorrelationChart(ytData, stData) {
+          const canvas = document.getElementById('overviewCorrelationChart');
+          if (!canvas) return;
+          if (charts['overviewCorrelation']) { charts['overviewCorrelation'].destroy(); delete charts['overviewCorrelation']; }
+
+          // Build rolling 30-day correlation
+          // Pair by date
+          const stMap = new Map(stData.map(d => [d.date, d.close]));
+          const paired = ytData
+            .filter(d => stMap.has(d.date) && d.daily_views)
+            .map(d => ({ date: d.date, views: d.daily_views, close: stMap.get(d.date) }));
+
+          const labels = [], rValues = [], insigValues = [];
+          for (let i = 29; i < paired.length; i++) {
+            const window = paired.slice(i - 29, i + 1);
+            const r = pearsonCorrelation(window.map(p=>p.views), window.map(p=>p.close));
+            const p = correlationPValue(r, window.length);
+            labels.push(paired[i].date);
+            rValues.push(r);
+            insigValues.push(p > 0.05 ? r : null); // null where significant (p <= 0.05)
+          }
+
+          const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+          const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+          charts['overviewCorrelation'] = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: '30d Rolling r',
+                  data: rValues,
+                  borderColor: '#06b6d4',
+                  borderWidth: 1.5,
+                  pointRadius: 0,
+                  tension: 0.3,
+                  fill: false,
+                },
+                {
+                  label: 'Not significant (p>0.05)',
+                  data: insigValues,
+                  borderColor: 'transparent',
+                  borderWidth: 0,
+                  pointRadius: 0,
+                  tension: 0.3,
+                  fill: 'origin',
+                  backgroundColor: 'rgba(239,68,68,0.15)',
+                  spanGaps: false,
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              aspectRatio: 2.5,
+              animation: { duration: 400 },
+              plugins: {
+                legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => `r = ${ctx.parsed.y.toFixed(3)}`
+                  }
+                }
+              },
+              scales: {
+                x: { ticks: { color: textColor, maxTicksLimit: 6, font: { size: 10 } }, grid: { color: gridColor } },
+                y: {
+                  min: -1, max: 1,
+                  ticks: { color: textColor, font: { size: 10 } },
+                  grid: { color: gridColor },
+                  title: { display: true, text: 'r', color: textColor, font: { size: 10 } }
+                }
+              }
+            }
+          });
         }
 
         function destroyChart(name) {
@@ -2111,10 +5426,423 @@
         }
 
         // ==========================================
+        // SECTION ROUTING
+        // ==========================================
+        let currentSection = 'overview';
+        let sidebarCollapsed = false;
+
+        const SECTION_TITLES = {
+            overview: 'Overview',
+            stock: 'Stock Analysis',
+            content: 'Content Analytics',
+            correlation: 'Correlation Analysis',
+            anomalies: 'Anomalies',
+            datatable: 'Data Table'
+        };
+
+        function navigateTo(section) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(el => el.classList.add('hidden'));
+            // Show target section
+            const el = document.getElementById('section-' + section);
+            if (el) {
+                el.classList.remove('hidden');
+                // Trigger entry animation
+                el.classList.remove('section-enter');
+                void el.offsetWidth; // force reflow
+                el.classList.add('section-enter');
+                el.addEventListener('animationend', () => el.classList.remove('section-enter'), { once: true });
+            }
+
+            // Update nav active states
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            const navEl = document.getElementById('nav-' + section);
+            const mobNavEl = document.getElementById('mob-nav-' + section);
+            if (navEl) navEl.classList.add('active');
+            if (mobNavEl) mobNavEl.classList.add('active');
+
+            // Update section title in global header
+            const titleEl = document.getElementById('sectionTitle');
+            if (titleEl) titleEl.textContent = SECTION_TITLES[section] || section;
+
+            currentSection = section;
+
+            // Re-render charts when switching to overview (Chart.js needs visible container)
+            if (section === 'overview') {
+                setTimeout(() => { renderAllCharts(); }, 50);
+            }
+
+            // Re-render stock charts when navigating to stock section
+            if (section === 'stock') {
+                setTimeout(() => {
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderStockSection(filteredStock);
+                }, 50);
+            }
+
+            // Re-render content charts when navigating to content section
+            if (section === 'content') {
+                setTimeout(() => {
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    renderContentSection(filteredYT);
+                }, 50);
+            }
+
+            // Re-render correlation charts when navigating to correlation section
+            if (section === 'correlation') {
+                setTimeout(() => {
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderCorrelationSection(filteredYT, filteredStock);
+                }, 50);
+            }
+
+            // Re-render anomalies section when navigating to anomalies
+            if (section === 'anomalies') {
+                setTimeout(() => {
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderAnomaliesSection(filteredYT, filteredStock);
+                }, 50);
+            }
+
+            // Re-render data table section when navigating to datatable
+            if (section === 'datatable') {
+                setTimeout(() => { renderDataTableSection(); }, 50);
+            }
+
+            // Close mobile sidebar
+            closeSidebar();
+            return false;
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('mobile-open');
+            } else {
+                sidebarCollapsed = !sidebarCollapsed;
+                sidebar.classList.toggle('collapsed', sidebarCollapsed);
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('mobile-open');
+        }
+
+        // ==========================================
+        // DATA TABLE SECTION
+        // ==========================================
+        let tableSortKey = 'date';
+        let tableSortDir = 'desc';
+
+        function renderDataTableSection() {
+            const tbody = document.getElementById('mainDataTableBody');
+            if (!tbody) return;
+
+            const dataset = (document.getElementById('tableDatasetSelect') || {}).value || 'combined';
+            const searchRaw = (document.getElementById('tableSearchInput') || {}).value || '';
+            const search = searchRaw.trim().toLowerCase();
+
+            // Build stock lookup map
+            const stockMap = {};
+            allStockData.forEach(s => { stockMap[s.date] = s; });
+
+            // Build youtube lookup map
+            const ytMap = {};
+            allYoutubeData.forEach(y => { ytMap[y.date] = y; });
+
+            // Get filtered YT data (period filtered)
+            const filteredYT = filterDataByTimePeriod([...allYoutubeData]);
+            const filteredStock = filterDataByTimePeriod([...allStockData]);
+
+            // Build combined rows (inner join on date)
+            let rows = [];
+            if (dataset === 'combined') {
+                const ytDates = new Set(filteredYT.map(r => r.date));
+                const stockDates = new Set(filteredStock.map(r => r.date));
+                const allDates = new Set([...ytDates, ...stockDates]);
+                allDates.forEach(date => {
+                    const yt = ytMap[date];
+                    const st = stockMap[date];
+                    rows.push({
+                        date: date,
+                        views: yt ? (yt.total_views || 0) : null,
+                        daily_views: yt ? (yt.daily_views || 0) : null,
+                        subscribers: yt ? (yt.subscribers || 0) : null,
+                        daily_subscribers: yt ? (yt.daily_subscribers || yt.daily_subs || 0) : null,
+                        close: st ? (st.close || null) : null,
+                        volume: st ? (st.volume || null) : null,
+                    });
+                });
+            } else if (dataset === 'youtube') {
+                filteredYT.forEach(yt => {
+                    rows.push({
+                        date: yt.date,
+                        views: yt.total_views || 0,
+                        daily_views: yt.daily_views || 0,
+                        subscribers: yt.subscribers || 0,
+                        daily_subscribers: yt.daily_subscribers || yt.daily_subs || 0,
+                        close: null,
+                        volume: null,
+                    });
+                });
+            } else if (dataset === 'stock') {
+                filteredStock.forEach(st => {
+                    rows.push({
+                        date: st.date,
+                        views: null,
+                        daily_views: null,
+                        subscribers: null,
+                        daily_subscribers: null,
+                        close: st.close || null,
+                        volume: st.volume || null,
+                    });
+                });
+            }
+
+            // Apply text search
+            if (search) {
+                rows = rows.filter(row => {
+                    return [
+                        row.date,
+                        row.views, row.daily_views,
+                        row.subscribers, row.daily_subscribers,
+                        row.close, row.volume
+                    ].some(val => val !== null && String(val).toLowerCase().includes(search));
+                });
+            }
+
+            // Sort
+            rows.sort((a, b) => {
+                let av = a[tableSortKey], bv = b[tableSortKey];
+                if (tableSortKey === 'date') {
+                    av = av || '';
+                    bv = bv || '';
+                    if (av < bv) return tableSortDir === 'asc' ? -1 : 1;
+                    if (av > bv) return tableSortDir === 'asc' ? 1 : -1;
+                    return 0;
+                }
+                av = av === null ? -Infinity : Number(av);
+                bv = bv === null ? -Infinity : Number(bv);
+                return tableSortDir === 'asc' ? av - bv : bv - av;
+            });
+
+            const totalRows = rows.length;
+            const displayRows = rows.slice(0, 500);
+
+            // Update row count
+            const countEl = document.getElementById('dtRowCount');
+            if (countEl) {
+                countEl.textContent = `Showing ${displayRows.length} of ${totalRows} rows`;
+            }
+
+            // Update sort icons in header
+            document.querySelectorAll('#mainDataTable th.sortable').forEach(th => {
+                const col = th.getAttribute('data-col');
+                const icon = th.querySelector('.sort-icon');
+                th.classList.remove('sort-active');
+                if (col === tableSortKey) {
+                    th.classList.add('sort-active');
+                    icon.textContent = tableSortDir === 'asc' ? '\u25B2' : '\u25BC';
+                } else {
+                    icon.textContent = '\u21C5';
+                }
+            });
+
+            // Determine which columns to show
+            const showYT = dataset === 'combined' || dataset === 'youtube';
+            const showStock = dataset === 'combined' || dataset === 'stock';
+
+            // Show/hide column headers
+            const colMap = {
+                views: 1, daily_views: 2, subscribers: 3, daily_subscribers: 4,
+                close: 5, volume: 6
+            };
+            document.querySelectorAll('#mainDataTable thead th').forEach(th => {
+                const col = th.getAttribute('data-col');
+                if (!col || col === 'date') return;
+                const isYTCol = ['views','daily_views','subscribers','daily_subscribers'].includes(col);
+                const isStockCol = ['close','volume'].includes(col);
+                if (isYTCol) th.style.display = showYT ? '' : 'none';
+                if (isStockCol) th.style.display = showStock ? '' : 'none';
+            });
+
+            // Render rows
+            tbody.innerHTML = '';
+            if (!displayRows.length) {
+                const colCount = 1 + (showYT ? 4 : 0) + (showStock ? 2 : 0);
+                tbody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;padding:30px;color:var(--text-muted)">No data available</td></tr>`;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            displayRows.forEach(row => {
+                const tr = document.createElement('tr');
+                let cells = `<td>${escHtml(row.date || '--')}</td>`;
+                if (showYT) {
+                    cells += `<td>${row.views !== null ? formatNumber(row.views) : '--'}</td>`;
+                    cells += `<td>${row.daily_views !== null ? formatNumber(row.daily_views) : '--'}</td>`;
+                    cells += `<td>${row.subscribers !== null ? formatNumber(row.subscribers) : '--'}</td>`;
+                    cells += `<td>${row.daily_subscribers !== null ? formatNumber(row.daily_subscribers) : '--'}</td>`;
+                }
+                if (showStock) {
+                    cells += `<td>${row.close !== null ? formatCurrency(row.close) : '--'}</td>`;
+                    cells += `<td>${row.volume !== null ? formatNumber(row.volume) : '--'}</td>`;
+                }
+                tr.innerHTML = cells;
+                fragment.appendChild(tr);
+            });
+            tbody.appendChild(fragment);
+        }
+
+        function wireDataTableSection() {
+            // Sort headers
+            document.querySelectorAll('#mainDataTable th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.getAttribute('data-col');
+                    if (col === tableSortKey) {
+                        tableSortDir = tableSortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        tableSortKey = col;
+                        tableSortDir = 'desc';
+                    }
+                    renderDataTableSection();
+                });
+            });
+
+            // Search input
+            const searchInput = document.getElementById('tableSearchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => renderDataTableSection());
+            }
+
+            // Dataset select
+            const datasetSelect = document.getElementById('tableDatasetSelect');
+            if (datasetSelect) {
+                datasetSelect.addEventListener('change', () => renderDataTableSection());
+            }
+
+            // Export CSV
+            const exportBtn = document.getElementById('exportCsvBtn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    const dataset = (document.getElementById('tableDatasetSelect') || {}).value || 'combined';
+                    const searchRaw = (document.getElementById('tableSearchInput') || {}).value || '';
+                    const search = searchRaw.trim().toLowerCase();
+
+                    const stockMap = {};
+                    allStockData.forEach(s => { stockMap[s.date] = s; });
+                    const ytMap = {};
+                    allYoutubeData.forEach(y => { ytMap[y.date] = y; });
+
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData]);
+                    const filteredStock = filterDataByTimePeriod([...allStockData]);
+
+                    let rows = [];
+                    if (dataset === 'combined') {
+                        const allDates = new Set([...filteredYT.map(r=>r.date), ...filteredStock.map(r=>r.date)]);
+                        allDates.forEach(date => {
+                            const yt = ytMap[date];
+                            const st = stockMap[date];
+                            rows.push({ date, views: yt?yt.total_views:'', daily_views: yt?yt.daily_views:'', subscribers: yt?yt.subscribers:'', daily_subscribers: yt?(yt.daily_subscribers||yt.daily_subs||''):'', close: st?st.close:'', volume: st?st.volume:'' });
+                        });
+                    } else if (dataset === 'youtube') {
+                        filteredYT.forEach(yt => rows.push({ date: yt.date, views: yt.total_views, daily_views: yt.daily_views, subscribers: yt.subscribers, daily_subscribers: yt.daily_subscribers||yt.daily_subs||'', close: '', volume: '' }));
+                    } else {
+                        filteredStock.forEach(st => rows.push({ date: st.date, views: '', daily_views: '', subscribers: '', daily_subscribers: '', close: st.close, volume: st.volume }));
+                    }
+
+                    if (search) {
+                        rows = rows.filter(row => Object.values(row).some(v => String(v).toLowerCase().includes(search)));
+                    }
+
+                    rows.sort((a, b) => {
+                        let av = a[tableSortKey], bv = b[tableSortKey];
+                        if (tableSortKey === 'date') {
+                            av = av || ''; bv = bv || '';
+                            if (av < bv) return tableSortDir === 'asc' ? -1 : 1;
+                            if (av > bv) return tableSortDir === 'asc' ? 1 : -1;
+                            return 0;
+                        }
+                        av = av === '' ? -Infinity : Number(av);
+                        bv = bv === '' ? -Infinity : Number(bv);
+                        return tableSortDir === 'asc' ? av - bv : bv - av;
+                    });
+
+                    const showYT = dataset === 'combined' || dataset === 'youtube';
+                    const showStock = dataset === 'combined' || dataset === 'stock';
+                    const headers = ['Date'];
+                    if (showYT) headers.push('Views', 'Daily Views', 'Subscribers', 'Daily Subs');
+                    if (showStock) headers.push('Stock Close', 'Stock Volume');
+
+                    const csvEscape = v => {
+                        const s = v == null ? '' : String(v);
+                        // Quote cells that contain comma, newline, double-quote, or start with formula chars
+                        if (/[,\n"=+\-@]/.test(s.charAt(0)) || /[,\n"]/.test(s)) {
+                            return '"' + s.replace(/"/g, '""') + '"';
+                        }
+                        return s;
+                    };
+                    const csvRows = rows.map(row => {
+                        const vals = [row.date];
+                        if (showYT) vals.push(row.views, row.daily_views, row.subscribers, row.daily_subscribers);
+                        if (showStock) vals.push(row.close, row.volume);
+                        return vals.map(csvEscape).join(',');
+                    });
+
+                    const csv = [headers.join(','), ...csvRows].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const company = COMPANY_CONFIG[currentCompany] ? COMPANY_CONFIG[currentCompany].name.replace(/\s+/g,'-').toLowerCase() : currentCompany;
+                    const today = new Date().toISOString().split('T')[0];
+                    a.download = `tips-data-${company}-${today}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+        }
+
+        // ==========================================
         // INIT
         // ==========================================
+        function wireCorrToggleButtons() {
+            document.querySelectorAll('.corr-window-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    corrWindow = parseInt(btn.getAttribute('data-window'), 10);
+                    document.querySelectorAll('.corr-window-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // Re-render rolling chart only
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderCorrelationSection(filteredYT, filteredStock);
+                });
+            });
+
+            document.querySelectorAll('.corr-type-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    corrWindow_type = btn.getAttribute('data-type');
+                    document.querySelectorAll('.corr-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // Re-render rolling chart + stats
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderCorrelationSection(filteredYT, filteredStock);
+                });
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Dashboard initialized');
+            wireStockToggleButtons();
+            wireCorrToggleButtons();
+            wireAnomalyButtons();
+            wireDataTableSection();
             fetchData();
         });
     </script>

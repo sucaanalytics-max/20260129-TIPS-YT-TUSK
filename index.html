@@ -957,6 +957,55 @@
             font-size: 16px;
         }
 
+        /* === CORRELATION SECTION === */
+        .stats-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 90px;
+            flex: 1;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .corr-window-btn, .corr-type-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .corr-window-btn.active, .corr-type-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+        .corr-window-btn:hover:not(.active), .corr-type-btn:hover:not(.active) {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
         /* Override old theme-toggle fixed positioning — now lives in sidebar */
         .theme-toggle {
             position: static;
@@ -1777,7 +1826,65 @@
 
         <!-- Section: Correlation -->
         <div class="section-content hidden" id="section-correlation">
-            <p class="coming-soon">Correlation Analysis &#8212; Coming Soon</p>
+
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <span class="stat-label">Pearson r</span>
+                    <span class="stat-value" id="corrStatR">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Spearman &#961;</span>
+                    <span class="stat-value" id="corrStatRho">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">p-value</span>
+                    <span class="stat-value" id="corrStatP">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">R&#178;</span>
+                    <span class="stat-value" id="corrStatR2">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Sample n</span>
+                    <span class="stat-value" id="corrStatN">--</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Best Lag</span>
+                    <span class="stat-value" id="corrStatBestLag">--</span>
+                </div>
+            </div>
+
+            <!-- Rolling Correlation Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title">Rolling Correlation (r over time)</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                    <div class="chart-controls">
+                        <button class="corr-window-btn active" data-window="30">30d</button>
+                        <button class="corr-window-btn" data-window="14">14d</button>
+                        <button class="corr-window-btn" data-window="60">60d</button>
+                        <button class="corr-window-btn" data-window="90">90d</button>
+                    </div>
+                    <div class="chart-controls">
+                        <button class="corr-type-btn active" data-type="pearson">Pearson</button>
+                        <button class="corr-type-btn" data-type="spearman">Spearman</button>
+                    </div>
+                </div>
+                <canvas id="corrRollingChart"></canvas>
+            </div>
+
+            <!-- Lead-Lag Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title">Lead-Lag Analysis (r vs lag offset)</div>
+                <canvas id="corrLeadLagChart"></canvas>
+            </div>
+
+            <!-- Content Impact Score Chart -->
+            <div class="stock-chart-card" style="margin-bottom:20px;">
+                <div class="stock-chart-title" id="corrImpactTitle">Content Impact Score vs Next-Day Stock Return</div>
+                <canvas id="corrImpactChart"></canvas>
+            </div>
+
         </div>
 
         <!-- Section: Anomalies -->
@@ -1854,6 +1961,10 @@
             stock: { scale: 'linear', showMA: false },
             dualAxis: 'raw'
         };
+
+        // Correlation section state
+        let corrWindow = 30;
+        let corrWindow_type = 'pearson'; // 'pearson' | 'spearman'
 
         // ==========================================
         // THEME SYSTEM
@@ -3086,6 +3197,78 @@
         }
 
         // ==========================================
+        // CORRELATION UTILITIES
+        // ==========================================
+
+        function spearmanCorrelation(x, y) {
+            const n = Math.min(x.length, y.length);
+            if (n < 2) return 0;
+            const xs = x.slice(0, n);
+            const ys = y.slice(0, n);
+
+            function rankArray(arr) {
+                const sorted = arr.slice().sort((a, b) => a - b);
+                return arr.map(v => {
+                    const indices = sorted.reduce((acc, sv, i) => sv === v ? acc.concat(i + 1) : acc, []);
+                    return indices.reduce((s, r) => s + r, 0) / indices.length;
+                });
+            }
+
+            const rx = rankArray(xs);
+            const ry = rankArray(ys);
+            return pearsonCorrelation(rx, ry);
+        }
+
+        function rollingCorrelation(pairs, window) {
+            // pairs: array of {date, views, close}
+            const result = [];
+            for (let i = window - 1; i < pairs.length; i++) {
+                const slice = pairs.slice(i - window + 1, i + 1);
+                const xArr = slice.map(p => p.views);
+                const yArr = slice.map(p => p.close);
+                const r = corrWindow_type === 'spearman'
+                    ? spearmanCorrelation(xArr, yArr)
+                    : pearsonCorrelation(xArr, yArr);
+                const pVal = correlationPValue(r, slice.length);
+                result.push({ date: pairs[i].date, r, pValue: pVal });
+            }
+            return result;
+        }
+
+        function calculateContentImpactScore(ytData, window = 30) {
+            if (!ytData || ytData.length === 0) return [];
+            const result = [];
+            for (let i = 0; i < ytData.length; i++) {
+                const slice = ytData.slice(Math.max(0, i - window + 1), i + 1);
+                const views = ytData[i].daily_views || 0;
+                const subs = ytData[i].daily_subscribers || ytData[i].subscribers || 0;
+                const uploads = (ytData[i].daily_videos || 0) > 0 ? 1 : 0;
+
+                const avgViews = slice.reduce((s, d) => s + (d.daily_views || 0), 0) / slice.length || 1;
+                const avgSubs = slice.reduce((s, d) => s + (d.daily_subscribers || d.subscribers || 0), 0) / slice.length || 1;
+
+                // velocity: current week vs prev week
+                let velocity = 1;
+                if (i >= 13) {
+                    const curr7 = ytData.slice(i - 6, i + 1).reduce((s, d) => s + (d.daily_views || 0), 0);
+                    const prev7 = ytData.slice(i - 13, i - 6).reduce((s, d) => s + (d.daily_views || 0), 0);
+                    const avgVelocity = prev7 === 0 ? curr7 : (curr7 + prev7) / 2 || 1;
+                    velocity = curr7 / avgVelocity;
+                }
+
+                const rawScore = (views / avgViews * 0.4) + (subs / avgSubs * 0.3) + (uploads * 0.2) + (velocity * 0.1);
+                result.push({ date: ytData[i].date, rawScore });
+            }
+
+            // Normalize 0-100
+            const rawScores = result.map(r => r.rawScore);
+            const minS = Math.min(...rawScores);
+            const maxS = Math.max(...rawScores);
+            const range = maxS - minS || 1;
+            return result.map(r => ({ date: r.date, score: ((r.rawScore - minS) / range) * 100 }));
+        }
+
+        // ==========================================
         // CHART COLOR PALETTES
         // ==========================================
         const COLORS = {
@@ -3539,6 +3722,329 @@
         }
 
         // ==========================================
+        // CORRELATION SECTION RENDERING
+        // ==========================================
+
+        function updateCorrStats(pairs) {
+            if (!pairs || pairs.length < 5) {
+                ['corrStatR','corrStatRho','corrStatP','corrStatR2','corrStatN','corrStatBestLag'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = 'n/a';
+                });
+                return;
+            }
+            const xArr = pairs.map(p => p.views);
+            const yArr = pairs.map(p => p.close);
+            const r = pearsonCorrelation(xArr, yArr);
+            const rho = spearmanCorrelation(xArr, yArr);
+            const pVal = correlationPValue(r, pairs.length);
+            const r2 = r * r;
+
+            // Best lag from lead-lag analysis
+            const lagOffsets = [-5, -3, -1, 0, 1, 3, 5];
+            let bestLag = 0, bestAbsR = 0;
+            lagOffsets.forEach(lag => {
+                const shifted = lagShiftPairs(pairs, lag);
+                if (shifted.length < 5) return;
+                const lr = pearsonCorrelation(shifted.map(p=>p.views), shifted.map(p=>p.close));
+                if (Math.abs(lr) > bestAbsR) { bestAbsR = Math.abs(lr); bestLag = lag; }
+            });
+
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setEl('corrStatR', r.toFixed(3));
+            setEl('corrStatRho', rho.toFixed(3));
+            setEl('corrStatP', pVal < 0.001 ? '<0.001' : pVal.toFixed(3));
+            setEl('corrStatR2', r2.toFixed(3));
+            setEl('corrStatN', pairs.length);
+            setEl('corrStatBestLag', bestLag === 0 ? '0d' : (bestLag > 0 ? `+${bestLag}d` : `${bestLag}d`));
+        }
+
+        function lagShiftPairs(pairs, lag) {
+            // lag > 0: views at t-lag vs close at t (views leads stock)
+            // lag < 0: views at t vs close at t+|lag| (stock leads views)
+            const result = [];
+            const absLag = Math.abs(lag);
+            for (let i = absLag; i < pairs.length; i++) {
+                if (lag > 0) {
+                    result.push({ views: pairs[i - lag].views, close: pairs[i].close });
+                } else if (lag < 0) {
+                    if (i + absLag < pairs.length) {
+                        result.push({ views: pairs[i].views, close: pairs[i + absLag].close });
+                    }
+                } else {
+                    result.push({ views: pairs[i].views, close: pairs[i].close });
+                }
+            }
+            return result;
+        }
+
+        function renderCorrelationSection(ytData, stData) {
+            if (!ytData || !stData || ytData.length === 0 || stData.length === 0) return;
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            // Build date-joined pairs (ascending by date)
+            const stockMap = {};
+            stData.forEach(s => { stockMap[s.date] = parseFloat(s.close); });
+            const pairs = [];
+            // ytData arrives descending from renderAllCharts (reversed), re-sort ascending
+            const ytAsc = [...ytData].sort((a,b) => a.date < b.date ? -1 : 1);
+            ytAsc.forEach(yt => {
+                if (stockMap[yt.date] !== undefined) {
+                    pairs.push({ date: yt.date, views: yt.daily_views || 0, close: stockMap[yt.date] });
+                }
+            });
+
+            if (pairs.length < 10) return;
+
+            updateCorrStats(pairs);
+
+            // --------------------------------------------------
+            // Chart 1: Rolling Correlation
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('corrRollingChart');
+                if (!canvas) return;
+                if (charts['corrRolling']) { charts['corrRolling'].destroy(); delete charts['corrRolling']; }
+
+                const win = corrWindow;
+                if (pairs.length < win) return;
+
+                const rolling = rollingCorrelation(pairs, win);
+                const labels = rolling.map(r => r.date);
+                const rVals = rolling.map(r => r.r);
+                // Insignificant band: show r where p > 0.05, else null
+                const insigBand = rolling.map(r => r.pValue > 0.05 ? r.r : null);
+
+                charts['corrRolling'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: `Rolling r (${win}d, ${corrWindow_type})`,
+                                data: rVals,
+                                borderColor: '#3b82f6',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                            },
+                            {
+                                label: 'Insignificant (p>0.05)',
+                                data: insigBand,
+                                borderColor: 'transparent',
+                                backgroundColor: 'rgba(239,68,68,0.12)',
+                                pointRadius: 0,
+                                fill: 'origin',
+                                tension: 0.2,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.datasetIndex === 0) {
+                                            const pv = rolling[ctx.dataIndex]?.pValue;
+                                            const sig = pv !== undefined ? (pv < 0.05 ? ' *' : '') : '';
+                                            return `r = ${ctx.parsed.y.toFixed(3)}${sig}`;
+                                        }
+                                        return null;
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    zeroLine: {
+                                        type: 'line', yMin: 0, yMax: 0,
+                                        borderColor: isDark ? 'rgba(148,163,184,0.4)' : 'rgba(0,0,0,0.2)',
+                                        borderWidth: 1, borderDash: [4, 4]
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: {
+                                min: -1, max: 1,
+                                ticks: { color: textColor, font: { size: 10 }, stepSize: 0.5 },
+                                grid: { color: gridColor }
+                            }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 2: Lead-Lag Analysis
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('corrLeadLagChart');
+                if (!canvas) return;
+                if (charts['corrLeadLag']) { charts['corrLeadLag'].destroy(); delete charts['corrLeadLag']; }
+
+                const lagOffsets = [-5, -3, -1, 0, 1, 3, 5];
+                const lagResults = lagOffsets.map(lag => {
+                    const shifted = lagShiftPairs(pairs, lag);
+                    if (shifted.length < 5) return { lag, r: 0, pValue: 1 };
+                    const r = pearsonCorrelation(shifted.map(p=>p.views), shifted.map(p=>p.close));
+                    const pVal = correlationPValue(r, shifted.length);
+                    return { lag, r, pValue: pVal };
+                });
+
+                const labels = lagResults.map(lr => lr.lag === 0 ? '0' : (lr.lag > 0 ? `+${lr.lag}d` : `${lr.lag}d`));
+                const rVals = lagResults.map(lr => lr.r);
+                const bgColors = lagResults.map(lr => lr.r >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)');
+                const borderColors = lagResults.map(lr => lr.r >= 0 ? '#10b981' : '#ef4444');
+
+                charts['corrLeadLag'] = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Pearson r at lag',
+                            data: rVals,
+                            backgroundColor: bgColors,
+                            borderColor: borderColors,
+                            borderWidth: 1.5,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const lr = lagResults[ctx.dataIndex];
+                                        const pStr = lr.pValue < 0.001 ? '<0.001' : lr.pValue.toFixed(3);
+                                        return [`r = ${lr.r.toFixed(3)}`, `p = ${pStr}`];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor },
+                                 title: { display: true, text: 'Lag offset (days, + = views leads stock)', color: textColor, font: { size: 11 } } },
+                            y: {
+                                min: -1, max: 1,
+                                ticks: { color: textColor, font: { size: 10 } },
+                                grid: { color: gridColor }
+                            }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 3: Content Impact Score vs Next-Day Return
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('corrImpactChart');
+                if (!canvas) return;
+                if (charts['corrImpact']) { charts['corrImpact'].destroy(); delete charts['corrImpact']; }
+
+                const impactScores = calculateContentImpactScore(ytAsc, 30);
+                const impactMap = {};
+                impactScores.forEach(d => { impactMap[d.date] = d.score; });
+
+                // Next-day stock return: (close[t+1] - close[t]) / close[t] * 100
+                const stockDatesSorted = Object.keys(stockMap).sort();
+                const nextDayReturnMap = {};
+                for (let i = 0; i < stockDatesSorted.length - 1; i++) {
+                    const d = stockDatesSorted[i];
+                    const dNext = stockDatesSorted[i + 1];
+                    const ret = ((stockMap[dNext] - stockMap[d]) / stockMap[d]) * 100;
+                    nextDayReturnMap[d] = ret;
+                }
+
+                // Only keep days present in pairs + having next-day return
+                const impactPairs = pairs.filter(p => impactMap[p.date] !== undefined && nextDayReturnMap[p.date] !== undefined);
+                if (impactPairs.length < 5) return;
+
+                const labels = impactPairs.map(p => p.date);
+                const scores = impactPairs.map(p => impactMap[p.date]);
+                const returns = impactPairs.map(p => nextDayReturnMap[p.date]);
+                const avgScore = scores.reduce((s, v) => s + v, 0) / scores.length;
+
+                // Compute summary: avg next-day return on high content days
+                const highDays = impactPairs.filter(p => impactMap[p.date] > avgScore);
+                const avgHighReturn = highDays.length > 0
+                    ? highDays.reduce((s, p) => s + nextDayReturnMap[p.date], 0) / highDays.length
+                    : 0;
+
+                const titleEl = document.getElementById('corrImpactTitle');
+                if (titleEl) {
+                    const sign = avgHighReturn >= 0 ? '+' : '';
+                    titleEl.textContent = `Content Impact Score vs Next-Day Stock Return \u2014 High content days \u2192 avg ${sign}${avgHighReturn.toFixed(2)}% next-day return`;
+                }
+
+                const barColors = scores.map(s => s >= avgScore ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.5)');
+
+                charts['corrImpact'] = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Content Impact Score',
+                                type: 'bar',
+                                data: scores,
+                                backgroundColor: barColors,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Next-Day Stock Return (%)',
+                                type: 'line',
+                                data: returns,
+                                borderColor: '#8b5cf6',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                yAxisID: 'y1',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2.5,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.datasetIndex === 0) return `Impact: ${ctx.parsed.y.toFixed(1)}`;
+                                        return `Next-day return: ${ctx.parsed.y.toFixed(2)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'Impact Score', color: textColor, font: { size: 10 } } },
+                            y1: { position: 'right', ticks: { color: '#8b5cf6', font: { size: 10 }, callback: v => `${v.toFixed(1)}%` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Next-Day Return %', color: '#8b5cf6', font: { size: 10 } } }
+                        }
+                    }
+                });
+            })();
+        }
+
+        // ==========================================
         // CHART RENDERING
         // ==========================================
         function renderAllCharts() {
@@ -3561,6 +4067,9 @@
 
             // Content Analytics section
             renderContentSection(filteredYT);
+
+            // Correlation section
+            renderCorrelationSection(filteredYT, filteredStock);
         }
 
         function renderOverviewViewsChart(ytData) {
@@ -4283,6 +4792,15 @@
                 }, 50);
             }
 
+            // Re-render correlation charts when navigating to correlation section
+            if (section === 'correlation') {
+                setTimeout(() => {
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderCorrelationSection(filteredYT, filteredStock);
+                }, 50);
+            }
+
             // Close mobile sidebar
             closeSidebar();
             return false;
@@ -4306,9 +4824,36 @@
         // ==========================================
         // INIT
         // ==========================================
+        function wireCorrToggleButtons() {
+            document.querySelectorAll('.corr-window-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    corrWindow = parseInt(btn.getAttribute('data-window'), 10);
+                    document.querySelectorAll('.corr-window-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // Re-render rolling chart only
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderCorrelationSection(filteredYT, filteredStock);
+                });
+            });
+
+            document.querySelectorAll('.corr-type-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    corrWindow_type = btn.getAttribute('data-type');
+                    document.querySelectorAll('.corr-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // Re-render rolling chart + stats
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
+                    renderCorrelationSection(filteredYT, filteredStock);
+                });
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Dashboard initialized');
             wireStockToggleButtons();
+            wireCorrToggleButtons();
             fetchData();
         });
     </script>

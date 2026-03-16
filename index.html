@@ -1161,6 +1161,9 @@
 
         [data-theme="light"] .stock-chart-card { backdrop-filter: none; box-shadow: var(--shadow-sm); }
 
+        /* Content Analytics: channel mix chart shorter */
+        .content-channel-mix-card canvas { max-height: 350px; }
+
         /* Desktop: hide mobile elements */
         @media (min-width: 769px) {
             .mobile-header, .mobile-bottom-nav { display: none !important; }
@@ -1697,7 +1700,79 @@
 
         <!-- Section: Content Analytics -->
         <div class="section-content hidden" id="section-content">
-            <p class="coming-soon">Content Analytics &#8212; Coming Soon</p>
+
+            <!-- Content KPI Cards -->
+            <div class="kpi-grid" style="margin-bottom:20px;">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Total Views</span>
+                        <span class="kpi-icon">&#128065;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiTotalViews">--</div>
+                    <div class="kpi-context" id="contentKpiTotalViewsCtx">in selected period</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Avg Daily Views</span>
+                        <span class="kpi-icon">&#128200;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiAvgDaily">--</div>
+                    <div class="kpi-context" id="contentKpiAvgDailyCtx">per day average</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Peak Day</span>
+                        <span class="kpi-icon">&#127942;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiPeakDay">--</div>
+                    <div class="kpi-context" id="contentKpiPeakDayCtx">highest single day</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">View Velocity Score</span>
+                        <span class="kpi-icon">&#9889;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiVelocity">--</div>
+                    <div class="kpi-context" id="contentKpiVelocityCtx">0–100 momentum score</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Active Channels</span>
+                        <span class="kpi-icon">&#128253;</span>
+                    </div>
+                    <div class="kpi-value" id="contentKpiActiveChannels">--</div>
+                    <div class="kpi-context" id="contentKpiActiveChannelsCtx">with views in period</div>
+                </div>
+            </div>
+
+            <!-- Content Charts -->
+            <div class="stock-charts-col">
+
+                <!-- Views + Upload Activity -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Views + Upload Activity</div>
+                    <canvas id="contentViewsChart"></canvas>
+                </div>
+
+                <!-- Subscriber Daily Change -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">Subscriber Daily Change</div>
+                    <canvas id="contentSubsChart"></canvas>
+                </div>
+
+                <!-- View Velocity (Weekly Rate) -->
+                <div class="stock-chart-card">
+                    <div class="stock-chart-title">View Velocity (Weekly Rate)</div>
+                    <canvas id="contentVelocityChart"></canvas>
+                </div>
+
+                <!-- Channel Mix -->
+                <div class="stock-chart-card content-channel-mix-card">
+                    <div class="stock-chart-title">Channel Mix (Top 5 vs Other)</div>
+                    <canvas id="contentChannelMixChart"></canvas>
+                </div>
+
+            </div>
         </div>
 
         <!-- Section: Correlation -->
@@ -3024,6 +3099,438 @@
         };
 
         // ==========================================
+        // ==========================================
+        // CONTENT ANALYTICS UTILITIES
+        // ==========================================
+
+        function calculateViewVelocity(ytData) {
+            // ytData sorted ascending by date
+            // Returns array of {date, velocity} — one per day
+            // velocity[i] = (sum of views in days i-6..i  vs  days i-13..i-7) / prev_7d * 100
+            // Returns null for first 14 days
+            if (!ytData || ytData.length < 14) return [];
+            const result = [];
+            for (let i = 0; i < ytData.length; i++) {
+                if (i < 13) {
+                    result.push({ date: ytData[i].date, velocity: null });
+                    continue;
+                }
+                const curr7 = ytData.slice(i - 6, i + 1).reduce((s, d) => s + (d.daily_views || 0), 0);
+                const prev7 = ytData.slice(i - 13, i - 6).reduce((s, d) => s + (d.daily_views || 0), 0);
+                const velocity = prev7 === 0 ? null : ((curr7 - prev7) / prev7) * 100;
+                result.push({ date: ytData[i].date, velocity });
+            }
+            return result;
+        }
+
+        function calculateContentVelocityScore(ytData, window = 30) {
+            // Normalized 0-100 score based on recent velocity vs trailing std dev
+            if (!ytData || ytData.length < 14) return 50;
+            const velocities = calculateViewVelocity(ytData)
+                .map(v => v.velocity)
+                .filter(v => v !== null);
+            if (velocities.length === 0) return 50;
+            const recent = velocities[velocities.length - 1];
+            const trailing = velocities.slice(-window);
+            const mean = trailing.reduce((s, v) => s + v, 0) / trailing.length;
+            const variance = trailing.reduce((s, v) => s + (v - mean) ** 2, 0) / trailing.length;
+            const stdDev = Math.sqrt(variance);
+            if (stdDev === 0) return 50;
+            const zScore = (recent - mean) / stdDev;
+            return Math.max(0, Math.min(100, Math.round(zScore * 10 + 50)));
+        }
+
+        // ==========================================
+        // CONTENT KPI CARDS
+        // ==========================================
+
+        function updateContentKPICards(data) {
+            if (!data || data.length === 0) return;
+
+            // Total Views: sum of daily_views
+            const totalViews = data.reduce((s, d) => s + (d.daily_views || 0), 0);
+            document.getElementById('contentKpiTotalViews').textContent = formatNumber(totalViews);
+            document.getElementById('contentKpiTotalViewsCtx').textContent = `${data.length} days in period`;
+
+            // Avg Daily Views
+            const avgDaily = Math.round(totalViews / data.length);
+            document.getElementById('contentKpiAvgDaily').textContent = formatNumber(avgDaily);
+
+            // Peak Day
+            let peakRow = data[0];
+            for (const d of data) {
+                if ((d.daily_views || 0) > (peakRow.daily_views || 0)) peakRow = d;
+            }
+            document.getElementById('contentKpiPeakDay').textContent = formatNumber(peakRow.daily_views || 0);
+            document.getElementById('contentKpiPeakDayCtx').textContent = peakRow.date || '--';
+
+            // Velocity Score
+            const score = calculateContentVelocityScore(data);
+            document.getElementById('contentKpiVelocity').textContent = score;
+            const velCtx = document.getElementById('contentKpiVelocityCtx');
+            velCtx.textContent = score >= 60 ? 'accelerating' : score <= 40 ? 'decelerating' : 'stable momentum';
+            velCtx.className = 'kpi-context ' + (score >= 60 ? 'positive' : score <= 40 ? 'negative' : '');
+
+            // Active Channels
+            const activeChannels = new Set(data.filter(d => (d.daily_views || 0) > 0).map(d => d.channel_id)).size;
+            document.getElementById('contentKpiActiveChannels').textContent = activeChannels;
+            document.getElementById('contentKpiActiveChannelsCtx').textContent = 'with views in period';
+        }
+
+        // ==========================================
+        // CONTENT SECTION CHARTS
+        // ==========================================
+
+        function renderContentSection(data) {
+            if (!data || data.length === 0) return;
+
+            updateContentKPICards(data);
+
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            // --------------------------------------------------
+            // Chart 1: Views + Upload Activity (combo)
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentViewsChart');
+                if (!canvas) return;
+                if (charts['contentViews']) { charts['contentViews'].destroy(); delete charts['contentViews']; }
+
+                const labels = data.map(d => d.date);
+                const views = data.map(d => d.daily_views || 0);
+                const ma30 = calculateMovingAverage(views, 30);
+                const maxViews = Math.max(...views.filter(v => v > 0), 1);
+
+                // Scatter dots for upload days
+                const uploadDots = data.map((d, i) => (d.daily_videos && d.daily_videos > 0)
+                    ? { x: d.date, y: maxViews * 0.97 }
+                    : null);
+
+                charts['contentViews'] = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Daily Views',
+                                type: 'bar',
+                                data: views,
+                                backgroundColor: 'rgba(59,130,246,0.5)',
+                                borderColor: 'rgba(59,130,246,0.7)',
+                                borderWidth: 1,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: '30d MA',
+                                type: 'line',
+                                data: ma30,
+                                borderColor: '#f59e0b',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.3,
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Upload Day',
+                                type: 'scatter',
+                                data: uploadDots,
+                                backgroundColor: 'rgba(249,115,22,0.85)',
+                                pointRadius: 4,
+                                pointStyle: 'circle',
+                                parsing: false,
+                                yAxisID: 'y',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        if (ctx.dataset.label === 'Upload Day') return 'Upload day';
+                                        return `${ctx.dataset.label}: ${formatNumber(ctx.parsed.y)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 2: Subscriber Daily Change
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentSubsChart');
+                if (!canvas) return;
+                if (charts['contentSubs']) { charts['contentSubs'].destroy(); delete charts['contentSubs']; }
+
+                const labels = data.map(d => d.date);
+                // Compute daily subscriber delta
+                const deltas = data.map((d, i) => {
+                    if (d.daily_subscribers != null) return d.daily_subscribers;
+                    if (i === 0) return 0;
+                    return (d.subscribers || 0) - (data[i - 1].subscribers || 0);
+                });
+                const ma30 = calculateMovingAverage(deltas, 30);
+
+                const posDeltas = deltas.map(v => v >= 0 ? v : null);
+                const negDeltas = deltas.map(v => v < 0 ? v : null);
+
+                charts['contentSubs'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Gain',
+                                data: posDeltas,
+                                borderColor: 'rgba(16,185,129,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(16,185,129,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Loss',
+                                data: negDeltas,
+                                borderColor: 'rgba(239,68,68,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(239,68,68,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Daily Δ',
+                                data: deltas,
+                                borderColor: 'rgba(148,163,184,0.4)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                            },
+                            {
+                                label: '30d MA',
+                                data: ma30,
+                                borderColor: '#f59e0b',
+                                borderDash: [5, 3],
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.3,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${formatNumber(ctx.parsed.y)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 3: View Velocity (Weekly Rate)
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentVelocityChart');
+                if (!canvas) return;
+                if (charts['contentVelocity']) { charts['contentVelocity'].destroy(); delete charts['contentVelocity']; }
+
+                const velocityData = calculateViewVelocity(data);
+                const labels = velocityData.map(v => v.date);
+                const values = velocityData.map(v => v.velocity);
+
+                const posValues = values.map(v => (v !== null && v >= 0) ? v : null);
+                const negValues = values.map(v => (v !== null && v < 0) ? v : null);
+                const zeroLine = values.map(() => 0);
+                const pos5 = values.map(() => 5);
+                const neg5 = values.map(() => -5);
+
+                charts['contentVelocity'] = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Positive Velocity',
+                                data: posValues,
+                                borderColor: 'rgba(16,185,129,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(16,185,129,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Negative Velocity',
+                                data: negValues,
+                                borderColor: 'rgba(239,68,68,0.7)',
+                                borderWidth: 1.5,
+                                pointRadius: 0,
+                                fill: 'origin',
+                                backgroundColor: 'rgba(239,68,68,0.15)',
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Velocity %',
+                                data: values,
+                                borderColor: 'rgba(148,163,184,0.5)',
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.2,
+                                spanGaps: false,
+                            },
+                            {
+                                label: 'Zero',
+                                data: zeroLine,
+                                borderColor: 'rgba(148,163,184,0.4)',
+                                borderDash: [4, 4],
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: '+5%',
+                                data: pos5,
+                                borderColor: 'rgba(16,185,129,0.3)',
+                                borderDash: [4, 4],
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            },
+                            {
+                                label: '-5%',
+                                data: neg5,
+                                borderColor: 'rgba(239,68,68,0.3)',
+                                borderDash: [4, 4],
+                                borderWidth: 1,
+                                pointRadius: 0,
+                                fill: false,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, filter: item => !['Zero','+5%','-5%'].includes(item.text) } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '--'}`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor, callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: gridColor } }
+                        }
+                    }
+                });
+            })();
+
+            // --------------------------------------------------
+            // Chart 4: Channel Mix (Doughnut)
+            // --------------------------------------------------
+            (function() {
+                const canvas = document.getElementById('contentChannelMixChart');
+                if (!canvas) return;
+                if (charts['contentChannelMix']) { charts['contentChannelMix'].destroy(); delete charts['contentChannelMix']; }
+
+                // Build channel name lookup from allChannelData
+                const channelNameMap = {};
+                if (allChannelData && allChannelData.length > 0) {
+                    allChannelData.forEach(ch => {
+                        if (ch.channel_id) channelNameMap[ch.channel_id] = ch.channel_name || ch.channel_id;
+                    });
+                }
+
+                // Sum views per channel_id
+                const channelViews = {};
+                data.forEach(d => {
+                    if (!d.channel_id) return;
+                    channelViews[d.channel_id] = (channelViews[d.channel_id] || 0) + (d.daily_views || 0);
+                });
+
+                // Sort channels by views desc
+                const sorted = Object.entries(channelViews).sort((a, b) => b[1] - a[1]);
+
+                const top5 = sorted.slice(0, 5);
+                const otherViews = sorted.slice(5).reduce((s, [, v]) => s + v, 0);
+
+                const labels = top5.map(([id]) => channelNameMap[id] || ('...' + id.slice(-6)));
+                const values = top5.map(([, v]) => v);
+                if (otherViews > 0) {
+                    labels.push('Other');
+                    values.push(otherViews);
+                }
+
+                const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#6b7280'];
+
+                charts['contentChannelMix'] = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: palette.slice(0, labels.length),
+                            borderColor: isDark ? '#1e293b' : '#ffffff',
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        animation: { duration: 400 },
+                        plugins: {
+                            legend: { display: true, position: 'right', labels: { color: textColor, font: { size: 11 }, boxWidth: 14 } },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const total = ctx.dataset.data.reduce((s, v) => s + v, 0);
+                                        const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0;
+                                        return `${ctx.label}: ${formatNumber(ctx.parsed)} (${pct}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })();
+        }
+
+        // ==========================================
         // CHART RENDERING
         // ==========================================
         function renderAllCharts() {
@@ -3043,6 +3550,9 @@
             // Stock Analysis section charts (renders even if section is hidden,
             // so they're ready when navigated to)
             renderStockSection(filteredStock);
+
+            // Content Analytics section
+            renderContentSection(filteredYT);
         }
 
         function renderOverviewViewsChart(ytData) {
@@ -3754,6 +4264,14 @@
                 setTimeout(() => {
                     const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
                     renderStockSection(filteredStock);
+                }, 50);
+            }
+
+            // Re-render content charts when navigating to content section
+            if (section === 'content') {
+                setTimeout(() => {
+                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
+                    renderContentSection(filteredYT);
                 }, 50);
             }
 

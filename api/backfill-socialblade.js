@@ -21,6 +21,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { fetchWithRetry } from './lib/fetch-utils.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -30,7 +31,7 @@ const SB_TOKEN    = process.env.SOCIAL_BLADE_TOKEN;
 
 async function fetchSocialBladeStats(handle) {
   const url = `https://matrix.sbapis.com/b/youtube/statistics?clientid=${SB_CLIENT_ID}&token=${SB_TOKEN}&query=${encodeURIComponent(handle)}`;
-  const resp = await fetch(url);
+  const resp = await fetchWithRetry(url);
   if (!resp.ok) throw new Error(`Social Blade API returned ${resp.status} for "${handle}"`);
   const json = await resp.json();
   if (!json.status?.success) {
@@ -48,19 +49,36 @@ function buildRecords(channelId, data) {
     const entry = daily[i];
     const prev  = daily[i - 1] ?? null;
 
-    const daily_views       = (prev && entry.views != null && prev.views != null)
-      ? entry.views - prev.views
-      : null;
-    const daily_subscribers = (prev && entry.subs != null && prev.subs != null)
-      ? entry.subs - prev.subs
-      : null;
+    let daily_views = null;
+    let daily_subscribers = null;
+
+    if (prev) {
+      // Validate: dates must be exactly 1 day apart
+      const entryDate = new Date(entry.date);
+      const prevDate = new Date(prev.date);
+      const dayGap = Math.round((entryDate - prevDate) / 86400000);
+
+      if (dayGap === 1) {
+        daily_views = (entry.views != null && prev.views != null)
+          ? entry.views - prev.views : null;
+        daily_subscribers = (entry.subs != null && prev.subs != null)
+          ? entry.subs - prev.subs : null;
+      }
+      // dayGap !== 1 → leave as null (multi-day gap, delta would be wrong)
+
+      // Reject negative deltas (YouTube audit corrections)
+      if (daily_views !== null && daily_views < 0) daily_views = null;
+
+      // Reject impossible spikes (>50M for single channel)
+      if (daily_views !== null && daily_views > 50000000) daily_views = null;
+    }
 
     records.push({
       channel_id:        channelId,
       date:              entry.date.split('T')[0],
       total_views:       entry.views ?? null,
       subscribers:       entry.subs  ?? null,
-      video_count:       i === daily.length - 1 ? totalUploads : null, // only set for latest
+      video_count:       i === daily.length - 1 ? totalUploads : null,
       daily_views,
       daily_subscribers,
       daily_videos:      null,

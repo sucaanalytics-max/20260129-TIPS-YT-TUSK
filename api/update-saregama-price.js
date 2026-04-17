@@ -36,14 +36,14 @@ export default async function handler(req, res) {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const today = new Date().toISOString().split('T')[0];
+    const date = stockPrice.tradingDate || new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('stock_prices')
       .upsert(
         {
           symbol: STOCK_SYMBOL,
-          date: today,
+          date,
           open: stockPrice.open,
           high: stockPrice.high,
           low: stockPrice.low,
@@ -58,14 +58,14 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    console.log(`✅ Stock price upserted for ${today}: ₹${stockPrice.close}`);
+    console.log(`✅ Stock price upserted for ${date}: ₹${stockPrice.close}`);
 
     return res.status(200).json({
       success: true,
       action: 'upserted',
       stockData: {
         symbol: STOCK_SYMBOL,
-        date: today,
+        date,
         open: stockPrice.open,
         high: stockPrice.high,
         low: stockPrice.low,

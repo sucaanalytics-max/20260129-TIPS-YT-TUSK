@@ -1042,6 +1042,11 @@
         }
         #mainDataTable tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
         #mainDataTable tbody tr:hover { background: rgba(59,130,246,0.06); }
+        .dt-summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .dt-stat { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; min-width: 140px; flex: 1; }
+        .dt-stat-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .dt-stat-value { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); }
+        .dt-stat-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
         .dt-row-count {
             font-size: 0.78rem;
             color: var(--text-muted);
@@ -1088,13 +1093,13 @@
             transition: all 0.15s;
         }
         .corr-window-btn.active, .corr-type-btn.active {
-            background: #3b82f6;
-            border-color: #3b82f6;
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
             color: #fff;
         }
         .corr-window-btn:hover:not(.active), .corr-type-btn:hover:not(.active) {
-            border-color: #3b82f6;
-            color: #3b82f6;
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
         }
 
         /* Override old theme-toggle fixed positioning — now lives in sidebar */
@@ -1409,7 +1414,7 @@
         }
 
         @media (max-width: 768px) {
-            .main-wrapper { padding-bottom: 70px; }
+            .main-wrapper { padding-bottom: 60px; }
         }
 
         /* --- 6. Scrollbar styling (webkit) --- */
@@ -2174,6 +2179,7 @@
                     <option value="stock">Stock Only</option>
                 </select>
             </div>
+            <div id="dtSummary" class="dt-summary"></div>
             <div class="dt-row-count" id="dtRowCount"></div>
             <div class="table-wrapper" id="dataTableWrapper">
                 <table id="mainDataTable">
@@ -2252,6 +2258,8 @@
         let currentPage = 1;
         const rowsPerPage = 50;
         let charts = {};
+        let fetchCounter = 0; // race condition guard for concurrent fetchData calls
+        let renderChartsTimer = null; // debounce timer for renderAllCharts
         let chartStates = {
             views: { scale: 'linear', showMA: false },
             stock: { scale: 'linear', showMA: false },
@@ -2342,6 +2350,10 @@
             return num.toLocaleString('en-IN');
         }
 
+        function escHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
         function formatCurrency(num) {
             if (num == null) return '--';
             return '\u20B9' + parseFloat(num).toFixed(2);
@@ -2354,18 +2366,19 @@
         }
 
         function calculatePercentageChange(current, previous) {
-            if (!previous || previous === 0) return 0;
+            if (current == null || previous == null || previous === 0) return 0;
             return ((current - previous) / previous) * 100;
         }
 
         function calculateMovingAverage(data, period) {
             const result = [];
+            let sum = 0;
             for (let i = 0; i < data.length; i++) {
+                sum += data[i] || 0;
                 if (i < period - 1) {
                     result.push(null);
                 } else {
-                    let sum = 0;
-                    for (let j = 0; j < period; j++) sum += data[i - j];
+                    if (i >= period) sum -= data[i - period] || 0;
                     result.push(sum / period);
                 }
             }
@@ -2545,6 +2558,7 @@
         }
 
         async function fetchData() {
+            const thisFetch = ++fetchCounter;
             console.log('Fetching all data for:', currentCompany, '(paginated, no 1000 row cap)');
 
             const [youtubeData, stockData, channelData] = await Promise.all([
@@ -2552,6 +2566,12 @@
                 fetchStockPrices(),
                 fetchChannelBreakdown()
             ]);
+
+            // Guard: if another fetchData() was called while we were awaiting, discard stale results
+            if (thisFetch !== fetchCounter) {
+                console.log('Discarding stale fetch result (superseded by newer request)');
+                return;
+            }
 
             allYoutubeData = youtubeData;
             allStockData = stockData;
@@ -2916,7 +2936,7 @@
                     : '<span style="opacity:0.4">--</span>';
 
                 return `<tr>
-                    <td><strong>${ch.channel_name}</strong></td>
+                    <td><strong>${escHtml(ch.channel_name)}</strong></td>
                     <td>${ch.subscribers != null ? formatNumber(ch.subscribers) : '--'}</td>
                     <td>${ch.total_views != null ? formatNumber(ch.total_views) : '--'}</td>
                     <td>${ch.daily_views != null ? formatNumber(ch.daily_views) : '--'}</td>
@@ -3864,11 +3884,16 @@
                 const labels = velocityData.map(v => v.date);
                 const values = velocityData.map(v => v.velocity);
 
-                const posValues = values.map(v => (v !== null && v >= 0) ? v : null);
-                const negValues = values.map(v => (v !== null && v < 0) ? v : null);
-                const zeroLine = values.map(() => 0);
-                const pos5 = values.map(() => 5);
-                const neg5 = values.map(() => -5);
+                // Clip extreme outliers to ±200% so the normal range is readable
+                const CLIP = 200;
+                const clippedValues = values.map(v => v === null ? null : Math.max(-CLIP, Math.min(CLIP, v)));
+                const clippedCount = values.filter(v => v !== null && Math.abs(v) > CLIP).length;
+
+                const posValues = clippedValues.map(v => (v !== null && v >= 0) ? v : null);
+                const negValues = clippedValues.map(v => (v !== null && v < 0) ? v : null);
+                const zeroLine = clippedValues.map(() => 0);
+                const pos5 = clippedValues.map(() => 5);
+                const neg5 = clippedValues.map(() => -5);
 
                 charts['contentVelocity'] = new Chart(canvas, {
                     type: 'line',
@@ -3899,7 +3924,7 @@
                             },
                             {
                                 label: 'Velocity %',
-                                data: values,
+                                data: clippedValues,
                                 borderColor: 'rgba(148,163,184,0.5)',
                                 borderWidth: 1,
                                 pointRadius: 0,
@@ -3942,15 +3967,27 @@
                         animation: { duration: 400 },
                         plugins: {
                             legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, filter: item => !['Zero','+5%','-5%'].includes(item.text) } },
+                            subtitle: clippedCount > 0 ? {
+                                display: true,
+                                text: `${clippedCount} extreme value${clippedCount > 1 ? 's' : ''} clipped to ±${CLIP}%`,
+                                color: 'rgba(148,163,184,0.7)',
+                                font: { size: 10, style: 'italic' },
+                                padding: { bottom: 4 }
+                            } : { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) + '%' : '--'}`
+                                    label: ctx => {
+                                        const raw = values[ctx.dataIndex];
+                                        const clipped = raw !== null && Math.abs(raw) > CLIP;
+                                        const display = raw != null ? raw.toFixed(1) + '%' + (clipped ? ' (clipped)' : '') : '--';
+                                        return `${ctx.dataset.label}: ${display}`;
+                                    }
                                 }
                             }
                         },
                         scales: {
                             x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
-                            y: { ticks: { color: textColor, callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: gridColor } }
+                            y: { min: -CLIP, max: CLIP, ticks: { color: textColor, callback: v => v.toFixed(0) + '%', font: { size: 10 } }, grid: { color: gridColor } }
                         }
                     }
                 });
@@ -4732,6 +4769,11 @@
             });
         }
 
+        function renderAllChartsDebounced() {
+            clearTimeout(renderChartsTimer);
+            renderChartsTimer = setTimeout(renderAllCharts, 60);
+        }
+
         function renderAllCharts() {
             const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
             const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
@@ -5057,6 +5099,7 @@
             const monthlyViews = months.map(m => monthlyData[m].views);
 
             const opts = baseChartOptions();
+            opts.scales.y.title = { display: true, text: 'Total Monthly Views', font: { size: 11 } };
             opts.plugins.tooltip = {
                 callbacks: {
                     label: ctx => {
@@ -5201,7 +5244,25 @@
                 return closes[i] >= closes[i - 1] ? 'rgba(16,185,129,0.5)' : 'rgba(239,68,68,0.5)';
             });
 
+            // Cap Y-axis at 95th percentile to prevent single spikes from compressing the chart
+            const sorted = [...volumes].filter(v => v > 0).sort((a, b) => a - b);
+            const p95 = sorted[Math.floor(sorted.length * 0.95)] || sorted[sorted.length - 1] || 1;
+            const axisMax = p95 * 1.5;
+            const spikeCount = volumes.filter(v => v > axisMax).length;
+
             const opts = baseChartOptions();
+            opts.scales.y.max = axisMax;
+            opts.scales.y.title = { display: true, text: 'Trading Volume', font: { size: 11 } };
+            if (spikeCount > 0) {
+                opts.plugins.subtitle = {
+                    display: true,
+                    text: `${spikeCount} spike${spikeCount > 1 ? 's' : ''} above chart max (zoom out to see)`,
+                    color: 'rgba(148,163,184,0.7)',
+                    font: { size: 10, style: 'italic' },
+                    padding: { bottom: 4 }
+                };
+            }
+
             charts.volume = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -5238,6 +5299,9 @@
 
             const opts = baseChartOptions();
             opts.indexAxis = 'y';
+            // Horizontal bar: Y = category axis (day names), X = value axis (views)
+            opts.scales.y = { type: 'category', ticks: { font: { size: 11 } }, grid: { display: false } };
+            opts.scales.x = { ticks: { callback: v => formatNumber(v), font: { size: 10 } }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim() || 'rgba(255,255,255,0.04)' }, title: { display: true, text: 'Average Views', font: { size: 11 } } };
 
             charts.distribution = new Chart(ctx, {
                 type: 'bar',
@@ -5314,7 +5378,7 @@
             pageData.forEach((row, idx) => {
                 const tr = document.createElement('tr');
 
-                const globalIdx = filteredData.indexOf(row);
+                const globalIdx = start + idx;
                 const prevRow = globalIdx + 1 < filteredData.length ? filteredData[globalIdx + 1] : null;
 
                 // View changes
@@ -5472,7 +5536,7 @@
 
             // Re-render charts when switching to overview (Chart.js needs visible container)
             if (section === 'overview') {
-                setTimeout(() => { renderAllCharts(); }, 50);
+                renderAllChartsDebounced();
             }
 
             // Re-render stock charts when navigating to stock section
@@ -5539,6 +5603,66 @@
         // ==========================================
         let tableSortKey = 'date';
         let tableSortDir = 'desc';
+
+        function renderDtSummary(allRows, showYT, showStock) {
+            const el = document.getElementById('dtSummary');
+            if (!el) return;
+            while (el.firstChild) el.removeChild(el.firstChild);
+            if (!allRows.length) return;
+
+            const dates = allRows.map(r => r.date).sort();
+            const stats = [];
+
+            stats.push({ label: 'Period', value: dates[0].slice(5) + ' \u2013 ' + dates[dates.length-1].slice(5), sub: dates.length + ' days', subStyle: '' });
+
+            if (showYT) {
+                const ytRows = allRows.filter(r => r.daily_views !== null);
+                if (ytRows.length) {
+                    const totalViews = ytRows.reduce((s, r) => s + (r.daily_views || 0), 0);
+                    const avgViews = Math.round(totalViews / ytRows.length);
+                    const subRows = [...ytRows].sort((a, b) => a.date < b.date ? -1 : 1);
+                    const subStart = subRows[0].subscribers || 0;
+                    const subEnd = subRows[subRows.length - 1].subscribers || 0;
+                    const subChange = subEnd - subStart;
+                    const subPct = subStart ? (subChange / subStart * 100) : 0;
+                    stats.push({ label: 'Total Daily Views', value: formatNumber(totalViews), sub: 'Avg ' + formatNumber(avgViews) + '/day', subStyle: '' });
+                    stats.push({ label: 'Subscribers', value: formatNumber(subEnd), sub: (subChange >= 0 ? '+' : '') + formatNumber(subChange) + ' (' + subPct.toFixed(1) + '%)', subStyle: subChange >= 0 ? 'color:var(--green)' : 'color:var(--red)' });
+                }
+            }
+
+            if (showStock) {
+                const stRows = allRows.filter(r => r.close !== null).sort((a, b) => a.date < b.date ? -1 : 1);
+                if (stRows.length) {
+                    const p0 = stRows[0].close;
+                    const p1 = stRows[stRows.length - 1].close;
+                    const pct = (p1 - p0) / p0 * 100;
+                    const totalVol = stRows.reduce((s, r) => s + (r.volume || 0), 0);
+                    stats.push({ label: 'Stock Price', value: '\u20B9' + p1.toFixed(2), sub: (pct >= 0 ? '+' : '') + pct.toFixed(1) + '% from \u20B9' + p0.toFixed(2), subStyle: pct >= 0 ? 'color:var(--green)' : 'color:var(--red)' });
+                    stats.push({ label: 'Avg Daily Volume', value: formatNumber(Math.round(totalVol / stRows.length)), sub: 'Total ' + formatNumber(totalVol), subStyle: '' });
+                }
+            }
+
+            stats.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'dt-stat';
+                const lbl = document.createElement('div');
+                lbl.className = 'dt-stat-label';
+                lbl.textContent = s.label;
+                const val = document.createElement('div');
+                val.className = 'dt-stat-value';
+                val.textContent = s.value;
+                card.appendChild(lbl);
+                card.appendChild(val);
+                if (s.sub) {
+                    const sub = document.createElement('div');
+                    sub.className = 'dt-stat-sub';
+                    if (s.subStyle) sub.style.cssText = s.subStyle;
+                    sub.textContent = s.sub;
+                    card.appendChild(sub);
+                }
+                el.appendChild(card);
+            });
+        }
 
         function renderDataTableSection() {
             const tbody = document.getElementById('mainDataTableBody');
@@ -5657,6 +5781,9 @@
             // Determine which columns to show
             const showYT = dataset === 'combined' || dataset === 'youtube';
             const showStock = dataset === 'combined' || dataset === 'stock';
+
+            // Render period summary (uses full period rows, not search-truncated)
+            renderDtSummary(rows, showYT, showStock);
 
             // Show/hide column headers
             const colMap = {

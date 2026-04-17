@@ -2,16 +2,18 @@
  * Shared stock price fetching utilities.
  * Used by update-stock-price.js, update-saregama-price.js, and backfill scripts.
  *
- * @param {string} symbol - The Yahoo Finance / NSE symbol (e.g. 'TIPSINDLTD' or 'SAREGAMA').
+ * @param {string} symbol - The Yahoo Finance / NSE symbol (e.g. 'TIPSMUSIC' or 'SAREGAMA').
  *   Yahoo Finance appends '.NS' internally; NSE India uses the bare symbol.
- * @returns {{ open, high, low, close, volume, source }}
+ * @returns {{ open, high, low, close, volume, source, tradingDate }}
  * @throws {Error} if both Yahoo Finance and NSE India fail
  */
+import { fetchWithRetry } from './fetch-utils.js';
+
 export async function fetchStockPrice(symbol) {
   console.log(`Fetching price for ${symbol}...`);
   try {
     const price = await fetchFromYahoo(symbol);
-    console.log(`✅ Fetched from Yahoo Finance: ₹${price.close}`);
+    console.log(`✅ Fetched from Yahoo Finance: ₹${price.close} (date: ${price.tradingDate})`);
     return price;
   } catch (err) {
     console.error(`Yahoo Finance failed for ${symbol}:`, err.message);
@@ -31,7 +33,7 @@ async function fetchFromYahoo(symbol) {
   const yahooSymbol = `${symbol}.NS`;
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
@@ -51,12 +53,22 @@ async function fetchFromYahoo(symbol) {
   const meta = quote.meta;
   const indicators = quote.indicators?.quote?.[0];
 
+  // Extract actual trading date from Yahoo timestamp (not server date)
+  const timestamps = quote.timestamp;
+  const tradingDate = timestamps?.length
+    ? new Date(timestamps[timestamps.length - 1] * 1000).toISOString().split('T')[0]
+    : null;
+
+  const close = meta.regularMarketPrice || meta.previousClose;
+  if (!close || close <= 0) throw new Error('No valid close price from Yahoo Finance');
+
   return {
-    open: indicators?.open?.[0] || meta.chartPreviousClose || meta.previousClose || meta.regularMarketPrice,
-    high: indicators?.high?.[0] || meta.regularMarketPrice || meta.previousClose,
-    low: indicators?.low?.[0] || meta.regularMarketPrice || meta.previousClose,
-    close: meta.regularMarketPrice || meta.previousClose || 0,
+    open: indicators?.open?.[0] || null,
+    high: indicators?.high?.[0] || null,
+    low: indicators?.low?.[0] || null,
+    close,
     volume: indicators?.volume?.[0] || 0,
+    tradingDate,
     source: 'yahoo_finance'
   };
 }
@@ -64,7 +76,7 @@ async function fetchFromYahoo(symbol) {
 async function fetchFromNSE(symbol) {
   const url = `https://www.nseindia.com/api/quote-equity?symbol=${symbol}`;
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0',
       'Accept': 'application/json',

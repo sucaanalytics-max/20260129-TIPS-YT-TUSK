@@ -1,3 +1,5 @@
 .vercel
 .env*.local
 .worktrees
+node_modules/
+.playwright-mcp/

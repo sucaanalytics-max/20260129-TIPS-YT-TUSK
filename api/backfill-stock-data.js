@@ -26,8 +26,8 @@ export default async function handler(req, res) {
     const startDate = req.query.start || '2023-01-01';
     const endDate = req.query.end || new Date().toISOString().split('T')[0];
 
-    // Yahoo uses TIPSINDLTD.NS but we store as TIPSMUSIC
-    const symbol = 'TIPSINDLTD.NS';
+    // Yahoo uses TIPSMUSIC.NS (was TIPSINDLTD.NS, delisted) but we store as TIPSMUSIC
+    const symbol = 'TIPSMUSIC.NS';
     const dbSymbol = 'TIPSMUSIC';
     const start = Math.floor(new Date(startDate).getTime() / 1000);
     const end = Math.floor(new Date(endDate).getTime() / 1000);

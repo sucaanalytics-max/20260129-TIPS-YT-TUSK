@@ -5,7 +5,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bfafqccvzboyfjewzvhk.s
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 const STOCK_SYMBOL = 'TIPSMUSIC';   // DB symbol
-const YAHOO_SYMBOL = 'TIPSINDLTD';  // Yahoo Finance / NSE symbol
+const YAHOO_SYMBOL = 'TIPSMUSIC';   // Yahoo Finance / NSE symbol (was TIPSINDLTD, delisted/renamed)
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -37,14 +37,15 @@ export default async function handler(req, res) {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const today = new Date().toISOString().split('T')[0];
+    // Use actual trading date from Yahoo (not server date) to avoid holiday duplicates
+    const date = stockPrice.tradingDate || new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabase
       .from('stock_prices')
       .upsert(
         {
           symbol: STOCK_SYMBOL,
-          date: today,
+          date,
           open: stockPrice.open,
           high: stockPrice.high,
           low: stockPrice.low,
@@ -59,14 +60,14 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    console.log(`✅ Stock price upserted for ${today}: ₹${stockPrice.close}`);
+    console.log(`✅ Stock price upserted for ${date}: ₹${stockPrice.close}`);
 
     return res.status(200).json({
       success: true,
       action: 'upserted',
       stockData: {
         symbol: STOCK_SYMBOL,
-        date: today,
+        date,
         open: stockPrice.open,
         high: stockPrice.high,
         low: stockPrice.low,

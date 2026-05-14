@@ -1,6 +1,13 @@
 /**
- * Daily cron: fetches latest channel stats from Social Blade API for all
- * active channels and upserts into youtube_channel_stats.
+ * DEPRECATED (2026-05-14): the daily cron in vercel.json now points at
+ * /api/ingest/youtube-channels, which uses YouTube Data API v3 directly.
+ * This Social Blade ingest is retained as a manual fallback only — no
+ * scheduler invokes it. To re-enable, point the cron path back here in
+ * vercel.json and ensure SOCIAL_BLADE_CLIENT_ID / SOCIAL_BLADE_TOKEN env
+ * vars are set on the deployment.
+ *
+ * Original purpose: fetch latest channel stats from Social Blade API for
+ * all active channels and upsert into youtube_channel_stats.
  *
  * Social Blade API response structure (confirmed):
  *   data.daily[0] = most recent day  { date (ISO), subs, views }

@@ -9,7 +9,7 @@
       "schedule": "35 10 * * 1-5"
     },
     {
-      "path": "/api/update-youtube-stats",
+      "path": "/api/ingest/youtube-channels",
       "schedule": "30 0 * * *"
     }
   ],

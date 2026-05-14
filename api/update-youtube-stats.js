@@ -9,11 +9,15 @@
  *
  * Daily views  = daily[0].views - daily[1].views  (delta between last 2 snapshots)
  * Daily subs   = daily[0].subs  - daily[1].subs
+ * Daily videos = data.statistics.total.uploads - prior_row.video_count
+ *                (SB's daily[] omits per-day uploads, so the prior cumulative
+ *                 comes from our own youtube_channel_stats row for yesterday)
  *
  * Data validation:
  *   - Consecutive-day check: dates must be exactly 1 day apart
  *   - Negative delta rejection: YouTube audit corrections stored as null
  *   - Spike rejection: >50M views per channel per day is impossible
+ *   - Upload spikes: >10k uploads per channel per day implies scraper error
  *
  * Vercel cron schedule: "30 0 * * *"  (00:30 UTC = 06:00 IST, daily)
  */
@@ -28,6 +32,7 @@ const SB_CLIENT_ID = process.env.SOCIAL_BLADE_CLIENT_ID;
 const SB_TOKEN    = process.env.SOCIAL_BLADE_TOKEN;
 
 const MAX_DAILY_VIEWS_PER_CHANNEL = 50000000; // 50M — no single channel exceeds this in a day
+const MAX_DAILY_VIDEOS_PER_CHANNEL = 10000;   // Sanity bound; >10k uploads/day implies scraper error
 const PARALLEL_BATCH_SIZE = 5; // Fetch 5 channels at a time to stay within 10s timeout
 const UPSERT_CHUNK_SIZE = 10;  // Upsert in small chunks so one bad record doesn't kill the batch
 
@@ -46,7 +51,7 @@ async function fetchSocialBladeStats(handle) {
   return json.data;
 }
 
-function processChannelData(channel, data) {
+function processChannelData(channel, data, prior) {
   const daily = data.daily || [];
   if (daily.length < 2) {
     throw new Error(`Insufficient daily history (${daily.length} entries)`);
@@ -54,6 +59,7 @@ function processChannelData(channel, data) {
 
   const today = daily[0];
   const yesterday = daily[1];
+  const todayDateStr = today.date.split('T')[0];
 
   // Validate: dates must be exactly 1 day apart
   const todayDate = new Date(today.date);
@@ -84,15 +90,34 @@ function processChannelData(channel, data) {
     daily_views = null;
   }
 
+  // Compute daily_videos = today.cumulative_uploads − prior.cumulative_uploads
+  // SB's daily[] doesn't carry per-day uploads, so the prior cumulative comes from our DB.
+  const todayUploads = data.statistics?.total?.uploads ?? null;
+  let daily_videos = null;
+  if (todayUploads != null && prior?.video_count != null && prior?.date) {
+    const priorDate = new Date(prior.date);
+    const priorGap = Math.round((todayDate - priorDate) / 86400000);
+    if (priorGap === 1) {
+      const delta = todayUploads - prior.video_count;
+      if (delta > MAX_DAILY_VIDEOS_PER_CHANNEL) {
+        console.warn(`  ⚠️ ${channel.channel_name}: upload spike ${delta} > ${MAX_DAILY_VIDEOS_PER_CHANNEL}, setting null`);
+      } else {
+        daily_videos = delta;   // negatives allowed (deleted/unlisted videos)
+      }
+    } else {
+      console.warn(`  ⚠️ ${channel.channel_name}: ${priorGap}-day uploads gap (${prior.date} → ${todayDateStr}), storing null daily_videos`);
+    }
+  }
+
   return {
     channel_id:        channel.channel_id,
-    date:              today.date.split('T')[0],
+    date:              todayDateStr,
     total_views:       data.statistics?.total?.views     ?? null,
     subscribers:       data.statistics?.total?.subscribers ?? null,
-    video_count:       data.statistics?.total?.uploads   ?? null,
+    video_count:       todayUploads,
     daily_views,
     daily_subscribers,
-    daily_videos:      null,
+    daily_videos,
     updated_at:        new Date().toISOString(),
   };
 }
@@ -132,6 +157,28 @@ export default async function handler(req, res) {
 
   console.log(`Found ${channels.length} active channels`);
 
+  // Bulk-fetch most recent prior row per channel (within last 7 days) so we can
+  // compute daily_videos = today.cumulative_uploads − prior.cumulative_uploads.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0];
+  const { data: priorRows, error: priorErr } = await supabase
+    .from('youtube_channel_stats')
+    .select('channel_id, date, video_count')
+    .gte('date', sevenDaysAgo)
+    .lt('date', today)
+    .order('date', { ascending: false });
+
+  if (priorErr) {
+    console.warn(`Could not fetch prior video_count for daily_videos delta: ${priorErr.message}`);
+  }
+
+  const priorVideoCount = new Map();
+  for (const row of priorRows ?? []) {
+    if (!priorVideoCount.has(row.channel_id)) {
+      priorVideoCount.set(row.channel_id, { date: row.date, video_count: row.video_count });
+    }
+  }
+
   const upsertRecords = [];
   const failed = [];
 
@@ -141,7 +188,7 @@ export default async function handler(req, res) {
     const results = await Promise.allSettled(
       batch.map(async (channel) => {
         const data = await fetchSocialBladeStats(channel.handle);
-        return processChannelData(channel, data);
+        return processChannelData(channel, data, priorVideoCount.get(channel.channel_id));
       })
     );
 

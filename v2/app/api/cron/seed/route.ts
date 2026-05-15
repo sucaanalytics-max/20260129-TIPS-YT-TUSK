@@ -85,7 +85,7 @@ const SAREGAMA_RESOLVE: Array<{
   {
     channel_name: 'Saregama Carvaan',
     company: 'SAREGAMA',
-    handle: 'saregamacarvaan',
+    handle: 'SaregamaCarvaan-h8u',
     language: null,
     meta: { kind: 'product', note: 'promo channel for Saregama Carvaan device' },
   },

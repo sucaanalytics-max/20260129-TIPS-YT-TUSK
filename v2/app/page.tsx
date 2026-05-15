@@ -3,20 +3,22 @@ import { auth } from '@clerk/nextjs/server';
 import { cacheLife, cacheTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
-  getOverview,
-  getFreshness,
-  getDualAxisSeries,
-  getLeadLagScan,
+  getDualSymbolHeadline,
+  getDualSymbolChartSeries,
   getCompanyGrowth,
+  getFreshness,
+  getEventHorizon,
+  getOpsRunHistory,
 } from '@/lib/queries';
-import { KpiGrid } from '@/components/kpi-grid';
-import { FreshnessBadge } from '@/components/freshness-badge';
-import { DualAxisLine } from '@/components/charts/dual-axis-line';
-import { LeadLagBars } from '@/components/charts/lead-lag-bars';
-import { CompanyGrowth } from '@/components/breakdowns/company-growth';
 import { CACHE_TAGS } from '@/lib/revalidate';
+import { FreshnessBadge } from '@/components/freshness-badge';
+import { CompanyGrowth } from '@/components/breakdowns/company-growth';
+import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
+import { DualSymbolKpiStrip } from '@/components/overview/dual-symbol-kpi-strip';
+import { DualSymbolChart } from '@/components/overview/dual-symbol-chart';
+import { PipelinePulse } from '@/components/overview/pipeline-pulse';
 
-export default function HomePage() {
+export default function OverviewPage() {
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
       <Suspense fallback={null}>
@@ -25,9 +27,9 @@ export default function HomePage() {
 
       <header className="mb-8 flex items-baseline justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">TIPS · YouTube × NSE</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">TUSK · YT × NSE</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Tips Industries (TIPSMUSIC) catalogue performance correlated with equity price · Saregama benchmark
+            Daily monitor — TIPSMUSIC + SAREGAMA · headline data, freshness, events
           </p>
         </div>
         <Suspense fallback={<span className="text-muted-foreground text-xs">checking…</span>}>
@@ -35,30 +37,32 @@ export default function HomePage() {
         </Suspense>
       </header>
 
-      <Suspense fallback={<LoadingCards />}>
-        <Overview />
+      <Suspense fallback={<KpiSkeleton />}>
+        <Headline />
       </Suspense>
 
-      <section className="mt-10">
-        <h2 className="text-foreground mb-4 text-sm font-medium uppercase tracking-wider">
-          Daily views growth — Tips × Saregama
-        </h2>
-        <Suspense fallback={<LoadingMatrix />}>
-          <GrowthMatrix />
+      <section className="mt-8">
+        <Suspense fallback={<ChartSkeleton />}>
+          <ChartBlock />
         </Suspense>
       </section>
 
-      <section className="mt-10 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Suspense fallback={<LoadingChart />}>
-            <ViewsVsPrice />
-          </Suspense>
-        </div>
-        <div>
-          <Suspense fallback={<LoadingChart />}>
-            <LeadLag />
-          </Suspense>
-        </div>
+      <section className="mt-10">
+        <h2 className="text-foreground mb-4 text-sm font-medium uppercase tracking-wider">
+          Growth — daily views, current vs prior period
+        </h2>
+        <Suspense fallback={<MatrixSkeleton />}>
+          <Growth />
+        </Suspense>
+      </section>
+
+      <section className="mt-10 grid gap-4 lg:grid-cols-2">
+        <Suspense fallback={<CardSkeleton />}>
+          <Events />
+        </Suspense>
+        <Suspense fallback={<CardSkeleton />}>
+          <Pulse />
+        </Suspense>
       </section>
     </main>
   );
@@ -70,14 +74,6 @@ async function AuthGate() {
   return null;
 }
 
-async function Overview() {
-  'use cache';
-  cacheLife('hours');
-  cacheTag(CACHE_TAGS.overview);
-  const data = await getOverview();
-  return <KpiGrid data={data} />;
-}
-
 async function Freshness() {
   'use cache';
   cacheLife('minutes');
@@ -86,7 +82,23 @@ async function Freshness() {
   return <FreshnessBadge status={status} />;
 }
 
-async function GrowthMatrix() {
+async function Headline() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
+  const rows = await getDualSymbolHeadline();
+  return <DualSymbolKpiStrip rows={rows} />;
+}
+
+async function ChartBlock() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
+  const data = await getDualSymbolChartSeries({});
+  return <DualSymbolChart data={data} />;
+}
+
+async function Growth() {
   'use cache';
   cacheLife('hours');
   cacheTag(CACHE_TAGS.overview, CACHE_TAGS.channels);
@@ -94,33 +106,37 @@ async function GrowthMatrix() {
   return <CompanyGrowth snapshots={snapshots} />;
 }
 
-async function ViewsVsPrice() {
+async function Events() {
   'use cache';
   cacheLife('hours');
-  cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
-  const data = await getDualAxisSeries({ company: 'TIPSMUSIC' });
-  return <DualAxisLine data={data} />;
+  cacheTag(CACHE_TAGS.events);
+  const events = await getEventHorizon({ days: 14 });
+  return <EventHorizonStrip events={events} />;
 }
 
-async function LeadLag() {
+async function Pulse() {
   'use cache';
-  cacheLife('hours');
-  cacheTag(CACHE_TAGS.correlation);
-  const data = await getLeadLagScan({ window: 30 });
-  return <LeadLagBars data={data} windowDays={30} />;
+  cacheLife('minutes');
+  cacheTag(CACHE_TAGS.ops);
+  const runs = await getOpsRunHistory({ limit: 5 });
+  return <PipelinePulse runs={runs} />;
 }
 
-function LoadingCards() {
+function KpiSkeleton() {
   return (
-    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="border-border bg-card/50 h-28 animate-pulse rounded-lg border" />
       ))}
     </section>
   );
 }
 
-function LoadingMatrix() {
+function ChartSkeleton() {
+  return <div className="border-border bg-card/50 h-80 animate-pulse rounded-lg border" />;
+}
+
+function MatrixSkeleton() {
   return (
     <div className="space-y-4">
       {Array.from({ length: 2 }).map((_, i) => (
@@ -130,6 +146,6 @@ function LoadingMatrix() {
   );
 }
 
-function LoadingChart() {
-  return <div className="border-border bg-card/50 h-80 animate-pulse rounded-lg border" />;
+function CardSkeleton() {
+  return <div className="border-border bg-card/50 h-48 animate-pulse rounded-lg border" />;
 }

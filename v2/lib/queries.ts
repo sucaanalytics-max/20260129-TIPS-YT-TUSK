@@ -10,8 +10,20 @@ import {
   type SignalsSnapshot,
   type VideoFreshnessInput,
 } from '@/lib/signals';
+import {
+  annualizedVolatility,
+  beta,
+  cumulativeRelativePerformance,
+  fiftyTwoWeekRange,
+  logReturns,
+  maxDrawdown,
+  periodReturn,
+  returnSinceDate,
+} from '@/lib/risk';
+import { resolveStockRange, type StockRange } from '@/lib/stock-range';
 
 export type { SignalsSnapshot } from '@/lib/signals';
+export type { StockRange } from '@/lib/stock-range';
 
 /**
  * Server-only data layer for the Tusk v2 dashboard.
@@ -1039,3 +1051,568 @@ export const formatPct = (n: number | null | undefined, digits = 2): string =>
 
 export const formatPrice = (n: number | null | undefined): string =>
   n == null ? '—' : `₹${Number(n).toFixed(2)}`;
+
+// =============================================================================
+// Overview (daily monitor) + Stock (research deep-dive) queries
+// =============================================================================
+
+type Company = 'TIPSMUSIC' | 'SAREGAMA';
+
+// ---- Overview ---------------------------------------------------------------
+
+export interface DualSymbolHeadlineRow {
+  company: Company;
+  latest_date: string | null;
+  close: number | null;
+  close_prev: number | null;
+  close_delta_pct: number | null;
+  daily_views_latest: number | null;
+  views_7d_avg: number | null;
+  views_prior_7d_avg: number | null;
+  views_delta_pct: number | null;
+  subscribers: number | null;
+  subscribers_yoy_delta: number | null;
+  sparkline_60d: Array<number | null>;
+}
+
+/**
+ * Single fan-out for the Overview KPI strip — returns one row per company
+ * (TIPSMUSIC, SAREGAMA) with latest close, daily views, subscribers and a
+ * 60-day daily-views sparkline.
+ */
+export async function getDualSymbolHeadline(): Promise<DualSymbolHeadlineRow[]> {
+  const supabase = getServiceSupabase();
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const since400 = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
+
+  const [priceRes, viewsRes] = await Promise.all([
+    supabase
+      .from('fct_price_daily')
+      .select('symbol, date, close')
+      .in('symbol', ['TIPSMUSIC', 'SAREGAMA'])
+      .gte('date', since400)
+      .lte('date', todayIso)
+      .order('date', { ascending: true }),
+    supabase
+      .from('v_company_daily')
+      .select('company, date, daily_views, subscribers')
+      .in('company', ['TIPSMUSIC', 'SAREGAMA'])
+      .gte('date', since400)
+      .lte('date', todayIso)
+      .order('date', { ascending: true }),
+  ]);
+
+  const prices = (priceRes.data ?? []) as Array<{
+    symbol: string;
+    date: string;
+    close: number | null;
+  }>;
+  const views = (viewsRes.data ?? []) as Array<{
+    company: string;
+    date: string;
+    daily_views: number | null;
+    subscribers: number | null;
+  }>;
+
+  const out: DualSymbolHeadlineRow[] = [];
+
+  for (const company of ['TIPSMUSIC', 'SAREGAMA'] as const) {
+    const pricesC = prices.filter((p) => p.symbol === company);
+    const viewsC = views.filter((v) => v.company === company);
+
+    const latestPrice = pricesC[pricesC.length - 1];
+    const prevPrice = pricesC[pricesC.length - 2];
+    const close = latestPrice?.close != null ? Number(latestPrice.close) : null;
+    const close_prev = prevPrice?.close != null ? Number(prevPrice.close) : null;
+    const close_delta_pct =
+      close != null && close_prev != null && close_prev !== 0
+        ? ((close - close_prev) / close_prev) * 100
+        : null;
+
+    const latestViews = viewsC[viewsC.length - 1];
+    const daily_views_latest =
+      latestViews?.daily_views != null ? Number(latestViews.daily_views) : null;
+
+    // 7d avg of daily_views vs prior 7d avg.
+    const tail = viewsC.slice(-14);
+    function avg(rows: typeof viewsC) {
+      const nums = rows
+        .map((r) => (r.daily_views == null ? null : Number(r.daily_views)))
+        .filter((n): n is number => n != null);
+      return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+    }
+    const cur7 = tail.length >= 7 ? avg(tail.slice(-7)) : null;
+    const pri7 = tail.length >= 14 ? avg(tail.slice(-14, -7)) : null;
+    const views_delta_pct =
+      cur7 != null && pri7 != null && pri7 !== 0 ? ((cur7 - pri7) / pri7) * 100 : null;
+
+    // 60-day sparkline (chronological, oldest→newest). Fill missing days as null.
+    const todayMs = Date.now();
+    const sparkline_60d: Array<number | null> = [];
+    for (let i = 59; i >= 0; i--) {
+      const d = new Date(todayMs - i * 86_400_000).toISOString().slice(0, 10);
+      const hit = viewsC.find((v) => v.date === d);
+      sparkline_60d.push(hit?.daily_views != null ? Number(hit.daily_views) : null);
+    }
+
+    // subscribers + YoY delta
+    const subscribers =
+      latestViews?.subscribers != null ? Number(latestViews.subscribers) : null;
+    const yearAgo = viewsC.find((v) => {
+      if (!latestViews?.date) return false;
+      const diff =
+        (new Date(latestViews.date + 'T00:00:00Z').getTime() -
+          new Date(v.date + 'T00:00:00Z').getTime()) /
+        86_400_000;
+      return Math.abs(diff - 365) <= 3;
+    });
+    const subscribers_yoy_delta =
+      subscribers != null && yearAgo?.subscribers != null
+        ? subscribers - Number(yearAgo.subscribers)
+        : null;
+
+    out.push({
+      company,
+      latest_date: latestPrice?.date ?? latestViews?.date ?? null,
+      close,
+      close_prev,
+      close_delta_pct,
+      daily_views_latest,
+      views_7d_avg: cur7,
+      views_prior_7d_avg: pri7,
+      views_delta_pct,
+      subscribers,
+      subscribers_yoy_delta,
+      sparkline_60d,
+    });
+  }
+
+  return out;
+}
+
+export interface DualSymbolChartRow {
+  date: string;
+  tips_views: number | null;
+  sare_views: number | null;
+  tips_close: number | null;
+  sare_close: number | null;
+}
+
+/**
+ * Joined daily series of TIPS + SARE views + adjusted closes for the
+ * Overview headline chart.
+ */
+export async function getDualSymbolChartSeries(opts: { from?: string; to?: string } = {}): Promise<DualSymbolChartRow[]> {
+  const supabase = getServiceSupabase();
+  const from = opts.from ?? new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
+  const to = opts.to ?? new Date().toISOString().slice(0, 10);
+
+  const [viewsRes, priceRes] = await Promise.all([
+    supabase
+      .from('v_company_daily')
+      .select('date, company, daily_views')
+      .in('company', ['TIPSMUSIC', 'SAREGAMA'])
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, symbol, adjusted_close')
+      .in('symbol', ['TIPSMUSIC', 'SAREGAMA'])
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+  ]);
+
+  const views = (viewsRes.data ?? []) as Array<{
+    date: string;
+    company: string;
+    daily_views: number | null;
+  }>;
+  const prices = (priceRes.data ?? []) as Array<{
+    date: string;
+    symbol: string;
+    adjusted_close: number | null;
+  }>;
+
+  const byDate = new Map<string, DualSymbolChartRow>();
+  function slot(date: string): DualSymbolChartRow {
+    const cur = byDate.get(date) ?? {
+      date,
+      tips_views: null,
+      sare_views: null,
+      tips_close: null,
+      sare_close: null,
+    };
+    byDate.set(date, cur);
+    return cur;
+  }
+  for (const v of views) {
+    const s = slot(v.date);
+    if (v.company === 'TIPSMUSIC') s.tips_views = v.daily_views != null ? Number(v.daily_views) : null;
+    else if (v.company === 'SAREGAMA') s.sare_views = v.daily_views != null ? Number(v.daily_views) : null;
+  }
+  for (const p of prices) {
+    const s = slot(p.date);
+    if (p.symbol === 'TIPSMUSIC') s.tips_close = p.adjusted_close != null ? Number(p.adjusted_close) : null;
+    else if (p.symbol === 'SAREGAMA') s.sare_close = p.adjusted_close != null ? Number(p.adjusted_close) : null;
+  }
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// ---- Stock ------------------------------------------------------------------
+
+export interface StockPriceRow {
+  date: string;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number;
+  adjusted_close: number | null;
+  volume: number | null;
+}
+
+export interface StockDeepDive {
+  symbol: string;
+  range: StockRange;
+  from: string;
+  to: string;
+  prices: StockPriceRow[];
+  corp_actions: Array<{ ex_date: string; action_type: string; label: string }>;
+  index_midcap150: Array<{ date: string; close: number | null }>;
+  index_nifty50: Array<{ date: string; close: number | null }>;
+  fiftyTwoWeek: { high: number; low: number; current: number; position_pct: number } | null;
+}
+
+/**
+ * Fan-out for the Stock page (single symbol). Pulls everything the page
+ * needs for the price chart + relative performance + hero stats.
+ */
+export async function getStockDeepDive(opts: {
+  symbol: string;
+  range: StockRange;
+}): Promise<StockDeepDive> {
+  const supabase = getServiceSupabase();
+  const { from, to } = resolveStockRange(opts.range);
+  // For 52-week range we need at least 365 days regardless of selected range.
+  const since52w = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
+
+  const [pRes, aRes, caRes, mRes, n50Res, p52Res] = await Promise.all([
+    supabase
+      .from('fct_price_daily')
+      .select('date, open, high, low, close, volume')
+      .eq('symbol', opts.symbol)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, adjusted_close')
+      .eq('symbol', opts.symbol)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_corporate_action')
+      .select('ex_date, action_type, ratio_num, ratio_den, cash_per_share')
+      .eq('symbol', opts.symbol)
+      .gte('ex_date', from)
+      .lte('ex_date', to)
+      .order('ex_date', { ascending: true }),
+    supabase
+      .from('dim_market_index')
+      .select('date, close')
+      .eq('index_name', 'NIFTY_MIDCAP_150')
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_market_index')
+      .select('date, close')
+      .eq('index_name', 'NIFTY_50')
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    // 52-week window — independent of selected range.
+    supabase
+      .from('fct_price_daily')
+      .select('date, close')
+      .eq('symbol', opts.symbol)
+      .gte('date', since52w)
+      .order('date', { ascending: true }),
+  ]);
+
+  const adjMap = new Map(
+    ((aRes.data ?? []) as Array<{ date: string; adjusted_close: number | null }>).map((r) => [
+      r.date,
+      r.adjusted_close != null ? Number(r.adjusted_close) : null,
+    ]),
+  );
+  const prices: StockPriceRow[] = ((pRes.data ?? []) as Array<{
+    date: string;
+    open: number | null;
+    high: number | null;
+    low: number | null;
+    close: number;
+    volume: number | null;
+  }>).map((r) => ({
+    date: r.date,
+    open: r.open != null ? Number(r.open) : null,
+    high: r.high != null ? Number(r.high) : null,
+    low: r.low != null ? Number(r.low) : null,
+    close: Number(r.close),
+    adjusted_close: adjMap.get(r.date) ?? null,
+    volume: r.volume != null ? Number(r.volume) : null,
+  }));
+
+  const corp_actions = ((caRes.data ?? []) as Array<{
+    ex_date: string;
+    action_type: string;
+    ratio_num: number | null;
+    ratio_den: number | null;
+    cash_per_share: number | null;
+  }>).map((r) => {
+    const label =
+      r.action_type === 'split' || r.action_type === 'bonus'
+        ? `${r.action_type} ${r.ratio_num ?? '?'}:${r.ratio_den ?? '?'}`
+        : r.action_type === 'dividend' && r.cash_per_share != null
+          ? `dividend ₹${r.cash_per_share}`
+          : r.action_type;
+    return { ex_date: r.ex_date, action_type: r.action_type, label };
+  });
+
+  const index_midcap150 = ((mRes.data ?? []) as Array<{ date: string; close: number | null }>).map(
+    (r) => ({ date: r.date, close: r.close != null ? Number(r.close) : null }),
+  );
+  const index_nifty50 = ((n50Res.data ?? []) as Array<{ date: string; close: number | null }>).map(
+    (r) => ({ date: r.date, close: r.close != null ? Number(r.close) : null }),
+  );
+
+  const p52 = (p52Res.data ?? []) as Array<{ date: string; close: number | null }>;
+  const fiftyTwoWeek = fiftyTwoWeekRange(
+    p52.map((r) => ({ date: r.date, close: r.close != null ? Number(r.close) : null })),
+  );
+
+  return {
+    symbol: opts.symbol,
+    range: opts.range,
+    from,
+    to,
+    prices,
+    corp_actions,
+    index_midcap150,
+    index_nifty50,
+    fiftyTwoWeek,
+  };
+}
+
+export interface ReturnsMatrixRow {
+  symbol: string;
+  ret_1d: number | null;
+  ret_5d: number | null;
+  ret_1m: number | null;
+  ret_3m: number | null;
+  ret_6m: number | null;
+  ret_ytd: number | null;
+  ret_1y: number | null;
+  ret_3y: number | null;
+  ret_inception: number | null;
+}
+
+/**
+ * 8 standard returns for a symbol, computed from fct_adjusted_price_daily.
+ */
+export async function getReturnsMatrix(opts: { symbol: string }): Promise<ReturnsMatrixRow> {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from('fct_adjusted_price_daily')
+    .select('date, adjusted_close')
+    .eq('symbol', opts.symbol)
+    .order('date', { ascending: true });
+  const prices = ((data ?? []) as Array<{ date: string; adjusted_close: number | null }>).map(
+    (r) => ({
+      date: r.date,
+      close: r.adjusted_close != null ? Number(r.adjusted_close) : null,
+    }),
+  );
+
+  const ytdAnchor = new Date(new Date().getUTCFullYear(), 0, 1).toISOString().slice(0, 10);
+
+  return {
+    symbol: opts.symbol,
+    ret_1d: periodReturn(prices, 1),
+    ret_5d: periodReturn(prices, 5),
+    ret_1m: periodReturn(prices, 30),
+    ret_3m: periodReturn(prices, 90),
+    ret_6m: periodReturn(prices, 180),
+    ret_ytd: returnSinceDate(prices, ytdAnchor),
+    ret_1y: periodReturn(prices, 365),
+    ret_3y: periodReturn(prices, 365 * 3),
+    ret_inception:
+      prices.length > 0 && prices[0].close != null && prices[prices.length - 1].close != null
+        ? Math.log((prices[prices.length - 1].close as number) / (prices[0].close as number))
+        : null,
+  };
+}
+
+export interface RiskMetrics {
+  symbol: string;
+  window_days: number;
+  annualized_vol: number | null;
+  max_drawdown_pct: number | null;
+  max_drawdown_peak: string | null;
+  max_drawdown_trough: string | null;
+  beta_midcap150: number | null;
+  beta_nifty50: number | null;
+}
+
+/**
+ * Annualized vol, max drawdown, and betas for a symbol over the last
+ * `windowDays` (default 252 = 1 year of trading days).
+ */
+export async function getRiskMetrics(opts: {
+  symbol: string;
+  windowDays?: number;
+}): Promise<RiskMetrics> {
+  const supabase = getServiceSupabase();
+  const windowDays = opts.windowDays ?? 252;
+  const since = new Date(Date.now() - (windowDays + 30) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+  const [pRes, mRes, n50Res] = await Promise.all([
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, adjusted_close')
+      .eq('symbol', opts.symbol)
+      .gte('date', since)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_market_index')
+      .select('date, close')
+      .eq('index_name', 'NIFTY_MIDCAP_150')
+      .gte('date', since)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_market_index')
+      .select('date, close')
+      .eq('index_name', 'NIFTY_50')
+      .gte('date', since)
+      .order('date', { ascending: true }),
+  ]);
+
+  const prices = ((pRes.data ?? []) as Array<{ date: string; adjusted_close: number | null }>).map(
+    (r) => ({ date: r.date, close: r.adjusted_close != null ? Number(r.adjusted_close) : null }),
+  );
+  const midcap = ((mRes.data ?? []) as Array<{ date: string; close: number | null }>).map((r) => ({
+    date: r.date,
+    close: r.close != null ? Number(r.close) : null,
+  }));
+  const nifty50 = ((n50Res.data ?? []) as Array<{ date: string; close: number | null }>).map(
+    (r) => ({ date: r.date, close: r.close != null ? Number(r.close) : null }),
+  );
+
+  const priceVals = prices.map((p) => p.close);
+  const stockReturns = logReturns(priceVals);
+  const dd = maxDrawdown(priceVals);
+
+  function alignedReturns(idx: Array<{ date: string; close: number | null }>) {
+    const idxMap = new Map(idx.map((r) => [r.date, r.close]));
+    const stockPaired: number[] = [];
+    const indexPaired: number[] = [];
+    for (let i = 1; i < prices.length; i++) {
+      const sa = prices[i - 1].close;
+      const sb = prices[i].close;
+      const ia = idxMap.get(prices[i - 1].date);
+      const ib = idxMap.get(prices[i].date);
+      if (sa == null || sb == null || sa <= 0 || sb <= 0) continue;
+      if (ia == null || ib == null || ia <= 0 || ib <= 0) continue;
+      stockPaired.push(Math.log(sb) - Math.log(sa));
+      indexPaired.push(Math.log(ib) - Math.log(ia));
+    }
+    return { stock: stockPaired, idx: indexPaired };
+  }
+
+  const m = alignedReturns(midcap);
+  const n = alignedReturns(nifty50);
+
+  return {
+    symbol: opts.symbol,
+    window_days: windowDays,
+    annualized_vol: annualizedVolatility(stockReturns),
+    max_drawdown_pct: dd?.drawdown_pct ?? null,
+    max_drawdown_peak: dd ? prices[dd.peak_idx]?.date ?? null : null,
+    max_drawdown_trough: dd ? prices[dd.trough_idx]?.date ?? null : null,
+    beta_midcap150: beta(m.stock, m.idx),
+    beta_nifty50: beta(n.stock, n.idx),
+  };
+}
+
+export interface EarningsRow {
+  symbol: string;
+  event_date: string;
+  period: string;
+  board_meeting_date: string | null;
+  results_pdf_url: string | null;
+}
+
+/** Earnings calendar for a single symbol. Recent + upcoming. */
+export async function getEarningsCalendar(opts: {
+  symbol: string;
+  since?: string;
+}): Promise<EarningsRow[]> {
+  const supabase = getServiceSupabase();
+  const since =
+    opts.since ?? new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from('dim_earnings_event')
+    .select('symbol, event_date, period, board_meeting_date, results_pdf_url')
+    .eq('symbol', opts.symbol)
+    .gte('event_date', since)
+    .order('event_date', { ascending: false })
+    .limit(40);
+  return ((data ?? []) as EarningsRow[]);
+}
+
+export interface RelPerfRow {
+  date: string;
+  rel: number;
+}
+
+/**
+ * Cumulative relative-performance line: stock log-return minus index
+ * log-return, rebased to 0 at the start of the range. Drives the
+ * relative-performance chart on the Stock page.
+ */
+export async function getRelativePerformanceSeries(opts: {
+  symbol: string;
+  indexName: 'NIFTY_MIDCAP_150' | 'NIFTY_50';
+  range: StockRange;
+}): Promise<RelPerfRow[]> {
+  const supabase = getServiceSupabase();
+  const { from, to } = resolveStockRange(opts.range);
+  const [sRes, iRes] = await Promise.all([
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, adjusted_close')
+      .eq('symbol', opts.symbol)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_market_index')
+      .select('date, close')
+      .eq('index_name', opts.indexName)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+  ]);
+  const stock = ((sRes.data ?? []) as Array<{ date: string; adjusted_close: number | null }>).map(
+    (r) => ({ date: r.date, close: r.adjusted_close != null ? Number(r.adjusted_close) : null }),
+  );
+  const idx = ((iRes.data ?? []) as Array<{ date: string; close: number | null }>).map((r) => ({
+    date: r.date,
+    close: r.close != null ? Number(r.close) : null,
+  }));
+  return cumulativeRelativePerformance(stock, idx);
+}

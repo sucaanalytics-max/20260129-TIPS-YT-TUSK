@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/**/*.test.ts",
+    "test": "npx -y tsx --test lib/**/*.test.ts",
     "db:diff": "supabase db diff --use-migra",
     "db:push": "supabase db push --include-all"
   },

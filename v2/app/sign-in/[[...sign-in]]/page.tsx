@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { SignIn } from '@clerk/nextjs';
 
 export default function SignInPage() {
@@ -7,7 +8,9 @@ export default function SignInPage() {
         <h1 className="mb-6 text-center text-xl font-semibold">
           Tusk · TIPS YT × Stock
         </h1>
-        <SignIn appearance={{ elements: { card: 'shadow-none border border-border' } }} />
+        <Suspense fallback={<div className="border-border h-96 animate-pulse rounded-lg border" />}>
+          <SignIn appearance={{ elements: { card: 'shadow-none border border-border' } }} />
+        </Suspense>
       </div>
     </main>
   );

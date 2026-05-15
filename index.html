@@ -590,6 +590,7 @@
 
         .positive { color: var(--accent-green); font-weight: 600; }
         .negative { color: var(--accent-red); font-weight: 600; }
+        .tabular-nums { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
 
         /* Pagination */
         .pagination {
@@ -1508,14 +1509,8 @@
             <a class="nav-item active" id="nav-overview" onclick="return navigateTo('overview')" href="#">
                 <span class="nav-icon">&#128202;</span><span class="nav-label">Overview</span>
             </a>
-            <a class="nav-item" id="nav-stock" onclick="return navigateTo('stock')" href="#">
-                <span class="nav-icon">&#128200;</span><span class="nav-label">Stock Analysis</span>
-            </a>
             <a class="nav-item" id="nav-content" onclick="return navigateTo('content')" href="#">
                 <span class="nav-icon">&#128250;</span><span class="nav-label">Content Analytics</span>
-            </a>
-            <a class="nav-item" id="nav-correlation" onclick="return navigateTo('correlation')" href="#">
-                <span class="nav-icon">&#128279;</span><span class="nav-label">Correlation</span>
             </a>
             <a class="nav-item" id="nav-anomalies" onclick="return navigateTo('anomalies')" href="#">
                 <span class="nav-icon">&#128680;</span><span class="nav-label">Anomalies</span>
@@ -1545,11 +1540,11 @@
                 <div class="period-picker">
                     <span class="period-label">Period:</span>
                     <select id="timePeriod" onchange="handleTimePeriodChange()">
-                        <option value="30">Last 30 Days</option>
-                        <option value="90" selected>Last 90 Days</option>
-                        <option value="180">Last 6 Months</option>
-                        <option value="365">Last 1 Year</option>
-                        <option value="all">All Time</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="last_month">Last Month</option>
+                        <option value="last_quarter">Last Quarter</option>
+                        <option value="current_fy">Current FY (Apr&ndash;Mar)</option>
+                        <option value="last_fy">Last FY</option>
                         <option value="custom">Custom Range</option>
                     </select>
                     <div id="customDateInputs" style="display:none; gap:8px; align-items:center;">
@@ -1622,10 +1617,10 @@
                 <canvas class="kpi-sparkline" id="sparkSubscribers" width="80" height="28"></canvas>
               </div>
 
-              <!-- 30-Day Correlation -->
+              <!-- 30-Day Returns Correlation -->
               <div class="kpi-card kpi-card--highlight">
                 <div class="kpi-header">
-                  <span class="kpi-label">30-Day Correlation</span>
+                  <span class="kpi-label" title="Pearson r between daily price return and daily views return, last 30 overlapping trading days">Returns Corr (30d)</span>
                   <span class="kpi-icon">🔗</span>
                 </div>
                 <div class="kpi-value" id="kpiCorrelation">--</div>
@@ -1660,7 +1655,7 @@
             <div class="period-summary" id="periodSummary">
                 <div class="period-summary-header">
                     <h2 class="section-heading">Period Summary</h2>
-                    <span class="period-range" id="periodRangeLabel">Last 90 Days</span>
+                    <span class="period-range" id="periodRangeLabel">Last 30 Days</span>
                 </div>
                 <div class="period-summary-grid">
                     <div class="period-stat">
@@ -1735,8 +1730,8 @@
               <div class="chart-card summary-chart">
                 <div class="chart-header">
                   <div>
-                    <h3 class="chart-title">Rolling 30-Day Correlation</h3>
-                    <p class="chart-subtitle">Views vs Stock Price relationship over time</p>
+                    <h3 class="chart-title">Rolling 30-Day Returns Correlation</h3>
+                    <p class="chart-subtitle">Pearson r between daily price return and daily views return</p>
                   </div>
                 </div>
                 <div class="chart-wrapper">
@@ -1892,96 +1887,6 @@
 
         </div><!-- /section-overview -->
 
-        <!-- Section: Stock Analysis -->
-        <div class="section-content hidden" id="section-stock">
-
-            <!-- Stock KPI Cards -->
-            <div class="kpi-grid" style="margin-bottom:20px;">
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-label">Current Price</span>
-                        <span class="kpi-icon">&#128200;</span>
-                    </div>
-                    <div class="kpi-value" id="stockKpiPrice">--</div>
-                    <div class="kpi-context" id="stockKpiPriceCtx">--</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-label">52W High</span>
-                        <span class="kpi-icon">&#8679;</span>
-                    </div>
-                    <div class="kpi-value" id="stockKpiHigh52">--</div>
-                    <div class="kpi-context" id="stockKpiHigh52Ctx">52-week high</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-label">52W Low</span>
-                        <span class="kpi-icon">&#8681;</span>
-                    </div>
-                    <div class="kpi-value" id="stockKpiLow52">--</div>
-                    <div class="kpi-context" id="stockKpiLow52Ctx">52-week low</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-label">ATR (14d)</span>
-                        <span class="kpi-icon">&#128200;</span>
-                    </div>
-                    <div class="kpi-value" id="stockKpiATR">--</div>
-                    <div class="kpi-context">avg true range</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-label">Max Drawdown</span>
-                        <span class="kpi-icon">&#128203;</span>
-                    </div>
-                    <div class="kpi-value" id="stockKpiMaxDD">--</div>
-                    <div class="kpi-context" id="stockKpiMaxDDCtx">from peak</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-header">
-                        <span class="kpi-label">Current Drawdown</span>
-                        <span class="kpi-icon">&#128202;</span>
-                    </div>
-                    <div class="kpi-value" id="stockKpiCurrDD">--</div>
-                    <div class="kpi-context" id="stockKpiCurrDDCtx">from recent peak</div>
-                </div>
-            </div>
-
-            <!-- Chart stack -->
-            <div class="stock-charts-col">
-
-                <!-- Candlestick (close price + overlays) -->
-                <div class="stock-chart-card">
-                    <div class="stock-chart-title">Price (Candlestick)</div>
-                    <div class="chart-controls">
-                        <button class="toggle-btn active" data-overlay="sma20">SMA 20</button>
-                        <button class="toggle-btn active" data-overlay="sma50">SMA 50</button>
-                        <button class="toggle-btn" data-overlay="bb">Bollinger Bands</button>
-                    </div><!-- /.chart-controls -->
-                    <canvas id="stockCandlestickChart"></canvas>
-                </div>
-
-                <!-- RSI -->
-                <div class="stock-chart-card">
-                    <div class="stock-chart-title">RSI (14)</div>
-                    <canvas id="stockRsiChart"></canvas>
-                </div>
-
-                <!-- MACD -->
-                <div class="stock-chart-card">
-                    <div class="stock-chart-title">MACD (12, 26, 9)</div>
-                    <canvas id="stockMacdChart"></canvas>
-                </div>
-
-                <!-- Drawdown -->
-                <div class="stock-chart-card">
-                    <div class="stock-chart-title">Drawdown from Peak</div>
-                    <canvas id="stockDrawdownChart"></canvas>
-                </div>
-
-            </div>
-        </div>
-
         <!-- Section: Content Analytics -->
         <div class="section-content hidden" id="section-content">
 
@@ -2057,69 +1962,6 @@
                 </div>
 
             </div>
-        </div>
-
-        <!-- Section: Correlation -->
-        <div class="section-content hidden" id="section-correlation">
-
-            <!-- Stats Panel -->
-            <div class="stats-panel">
-                <div class="stat-item">
-                    <span class="stat-label">Pearson r</span>
-                    <span class="stat-value" id="corrStatR">--</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Spearman &#961;</span>
-                    <span class="stat-value" id="corrStatRho">--</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">p-value</span>
-                    <span class="stat-value" id="corrStatP">--</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">R&#178;</span>
-                    <span class="stat-value" id="corrStatR2">--</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Sample n</span>
-                    <span class="stat-value" id="corrStatN">--</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Best Lag</span>
-                    <span class="stat-value" id="corrStatBestLag">--</span>
-                </div>
-            </div>
-
-            <!-- Rolling Correlation Chart -->
-            <div class="stock-chart-card" style="margin-bottom:20px;">
-                <div class="stock-chart-title">Rolling Correlation (r over time)</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
-                    <div class="chart-controls">
-                        <button class="corr-window-btn active" data-window="30">30d</button>
-                        <button class="corr-window-btn" data-window="14">14d</button>
-                        <button class="corr-window-btn" data-window="60">60d</button>
-                        <button class="corr-window-btn" data-window="90">90d</button>
-                    </div>
-                    <div class="chart-controls">
-                        <button class="corr-type-btn active" data-type="pearson">Pearson</button>
-                        <button class="corr-type-btn" data-type="spearman">Spearman</button>
-                    </div>
-                </div>
-                <canvas id="corrRollingChart"></canvas>
-            </div>
-
-            <!-- Lead-Lag Chart -->
-            <div class="stock-chart-card" style="margin-bottom:20px;">
-                <div class="stock-chart-title">Lead-Lag Analysis (r vs lag offset)</div>
-                <canvas id="corrLeadLagChart"></canvas>
-            </div>
-
-            <!-- Content Impact Score Chart -->
-            <div class="stock-chart-card" style="margin-bottom:20px;">
-                <div class="stock-chart-title" id="corrImpactTitle">Content Impact Score vs Next-Day Stock Return</div>
-                <canvas id="corrImpactChart"></canvas>
-            </div>
-
         </div>
 
         <!-- Section: Anomalies -->
@@ -2206,14 +2048,8 @@
         <a class="mobile-nav-item active" id="mob-nav-overview" onclick="return navigateTo('overview')" href="#">
             <span>&#128202;</span><small>Overview</small>
         </a>
-        <a class="mobile-nav-item" id="mob-nav-stock" onclick="return navigateTo('stock')" href="#">
-            <span>&#128200;</span><small>Stock</small>
-        </a>
         <a class="mobile-nav-item" id="mob-nav-content" onclick="return navigateTo('content')" href="#">
             <span>&#128250;</span><small>Content</small>
-        </a>
-        <a class="mobile-nav-item" id="mob-nav-correlation" onclick="return navigateTo('correlation')" href="#">
-            <span>&#128279;</span><small>Correlation</small>
         </a>
         <a class="mobile-nav-item" id="mob-nav-anomalies" onclick="return navigateTo('anomalies')" href="#">
             <span>&#128680;</span><small>Anomalies</small>
@@ -2265,10 +2101,6 @@
             stock: { scale: 'linear', showMA: false },
             dualAxis: 'raw'
         };
-
-        // Correlation section state
-        let corrWindow = 30;
-        let corrWindow_type = 'pearson'; // 'pearson' | 'spearman'
 
         // Anomalies section state
         let anomMetric = 'all'; // 'all' | 'youtube' | 'stock'
@@ -2350,6 +2182,13 @@
             return num.toLocaleString('en-IN');
         }
 
+        // Western thousand-grouping (1,234,567). Used for views columns in the
+        // Daily Channel & Stock Metrics table so big counts read at a glance.
+        function formatViews(num) {
+            if (num == null || Number.isNaN(num)) return '--';
+            return Math.round(num).toLocaleString('en-US');
+        }
+
         function escHtml(s) {
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
@@ -2399,6 +2238,35 @@
           }
           const denom = Math.sqrt(dx*dy);
           return denom === 0 ? 0 : Math.max(-1, Math.min(1, num/denom));
+        }
+
+        // Build returns series r[t] = v[t] / v[t-1] - 1 from an ASC-sorted array of
+        // {date, value}. Skips a date if either side is null/<=0. Returned pairs
+        // already share a date, so correlation of `priceRet` × `viewsRet` is the
+        // movement-vs-movement correlation the dashboard's KPI displays.
+        function returnsPairs(ytAsc, stMap) {
+          const pairs = [];
+          let prevV = null, prevC = null;
+          for (const row of ytAsc) {
+            const close = stMap.get(row.date);
+            const views = row.daily_views;
+            if (close != null && views != null && close > 0 && views > 0) {
+              if (prevV != null && prevC != null) {
+                pairs.push({
+                  date: row.date,
+                  priceRet: (close - prevC) / prevC,
+                  viewsRet: (views - prevV) / prevV
+                });
+              }
+              prevV = views;
+              prevC = close;
+            } else {
+              // gap: reset baseline so we don't span missing data
+              prevV = (views != null && views > 0) ? views : null;
+              prevC = (close != null && close > 0) ? close : null;
+            }
+          }
+          return pairs;
         }
 
         // p-value from Pearson r and sample size n
@@ -2472,25 +2340,78 @@
           return atrs;
         }
 
-        function filterDataByTimePeriod(data) {
-            const period = document.getElementById('timePeriod').value;
+        // ISO date string (YYYY-MM-DD) in local time
+        function fmtISO(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
 
-            if (period === 'all') return data;
+        // Resolve a period key to [startISO, endISO] inclusive. Returns null for 'all'.
+        // Indian financial year: 1 Apr (year N) — 31 Mar (year N+1).
+        function resolvePeriodRange(period) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (period === 'all') return null;
 
             if (period === 'custom') {
-                const startDate = document.getElementById('startDate').value;
-                const endDate = document.getElementById('endDate').value;
-                if (startDate && endDate) {
-                    return data.filter(item => item.date >= startDate && item.date <= endDate);
-                }
-                return data;
+                const s = document.getElementById('startDate').value;
+                const e = document.getElementById('endDate').value;
+                if (s && e) return { start: s, end: e };
+                return null;
             }
 
-            const days = parseInt(period);
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - days);
-            const cutoffStr = cutoffDate.toISOString().split('T')[0];
-            return data.filter(item => item.date >= cutoffStr);
+            // "Last N days" (legacy numeric values, e.g. 30 / 90 / 365)
+            const asInt = parseInt(period, 10);
+            if (!Number.isNaN(asInt)) {
+                const start = new Date(today);
+                start.setDate(start.getDate() - (asInt - 1));
+                return { start: fmtISO(start), end: fmtISO(today) };
+            }
+
+            // Last calendar month (full previous month)
+            if (period === 'last_month') {
+                const firstOfThis = new Date(today.getFullYear(), today.getMonth(), 1);
+                const start = new Date(firstOfThis.getFullYear(), firstOfThis.getMonth() - 1, 1);
+                const end = new Date(firstOfThis.getFullYear(), firstOfThis.getMonth(), 0); // last day of prev month
+                return { start: fmtISO(start), end: fmtISO(end) };
+            }
+
+            // Last calendar quarter (full previous Jan–Mar / Apr–Jun / Jul–Sep / Oct–Dec)
+            if (period === 'last_quarter') {
+                const currentQ = Math.floor(today.getMonth() / 3); // 0..3
+                let qStartMonth = (currentQ - 1) * 3;
+                let qYear = today.getFullYear();
+                if (currentQ === 0) { qStartMonth = 9; qYear -= 1; } // Oct-Dec of prev year
+                const start = new Date(qYear, qStartMonth, 1);
+                const end = new Date(qYear, qStartMonth + 3, 0); // last day of last month of quarter
+                return { start: fmtISO(start), end: fmtISO(end) };
+            }
+
+            // Indian FY: starts 1 April. If today is before April, current FY started last April.
+            if (period === 'current_fy') {
+                const fyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+                const start = new Date(fyStartYear, 3, 1);          // Apr 1
+                return { start: fmtISO(start), end: fmtISO(today) };
+            }
+
+            if (period === 'last_fy') {
+                const currentFyStartYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+                const start = new Date(currentFyStartYear - 1, 3, 1);  // Apr 1 (prev FY start)
+                const end = new Date(currentFyStartYear, 2, 31);       // Mar 31 (prev FY end)
+                return { start: fmtISO(start), end: fmtISO(end) };
+            }
+
+            return null;
+        }
+
+        function filterDataByTimePeriod(data) {
+            const period = document.getElementById('timePeriod').value;
+            const range = resolvePeriodRange(period);
+            if (!range) return data;
+            return data.filter(item => item.date >= range.start && item.date <= range.end);
         }
 
         // ==========================================
@@ -2743,34 +2664,40 @@
             renderSparkline('sparkSubscribers', yt.slice(0,30).map(d=>d.subscribers||0).reverse(), '#8b5cf6');
           }
 
-          // --- 30-Day Correlation ---
-          const pairs = allYoutubeData.map(yt => {
-            const match = allStockData.find(s => s.date === yt.date);
-            return match ? { x: yt.daily_views, y: match.close } : null;
-          }).filter(Boolean).slice(0, 30);
+          // --- 30-Day Returns Correlation ---
+          // r between daily price return and daily views return (movement vs movement).
+          // Both series are stationary first-differences; this avoids the spurious
+          // correlation you get from regressing a level (close) on a flow (daily_views).
+          const stMap = new Map(allStockData.map(s => [s.date, parseFloat(s.close)]));
+          const ytAsc = [...allYoutubeData].slice().reverse(); // ascending by date
+          const allRetPairs = returnsPairs(ytAsc, stMap);
+          const last30 = allRetPairs.slice(-30);
 
-          if (pairs.length >= 10) {
-            const r = pearsonCorrelation(pairs.map(p=>p.x), pairs.map(p=>p.y));
-            const p = correlationPValue(r, pairs.length);
+          if (last30.length >= 10) {
+            const r = pearsonCorrelation(last30.map(p=>p.priceRet), last30.map(p=>p.viewsRet));
+            const p = correlationPValue(r, last30.length);
             const isSignificant = p < 0.05;
             document.getElementById('kpiCorrelation').textContent = `r = ${r.toFixed(2)}`;
             const ctxEl = document.getElementById('kpiCorrelationSig');
-            ctxEl.textContent = isSignificant ? `p < 0.05 ✓ significant (n=${pairs.length})` : `p = ${p.toFixed(2)} (not significant)`;
+            ctxEl.textContent = isSignificant
+              ? `p < 0.05 ✓ significant (n=${last30.length})`
+              : `p = ${p.toFixed(2)} (n=${last30.length}, not significant)`;
             ctxEl.className = 'kpi-context ' + (isSignificant ? 'significant' : '');
-            // Green left border accent on significant correlation card
             const corrCard = document.getElementById('kpiCorrelation')?.closest('.kpi-card');
             if (corrCard) corrCard.classList.toggle('kpi-correlation--significant', isSignificant);
-            // Sparkline: rolling 30d r over time (last 60d windows)
+
+            // Sparkline: trailing rolling-30d r over the most recent ~60 windows
             const rollingR = [];
-            const allPairs = allYoutubeData.map(yt => {
-              const match = allStockData.find(s => s.date === yt.date);
-              return match ? { x: yt.daily_views, y: match.close } : null;
-            }).filter(Boolean);
-            for (let i = 29; i < Math.min(allPairs.length, 89); i++) {
-              const window = allPairs.slice(i-29, i+1);
-              rollingR.push(pearsonCorrelation(window.map(p=>p.x), window.map(p=>p.y)));
+            const maxIdx = Math.min(allRetPairs.length, 89);
+            for (let i = 29; i < maxIdx; i++) {
+              const w = allRetPairs.slice(i - 29, i + 1);
+              rollingR.push(pearsonCorrelation(w.map(p=>p.priceRet), w.map(p=>p.viewsRet)));
             }
-            if (rollingR.length) renderSparkline('sparkCorrelation', rollingR.reverse(), '#06b6d4', -1, 1);
+            if (rollingR.length) renderSparkline('sparkCorrelation', rollingR, '#06b6d4', -1, 1);
+          } else {
+            document.getElementById('kpiCorrelation').textContent = '—';
+            const ctxEl = document.getElementById('kpiCorrelationSig');
+            ctxEl.textContent = `need ≥ 10 overlapping trading days (have ${last30.length})`;
           }
 
           // --- View Velocity (7-day rate of change) ---
@@ -2856,8 +2783,20 @@
             const period = document.getElementById('timePeriod').value;
 
             // Period label
-            const labels = { '30': 'Last 30 Days', '90': 'Last 90 Days', '180': 'Last 6 Months', '365': 'Last 1 Year', 'all': 'All Time', 'custom': 'Custom Range' };
-            document.getElementById('periodRangeLabel').textContent = labels[period] || period;
+            const labels = {
+                '30': 'Last 30 Days',
+                'last_month': 'Last Month',
+                'last_quarter': 'Last Quarter',
+                'current_fy': 'Current FY',
+                'last_fy': 'Last FY',
+                'custom': 'Custom Range'
+            };
+            let label = labels[period] || period;
+            if (period === 'custom') {
+                const r = resolvePeriodRange(period);
+                if (r) label = `${r.start} → ${r.end}`;
+            }
+            document.getElementById('periodRangeLabel').textContent = label;
 
             if (!filtered.length) {
                 ['periodTotalViews','periodAvgViews','periodPeakViews','periodMinViews','periodSubGrowth','periodDays'].forEach(id => {
@@ -2995,602 +2934,6 @@
             document.getElementById('lastUpdated').textContent = timeStr;
             const headerEl = document.getElementById('lastUpdatedHeader');
             if (headerEl) headerEl.textContent = 'Updated ' + timeStr;
-        }
-
-        // ==========================================
-        // STOCK ANALYSIS UTILITIES
-        // ==========================================
-
-        function calculateSMA(closes, period) {
-            return closes.map((_, i) => {
-                if (i < period - 1) return null;
-                const slice = closes.slice(i - period + 1, i + 1);
-                return slice.reduce((a, b) => a + b, 0) / period;
-            });
-        }
-
-        function calculateEMA(closes, period) {
-            const k = 2 / (period + 1);
-            const ema = [];
-            let prev = null;
-            for (let i = 0; i < closes.length; i++) {
-                if (prev === null) {
-                    // Seed with SMA of first `period` values
-                    if (i < period - 1) { ema.push(null); continue; }
-                    const seed = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
-                    prev = seed;
-                    ema.push(seed);
-                } else {
-                    prev = closes[i] * k + prev * (1 - k);
-                    ema.push(prev);
-                }
-            }
-            return ema;
-        }
-
-        function calculateRSI(closes, period = 14) {
-            const rsi = new Array(closes.length).fill(null);
-            if (closes.length <= period) return rsi;
-
-            let avgGain = 0, avgLoss = 0;
-            for (let i = 1; i <= period; i++) {
-                const diff = closes[i] - closes[i - 1];
-                if (diff > 0) avgGain += diff;
-                else avgLoss += Math.abs(diff);
-            }
-            avgGain /= period;
-            avgLoss /= period;
-
-            const rs0 = avgLoss === 0 ? 100 : avgGain / avgLoss;
-            rsi[period] = 100 - 100 / (1 + rs0);
-
-            for (let i = period + 1; i < closes.length; i++) {
-                const diff = closes[i] - closes[i - 1];
-                const gain = diff > 0 ? diff : 0;
-                const loss = diff < 0 ? Math.abs(diff) : 0;
-                avgGain = (avgGain * (period - 1) + gain) / period;
-                avgLoss = (avgLoss * (period - 1) + loss) / period;
-                const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-                rsi[i] = 100 - 100 / (1 + rs);
-            }
-            return rsi;
-        }
-
-        function calculateMACD(closes, fast = 12, slow = 26, signal = 9) {
-            const emaFast = calculateEMA(closes, fast);
-            const emaSlow = calculateEMA(closes, slow);
-            const macdLine = closes.map((_, i) => {
-                if (emaFast[i] === null || emaSlow[i] === null) return null;
-                return emaFast[i] - emaSlow[i];
-            });
-
-            // Signal: EMA of macdLine (only where non-null)
-            // We need to compute EMA on the non-null segment
-            const signalLine = new Array(closes.length).fill(null);
-            const firstValid = macdLine.findIndex(v => v !== null);
-            if (firstValid === -1) return macdLine.map(() => ({ macd: null, signal: null, histogram: null }));
-
-            const validMacd = macdLine.slice(firstValid);
-            const emaSignal = calculateEMA(validMacd, signal);
-
-            for (let i = 0; i < emaSignal.length; i++) {
-                signalLine[firstValid + i] = emaSignal[i];
-            }
-
-            return closes.map((_, i) => ({
-                macd: macdLine[i],
-                signal: signalLine[i],
-                histogram: (macdLine[i] !== null && signalLine[i] !== null) ? macdLine[i] - signalLine[i] : null
-            }));
-        }
-
-        function calculateBollingerBands(closes, period = 20, stdMult = 2) {
-            return closes.map((_, i) => {
-                if (i < period - 1) return null;
-                const slice = closes.slice(i - period + 1, i + 1);
-                const mean = slice.reduce((a, b) => a + b, 0) / period;
-                const variance = slice.reduce((a, b) => a + (b - mean) ** 2, 0) / period;
-                const std = Math.sqrt(variance);
-                return { upper: mean + stdMult * std, middle: mean, lower: mean - stdMult * std };
-            });
-        }
-
-        function calculateMaxDrawdown(closes) {
-            if (!closes || closes.length === 0) return { maxDrawdownPct: 0, currentDrawdownPct: 0, drawdownSeries: [] };
-            let peak = closes[0];
-            let maxDD = 0;
-            const ddSeries = [];
-            for (let i = 0; i < closes.length; i++) {
-                if (closes[i] > peak) peak = closes[i];
-                const dd = peak > 0 ? ((closes[i] - peak) / peak) * 100 : 0;
-                if (dd < maxDD) maxDD = dd;
-                ddSeries.push(dd);
-            }
-            const currentDD = ddSeries[ddSeries.length - 1];
-            return { maxDrawdownPct: maxDD, currentDrawdownPct: currentDD, drawdownSeries: ddSeries };
-        }
-
-        // ==========================================
-        // STOCK SECTION: KPI CARDS
-        // ==========================================
-        function updateStockKPICards(data) {
-            if (!data || data.length === 0) {
-                ['stockKpiPrice','stockKpiHigh52','stockKpiLow52','stockKpiATR','stockKpiMaxDD','stockKpiCurrDD'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = '--';
-                });
-                return;
-            }
-
-            const closes = data.map(d => parseFloat(d.close));
-
-            // Current price (last entry = most recent since data is asc)
-            const latest = data[data.length - 1];
-            const prev = data.length >= 2 ? data[data.length - 2] : null;
-            document.getElementById('stockKpiPrice').textContent = formatCurrency(latest.close);
-            if (prev) {
-                const change = latest.close - prev.close;
-                const changePct = ((change / prev.close) * 100).toFixed(2);
-                const ctxEl = document.getElementById('stockKpiPriceCtx');
-                ctxEl.textContent = `${change >= 0 ? '+' : ''}${formatCurrency(change)} (${change >= 0 ? '+' : ''}${changePct}%)`;
-                ctxEl.className = 'kpi-context ' + (change >= 0 ? 'positive' : 'negative');
-            }
-
-            // 52W High/Low — last 365 days from dataset
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - 365);
-            const cutoffStr = cutoff.toISOString().split('T')[0];
-            const last52 = data.filter(d => d.date >= cutoffStr);
-            if (last52.length) {
-                const high52 = Math.max(...last52.map(d => parseFloat(d.high || d.close)));
-                const low52 = Math.min(...last52.map(d => parseFloat(d.low || d.close)));
-                document.getElementById('stockKpiHigh52').textContent = formatCurrency(high52);
-                document.getElementById('stockKpiLow52').textContent = formatCurrency(low52);
-                const pctFromHigh = (((latest.close - high52) / high52) * 100).toFixed(1);
-                const pctFromLow = (((latest.close - low52) / low52) * 100).toFixed(1);
-                const highCtx = document.getElementById('stockKpiHigh52Ctx');
-                highCtx.textContent = `${pctFromHigh}% from 52W high`;
-                highCtx.className = 'kpi-context ' + (pctFromHigh >= 0 ? 'positive' : 'negative');
-                const lowCtx = document.getElementById('stockKpiLow52Ctx');
-                lowCtx.textContent = `+${pctFromLow}% from 52W low`;
-                lowCtx.className = 'kpi-context positive';
-            }
-
-            // ATR 14d
-            if (data.length >= 15) {
-                const atrVals = calculateATR(data, 14);
-                const latestATR = atrVals[atrVals.length - 1];
-                document.getElementById('stockKpiATR').textContent = formatCurrency(latestATR);
-            }
-
-            // Max drawdown & current drawdown
-            const { maxDrawdownPct, currentDrawdownPct } = calculateMaxDrawdown(closes);
-            const maxDDEl = document.getElementById('stockKpiMaxDD');
-            if (maxDDEl) { maxDDEl.textContent = maxDrawdownPct.toFixed(1) + '%'; maxDDEl.style.color = 'var(--accent-red)'; }
-            const maxDDCtxEl = document.getElementById('stockKpiMaxDDCtx');
-            if (maxDDCtxEl) maxDDCtxEl.textContent = 'peak-to-trough in period';
-
-            const currDDEl = document.getElementById('stockKpiCurrDD');
-            if (currDDEl) { currDDEl.textContent = currentDrawdownPct.toFixed(1) + '%'; currDDEl.style.color = currentDrawdownPct < -5 ? 'var(--accent-red)' : 'var(--accent-amber)'; }
-            const currDDCtxEl = document.getElementById('stockKpiCurrDDCtx');
-            if (currDDCtxEl) currDDCtxEl.textContent = 'current vs running peak';
-        }
-
-        // ==========================================
-        // STOCK SECTION: OVERLAY STATE
-        // ==========================================
-        let stockOverlays = { sma20: true, sma50: true, bb: false };
-
-        function wireStockToggleButtons() {
-            const btns = document.querySelectorAll('#section-stock .toggle-btn');
-            btns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const key = btn.getAttribute('data-overlay');
-                    stockOverlays[key] = !stockOverlays[key];
-                    btn.classList.toggle('active', stockOverlays[key]);
-                    // Re-render just the candlestick chart
-                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
-                    renderStockCandlestickChart(filteredStock);
-                });
-                // Sync initial visual state from JS state (avoids HTML/JS drift)
-                const key = btn.getAttribute('data-overlay');
-                btn.classList.toggle('active', !!stockOverlays[key]);
-            });
-        }
-
-        // ==========================================
-        // STOCK SECTION: CHART RENDERING
-        // ==========================================
-        function renderStockSection(data) {
-            if (!data || data.length === 0) return;
-            updateStockKPICards(data);
-            renderStockCandlestickChart(data);
-            renderStockRsiChart(data);
-            renderStockMacdChart(data);
-            renderStockDrawdownChart(data);
-        }
-
-        function getStockChartTheme() {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            return {
-                gridColor: isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)',
-                textColor: isDark ? '#94a3b8' : '#6b7280'
-            };
-        }
-
-        function renderStockCandlestickChart(data) {
-            if (charts['stockCandlestick']) { charts['stockCandlestick'].destroy(); delete charts['stockCandlestick']; }
-            const canvas = document.getElementById('stockCandlestickChart');
-            if (!canvas || !data.length) return;
-
-            const { gridColor, textColor } = getStockChartTheme();
-            const labels = data.map(d => d.date);
-            const closes = data.map(d => parseFloat(d.close));
-
-            const datasets = [{
-                label: 'Close Price',
-                data: closes,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.08)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.15,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                order: 10
-            }];
-
-            if (stockOverlays.sma20) {
-                datasets.push({
-                    label: 'SMA 20',
-                    data: calculateSMA(closes, 20),
-                    borderColor: '#10b981',
-                    borderWidth: 1.5,
-                    borderDash: [6, 3],
-                    fill: false,
-                    tension: 0.3,
-                    pointRadius: 0,
-                    order: 5
-                });
-            }
-
-            if (stockOverlays.sma50) {
-                datasets.push({
-                    label: 'SMA 50',
-                    data: calculateSMA(closes, 50),
-                    borderColor: '#f59e0b',
-                    borderWidth: 1.5,
-                    borderDash: [2, 4],
-                    fill: false,
-                    tension: 0.3,
-                    pointRadius: 0,
-                    order: 4
-                });
-            }
-
-            if (stockOverlays.bb) {
-                const bb = calculateBollingerBands(closes, 20, 2);
-                datasets.push({
-                    label: 'BB Upper',
-                    data: bb.map(v => v ? v.upper : null),
-                    borderColor: 'rgba(139,92,246,0.7)',
-                    borderWidth: 1,
-                    fill: false,
-                    tension: 0.3,
-                    pointRadius: 0,
-                    order: 3
-                });
-                datasets.push({
-                    label: 'BB Lower',
-                    data: bb.map(v => v ? v.lower : null),
-                    borderColor: 'rgba(139,92,246,0.7)',
-                    borderWidth: 1,
-                    fill: '-1',
-                    backgroundColor: 'rgba(139,92,246,0.07)',
-                    tension: 0.3,
-                    pointRadius: 0,
-                    order: 2
-                });
-            }
-
-            charts['stockCandlestick'] = new Chart(canvas, {
-                type: 'line',
-                data: { labels, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 2.5,
-                    animation: { duration: 300 },
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => {
-                                    if (ctx.dataset.label === 'Close Price') {
-                                        const d = data[ctx.dataIndex];
-                                        return [
-                                            `Close: ${formatCurrency(d.close)}`,
-                                            d.open ? `Open: ${formatCurrency(d.open)}` : null,
-                                            d.high ? `High: ${formatCurrency(d.high)}` : null,
-                                            d.low ? `Low: ${formatCurrency(d.low)}` : null
-                                        ].filter(Boolean);
-                                    }
-                                    return `${ctx.dataset.label}: ${ctx.parsed.y !== null ? formatCurrency(ctx.parsed.y) : '--'}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
-                        y: { ticks: { color: textColor, callback: v => formatCurrency(v), font: { size: 10 } }, grid: { color: gridColor }, beginAtZero: false }
-                    }
-                }
-            });
-        }
-
-        function renderStockRsiChart(data) {
-            if (charts['stockRsi']) { charts['stockRsi'].destroy(); delete charts['stockRsi']; }
-            const canvas = document.getElementById('stockRsiChart');
-            if (!canvas || !data.length) return;
-
-            const { gridColor, textColor } = getStockChartTheme();
-            const labels = data.map(d => d.date);
-            const closes = data.map(d => parseFloat(d.close));
-            const rsi = calculateRSI(closes, 14);
-
-            // Overbought/oversold reference lines as flat datasets
-            const ob = labels.map(() => 70);
-            const os = labels.map(() => 30);
-
-            charts['stockRsi'] = new Chart(canvas, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            label: 'RSI (14)',
-                            data: rsi,
-                            borderColor: '#3b82f6',
-                            borderWidth: 2,
-                            fill: false,
-                            tension: 0.25,
-                            pointRadius: 0,
-                            pointHoverRadius: 4,
-                            order: 10
-                        },
-                        {
-                            label: 'Overbought (70)',
-                            data: ob,
-                            borderColor: 'rgba(239,68,68,0.5)',
-                            borderWidth: 1,
-                            borderDash: [4, 4],
-                            fill: false,
-                            pointRadius: 0,
-                            order: 5
-                        },
-                        {
-                            label: 'Oversold (30)',
-                            data: os,
-                            borderColor: 'rgba(16,185,129,0.5)',
-                            borderWidth: 1,
-                            borderDash: [4, 4],
-                            fill: false,
-                            pointRadius: 0,
-                            order: 5
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 3.5,
-                    animation: { duration: 300 },
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } }
-                    },
-                    scales: {
-                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
-                        y: {
-                            min: 0, max: 100,
-                            ticks: { color: textColor, font: { size: 10 }, stepSize: 20 },
-                            grid: { color: gridColor }
-                        }
-                    }
-                }
-            });
-        }
-
-        function renderStockMacdChart(data) {
-            if (charts['stockMacd']) { charts['stockMacd'].destroy(); delete charts['stockMacd']; }
-            const canvas = document.getElementById('stockMacdChart');
-            if (!canvas || !data.length) return;
-
-            const { gridColor, textColor } = getStockChartTheme();
-            const labels = data.map(d => d.date);
-            const closes = data.map(d => parseFloat(d.close));
-            const macdData = calculateMACD(closes, 12, 26, 9);
-
-            const histColors = macdData.map(d =>
-                d.histogram === null ? 'transparent' :
-                d.histogram >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'
-            );
-
-            charts['stockMacd'] = new Chart(canvas, {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            type: 'bar',
-                            label: 'Histogram',
-                            data: macdData.map(d => d.histogram),
-                            backgroundColor: histColors,
-                            borderWidth: 0,
-                            borderRadius: 1,
-                            order: 5
-                        },
-                        {
-                            type: 'line',
-                            label: 'MACD',
-                            data: macdData.map(d => d.macd),
-                            borderColor: '#3b82f6',
-                            borderWidth: 1.5,
-                            fill: false,
-                            tension: 0.2,
-                            pointRadius: 0,
-                            order: 1
-                        },
-                        {
-                            type: 'line',
-                            label: 'Signal',
-                            data: macdData.map(d => d.signal),
-                            borderColor: '#f59e0b',
-                            borderWidth: 1.5,
-                            fill: false,
-                            tension: 0.2,
-                            pointRadius: 0,
-                            order: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 3.5,
-                    animation: { duration: 300 },
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } }
-                    },
-                    scales: {
-                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
-                        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
-                    }
-                }
-            });
-        }
-
-        function renderStockDrawdownChart(data) {
-            if (charts['stockDrawdown']) { charts['stockDrawdown'].destroy(); delete charts['stockDrawdown']; }
-            const canvas = document.getElementById('stockDrawdownChart');
-            if (!canvas || !data.length) return;
-
-            const { gridColor, textColor } = getStockChartTheme();
-            const labels = data.map(d => d.date);
-            const closes = data.map(d => parseFloat(d.close));
-            const { drawdownSeries } = calculateMaxDrawdown(closes);
-
-            charts['stockDrawdown'] = new Chart(canvas, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Drawdown %',
-                        data: drawdownSeries,
-                        borderColor: '#ef4444',
-                        borderWidth: 1.5,
-                        fill: 'origin',
-                        backgroundColor: 'rgba(239,68,68,0.2)',
-                        tension: 0.15,
-                        pointRadius: 0,
-                        pointHoverRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 3.5,
-                    animation: { duration: 300 },
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 }, boxWidth: 12, padding: 10 } },
-                        tooltip: {
-                            callbacks: { label: ctx => `Drawdown: ${ctx.parsed.y.toFixed(2)}%` }
-                        }
-                    },
-                    scales: {
-                        x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
-                        y: {
-                            ticks: { color: textColor, font: { size: 10 }, callback: v => v.toFixed(1) + '%' },
-                            grid: { color: gridColor }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ==========================================
-        // CORRELATION UTILITIES
-        // ==========================================
-
-        function spearmanCorrelation(x, y) {
-            const n = Math.min(x.length, y.length);
-            if (n < 2) return 0;
-            const xs = x.slice(0, n);
-            const ys = y.slice(0, n);
-
-            function rankArray(arr) {
-                const sorted = arr.slice().sort((a, b) => a - b);
-                return arr.map(v => {
-                    const indices = sorted.reduce((acc, sv, i) => sv === v ? acc.concat(i + 1) : acc, []);
-                    return indices.reduce((s, r) => s + r, 0) / indices.length;
-                });
-            }
-
-            const rx = rankArray(xs);
-            const ry = rankArray(ys);
-            return pearsonCorrelation(rx, ry);
-        }
-
-        function rollingCorrelation(pairs, window) {
-            // pairs: array of {date, views, close}
-            const result = [];
-            for (let i = window - 1; i < pairs.length; i++) {
-                const slice = pairs.slice(i - window + 1, i + 1);
-                const xArr = slice.map(p => p.views);
-                const yArr = slice.map(p => p.close);
-                const r = corrWindow_type === 'spearman'
-                    ? spearmanCorrelation(xArr, yArr)
-                    : pearsonCorrelation(xArr, yArr);
-                const pVal = correlationPValue(r, slice.length);
-                result.push({ date: pairs[i].date, r, pValue: pVal });
-            }
-            return result;
-        }
-
-        function calculateContentImpactScore(ytData, window = 30) {
-            if (!ytData || ytData.length === 0) return [];
-            const result = [];
-            for (let i = 0; i < ytData.length; i++) {
-                const slice = ytData.slice(Math.max(0, i - window + 1), i + 1);
-                const views = ytData[i].daily_views || 0;
-                const subs = ytData[i].daily_subscribers || ytData[i].subscribers || 0;
-                const uploads = (ytData[i].daily_videos || 0) > 0 ? 1 : 0;
-
-                const avgViews = slice.reduce((s, d) => s + (d.daily_views || 0), 0) / slice.length || 1;
-                const avgSubs = slice.reduce((s, d) => s + (d.daily_subscribers || d.subscribers || 0), 0) / slice.length || 1;
-
-                // velocity: current week vs prev week
-                let velocity = 1;
-                if (i >= 13) {
-                    const curr7 = ytData.slice(i - 6, i + 1).reduce((s, d) => s + (d.daily_views || 0), 0);
-                    const prev7 = ytData.slice(i - 13, i - 6).reduce((s, d) => s + (d.daily_views || 0), 0);
-                    const avgVelocity = prev7 === 0 ? curr7 : (curr7 + prev7) / 2 || 1;
-                    velocity = avgVelocity === 0 ? 1 : curr7 / avgVelocity;
-                }
-
-                const rawScore = (views / avgViews * 0.4) + (subs / avgSubs * 0.3) + (uploads * 0.2) + (velocity * 0.1);
-                result.push({ date: ytData[i].date, rawScore });
-            }
-
-            // Normalize 0-100
-            const rawScores = result.map(r => r.rawScore);
-            const minS = Math.min(...rawScores);
-            const maxS = Math.max(...rawScores);
-            const range = maxS - minS || 1;
-            return result.map(r => ({ date: r.date, score: ((r.rawScore - minS) / range) * 100 }));
         }
 
         // ==========================================
@@ -4064,335 +3407,6 @@
         }
 
         // ==========================================
-        // CORRELATION SECTION RENDERING
-        // ==========================================
-
-        function updateCorrStats(pairs) {
-            if (!pairs || pairs.length < 5) {
-                ['corrStatR','corrStatRho','corrStatP','corrStatR2','corrStatN','corrStatBestLag'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.textContent = 'n/a';
-                });
-                return;
-            }
-            const xArr = pairs.map(p => p.views);
-            const yArr = pairs.map(p => p.close);
-            const r = pearsonCorrelation(xArr, yArr);
-            const rho = spearmanCorrelation(xArr, yArr);
-            const pVal = correlationPValue(r, pairs.length);
-            const r2 = r * r;
-
-            // Best lag from lead-lag analysis
-            const lagOffsets = [-5, -3, -1, 0, 1, 3, 5];
-            let bestLag = 0, bestAbsR = 0;
-            lagOffsets.forEach(lag => {
-                const shifted = lagShiftPairs(pairs, lag);
-                if (shifted.length < 5) return;
-                const lr = pearsonCorrelation(shifted.map(p=>p.views), shifted.map(p=>p.close));
-                if (Math.abs(lr) > bestAbsR) { bestAbsR = Math.abs(lr); bestLag = lag; }
-            });
-
-            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-            setEl('corrStatR', r.toFixed(3));
-            setEl('corrStatRho', rho.toFixed(3));
-            setEl('corrStatP', pVal < 0.001 ? '<0.001' : pVal.toFixed(3));
-            setEl('corrStatR2', r2.toFixed(3));
-            setEl('corrStatN', pairs.length);
-            setEl('corrStatBestLag', bestLag === 0 ? '0d' : (bestLag > 0 ? `+${bestLag}d` : `${bestLag}d`));
-        }
-
-        function lagShiftPairs(pairs, lag) {
-            // lag > 0: views at t-lag vs close at t (views leads stock)
-            // lag < 0: views at t vs close at t+|lag| (stock leads views)
-            const result = [];
-            const absLag = Math.abs(lag);
-            if (lag > 0) {
-                // views leads stock: pair views[i] with close[i+lag]
-                for (let i = 0; i + lag < pairs.length; i++) {
-                    result.push({ views: pairs[i].views, close: pairs[i + lag].close });
-                }
-            } else if (lag < 0) {
-                // stock leads views: pair views[i+|lag|] with close[i]
-                for (let i = 0; i + absLag < pairs.length; i++) {
-                    result.push({ views: pairs[i + absLag].views, close: pairs[i].close });
-                }
-            } else {
-                for (let i = 0; i < pairs.length; i++) {
-                    result.push({ views: pairs[i].views, close: pairs[i].close });
-                }
-            }
-            return result;
-        }
-
-        function renderCorrelationSection(ytData, stData) {
-            if (!ytData || !stData || ytData.length === 0 || stData.length === 0) return;
-
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const gridColor = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(0,0,0,0.08)';
-            const textColor = isDark ? '#94a3b8' : '#6b7280';
-
-            // Build date-joined pairs (ascending by date)
-            const stockMap = {};
-            stData.forEach(s => { stockMap[s.date] = parseFloat(s.close); });
-            const pairs = [];
-            // ytData arrives descending from renderAllCharts (reversed), re-sort ascending
-            const ytAsc = [...ytData].sort((a,b) => a.date < b.date ? -1 : 1);
-            ytAsc.forEach(yt => {
-                if (stockMap[yt.date] !== undefined) {
-                    pairs.push({ date: yt.date, views: yt.daily_views || 0, close: stockMap[yt.date] });
-                }
-            });
-
-            if (pairs.length < 10) return;
-
-            updateCorrStats(pairs);
-
-            // --------------------------------------------------
-            // Chart 1: Rolling Correlation
-            // --------------------------------------------------
-            (function() {
-                const canvas = document.getElementById('corrRollingChart');
-                if (!canvas) return;
-                const win = corrWindow;
-                if (pairs.length < win) return;
-                if (charts['corrRolling']) { charts['corrRolling'].destroy(); delete charts['corrRolling']; }
-
-                const rolling = rollingCorrelation(pairs, win);
-                const labels = rolling.map(r => r.date);
-                const rVals = rolling.map(r => r.r);
-                // Insignificant band: show r where p > 0.05, else null
-                const insigBand = rolling.map(r => r.pValue > 0.05 ? r.r : null);
-
-                charts['corrRolling'] = new Chart(canvas, {
-                    type: 'line',
-                    data: {
-                        labels,
-                        datasets: [
-                            {
-                                label: `Rolling r (${win}d, ${corrWindow_type})`,
-                                data: rVals,
-                                borderColor: '#3b82f6',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                fill: false,
-                                tension: 0.2,
-                            },
-                            {
-                                label: 'Insignificant (p>0.05)',
-                                data: insigBand,
-                                borderColor: 'transparent',
-                                backgroundColor: 'rgba(239,68,68,0.12)',
-                                pointRadius: 0,
-                                fill: 'origin',
-                                tension: 0.2,
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: 2.5,
-                        animation: { duration: 400 },
-                        plugins: {
-                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => {
-                                        if (ctx.datasetIndex === 0) {
-                                            const pv = rolling[ctx.dataIndex]?.pValue;
-                                            const sig = pv !== undefined ? (pv < 0.05 ? ' *' : '') : '';
-                                            return `r = ${ctx.parsed.y.toFixed(3)}${sig}`;
-                                        }
-                                        return null;
-                                    }
-                                }
-                            },
-                            annotation: {
-                                annotations: {
-                                    zeroLine: {
-                                        type: 'line', yMin: 0, yMax: 0,
-                                        borderColor: isDark ? 'rgba(148,163,184,0.4)' : 'rgba(0,0,0,0.2)',
-                                        borderWidth: 1, borderDash: [4, 4]
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { ticks: { color: textColor, maxTicksLimit: 8, font: { size: 10 } }, grid: { color: gridColor } },
-                            y: {
-                                min: -1, max: 1,
-                                ticks: { color: textColor, font: { size: 10 }, stepSize: 0.5 },
-                                grid: { color: gridColor }
-                            }
-                        }
-                    }
-                });
-            })();
-
-            // --------------------------------------------------
-            // Chart 2: Lead-Lag Analysis
-            // --------------------------------------------------
-            (function() {
-                const canvas = document.getElementById('corrLeadLagChart');
-                if (!canvas) return;
-                if (charts['corrLeadLag']) { charts['corrLeadLag'].destroy(); delete charts['corrLeadLag']; }
-
-                const lagOffsets = [-5, -3, -1, 0, 1, 3, 5];
-                const lagResults = lagOffsets.map(lag => {
-                    const shifted = lagShiftPairs(pairs, lag);
-                    if (shifted.length < 5) return { lag, r: 0, pValue: 1 };
-                    const r = pearsonCorrelation(shifted.map(p=>p.views), shifted.map(p=>p.close));
-                    const pVal = correlationPValue(r, shifted.length);
-                    return { lag, r, pValue: pVal };
-                });
-
-                const labels = lagResults.map(lr => lr.lag === 0 ? '0' : (lr.lag > 0 ? `+${lr.lag}d` : `${lr.lag}d`));
-                const rVals = lagResults.map(lr => lr.r);
-                const bgColors = lagResults.map(lr => lr.r >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)');
-                const borderColors = lagResults.map(lr => lr.r >= 0 ? '#10b981' : '#ef4444');
-
-                charts['corrLeadLag'] = new Chart(canvas, {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [{
-                            label: 'Pearson r at lag',
-                            data: rVals,
-                            backgroundColor: bgColors,
-                            borderColor: borderColors,
-                            borderWidth: 1.5,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: 2.5,
-                        animation: { duration: 400 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => {
-                                        const lr = lagResults[ctx.dataIndex];
-                                        const pStr = lr.pValue < 0.001 ? '<0.001' : lr.pValue.toFixed(3);
-                                        return [`r = ${lr.r.toFixed(3)}`, `p = ${pStr}`];
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor },
-                                 title: { display: true, text: 'Lag offset (days, + = views leads stock)', color: textColor, font: { size: 11 } } },
-                            y: {
-                                min: -1, max: 1,
-                                ticks: { color: textColor, font: { size: 10 } },
-                                grid: { color: gridColor }
-                            }
-                        }
-                    }
-                });
-            })();
-
-            // --------------------------------------------------
-            // Chart 3: Content Impact Score vs Next-Day Return
-            // --------------------------------------------------
-            (function() {
-                const canvas = document.getElementById('corrImpactChart');
-                if (!canvas) return;
-                if (charts['corrImpact']) { charts['corrImpact'].destroy(); delete charts['corrImpact']; }
-
-                const impactScores = calculateContentImpactScore(ytAsc, 30);
-                const impactMap = {};
-                impactScores.forEach(d => { impactMap[d.date] = d.score; });
-
-                // Next-day stock return: (close[t+1] - close[t]) / close[t] * 100
-                const stockDatesSorted = Object.keys(stockMap).sort();
-                const nextDayReturnMap = {};
-                for (let i = 0; i < stockDatesSorted.length - 1; i++) {
-                    const d = stockDatesSorted[i];
-                    const dNext = stockDatesSorted[i + 1];
-                    const ret = ((stockMap[dNext] - stockMap[d]) / stockMap[d]) * 100;
-                    nextDayReturnMap[d] = ret;
-                }
-
-                // Only keep days present in pairs + having next-day return
-                const impactPairs = pairs.filter(p => impactMap[p.date] !== undefined && nextDayReturnMap[p.date] !== undefined);
-                if (impactPairs.length < 5) return;
-
-                const labels = impactPairs.map(p => p.date);
-                const scores = impactPairs.map(p => impactMap[p.date]);
-                const returns = impactPairs.map(p => nextDayReturnMap[p.date]);
-                const avgScore = scores.reduce((s, v) => s + v, 0) / scores.length;
-
-                // Compute summary: avg next-day return on high content days
-                const highDays = impactPairs.filter(p => impactMap[p.date] > avgScore);
-                const avgHighReturn = highDays.length > 0
-                    ? highDays.reduce((s, p) => s + nextDayReturnMap[p.date], 0) / highDays.length
-                    : 0;
-
-                const titleEl = document.getElementById('corrImpactTitle');
-                if (titleEl) {
-                    const sign = avgHighReturn >= 0 ? '+' : '';
-                    titleEl.textContent = `Content Impact Score vs Next-Day Stock Return \u2014 High content days \u2192 avg ${sign}${avgHighReturn.toFixed(2)}% next-day return`;
-                }
-
-                const barColors = scores.map(s => s >= avgScore ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.5)');
-
-                charts['corrImpact'] = new Chart(canvas, {
-                    type: 'bar',
-                    data: {
-                        labels,
-                        datasets: [
-                            {
-                                label: 'Content Impact Score',
-                                type: 'bar',
-                                data: scores,
-                                backgroundColor: barColors,
-                                yAxisID: 'y',
-                            },
-                            {
-                                label: 'Next-Day Stock Return (%)',
-                                type: 'line',
-                                data: returns,
-                                borderColor: '#8b5cf6',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                fill: false,
-                                tension: 0.2,
-                                yAxisID: 'y1',
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: 2.5,
-                        animation: { duration: 400 },
-                        plugins: {
-                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => {
-                                        if (ctx.datasetIndex === 0) return `Impact: ${ctx.parsed.y.toFixed(1)}`;
-                                        return `Next-day return: ${ctx.parsed.y.toFixed(2)}%`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { ticks: { color: textColor, maxTicksLimit: 10, font: { size: 10 } }, grid: { color: gridColor } },
-                            y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'Impact Score', color: textColor, font: { size: 10 } } },
-                            y1: { position: 'right', ticks: { color: '#8b5cf6', font: { size: 10 }, callback: v => `${v.toFixed(1)}%` }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Next-Day Return %', color: '#8b5cf6', font: { size: 10 } } }
-                        }
-                    }
-                });
-            })();
-        }
-
-        // ==========================================
-        // CHART RENDERING
-        // ==========================================
-        // ==========================================
         // ANOMALIES SECTION
         // ==========================================
 
@@ -4788,15 +3802,8 @@
             renderVolumeChart(filteredStock);
             renderDistributionChart(filteredYT);
 
-            // Stock Analysis section charts (renders even if section is hidden,
-            // so they're ready when navigated to)
-            renderStockSection(filteredStock);
-
             // Content Analytics section
             renderContentSection(filteredYT);
-
-            // Correlation section
-            renderCorrelationSection(filteredYT, filteredStock);
 
             // Anomalies section
             renderAnomaliesSection(filteredYT, filteredStock);
@@ -4863,21 +3870,20 @@
           if (!canvas) return;
           if (charts['overviewCorrelation']) { charts['overviewCorrelation'].destroy(); delete charts['overviewCorrelation']; }
 
-          // Build rolling 30-day correlation
-          // Pair by date
-          const stMap = new Map(stData.map(d => [d.date, d.close]));
-          const paired = ytData
-            .filter(d => stMap.has(d.date) && d.daily_views)
-            .map(d => ({ date: d.date, views: d.daily_views, close: stMap.get(d.date) }));
+          // Rolling 30-day correlation between daily PRICE RETURN and daily VIEWS RETURN.
+          // Inputs arrive ascending after the renderAllCharts .reverse(), so we can walk forward.
+          const stMap = new Map(stData.map(d => [d.date, parseFloat(d.close)]));
+          const ytAsc = [...ytData].sort((a, b) => a.date < b.date ? -1 : 1);
+          const retPairs = returnsPairs(ytAsc, stMap);
 
           const labels = [], rValues = [], insigValues = [];
-          for (let i = 29; i < paired.length; i++) {
-            const window = paired.slice(i - 29, i + 1);
-            const r = pearsonCorrelation(window.map(p=>p.views), window.map(p=>p.close));
+          for (let i = 29; i < retPairs.length; i++) {
+            const window = retPairs.slice(i - 29, i + 1);
+            const r = pearsonCorrelation(window.map(p => p.priceRet), window.map(p => p.viewsRet));
             const p = correlationPValue(r, window.length);
-            labels.push(paired[i].date);
+            labels.push(retPairs[i].date);
             rValues.push(r);
-            insigValues.push(p > 0.05 ? r : null); // null where significant (p <= 0.05)
+            insigValues.push(p > 0.05 ? r : null);
           }
 
           const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -5386,7 +4392,7 @@
                 if (prevRow && prevRow.daily_views) {
                     const change = row.daily_views - prevRow.daily_views;
                     const pct = calculatePercentageChange(row.daily_views, prevRow.daily_views);
-                    viewChange = (change > 0 ? '+' : '') + formatNumberFull(change);
+                    viewChange = (change > 0 ? '+' : '') + formatViews(change);
                     viewChangePct = formatPercentage(pct);
                     viewClass = change >= 0 ? 'positive' : 'negative';
                 }
@@ -5395,7 +4401,7 @@
                 let subChange = '--', subClass = '';
                 if (prevRow && prevRow.subscribers) {
                     const sc = row.subscribers - prevRow.subscribers;
-                    subChange = (sc > 0 ? '+' : '') + formatNumberFull(sc);
+                    subChange = (sc > 0 ? '+' : '') + formatViews(sc);
                     subClass = sc >= 0 ? 'positive' : 'negative';
                 }
 
@@ -5409,7 +4415,7 @@
                     stockOpen = stock.open ? formatCurrency(stock.open) : '--';
                     stockHigh = stock.high ? formatCurrency(stock.high) : '--';
                     stockLow = stock.low ? formatCurrency(stock.low) : '--';
-                    stockVol = stock.volume ? formatNumberFull(stock.volume) : '--';
+                    stockVol = stock.volume ? formatViews(stock.volume) : '--';
 
                     // Find prev stock
                     const stockIdx = allStockData.findIndex(s => s.date === stock.date);
@@ -5425,18 +4431,18 @@
 
                 tr.innerHTML = `
                     <td>${row.date}</td>
-                    <td>${formatNumberFull(row.daily_views)}</td>
-                    <td class="${viewClass}">${viewChange}</td>
-                    <td class="${viewClass}">${viewChangePct}</td>
-                    <td>${formatNumberFull(row.subscribers)}</td>
-                    <td class="${subClass}">${subChange}</td>
-                    <td>${formatNumberFull(row.total_views)}</td>
-                    <td>${stockClose}</td>
-                    <td>${stockOpen}</td>
-                    <td>${stockHigh}</td>
-                    <td>${stockLow}</td>
-                    <td>${stockVol}</td>
-                    <td class="${stockClass}">${stockChangeStr}</td>
+                    <td class="tabular-nums">${formatViews(row.daily_views)}</td>
+                    <td class="${viewClass} tabular-nums">${viewChange}</td>
+                    <td class="${viewClass} tabular-nums">${viewChangePct}</td>
+                    <td class="tabular-nums">${formatViews(row.subscribers)}</td>
+                    <td class="${subClass} tabular-nums">${subChange}</td>
+                    <td class="tabular-nums">${formatViews(row.total_views)}</td>
+                    <td class="tabular-nums">${stockClose}</td>
+                    <td class="tabular-nums">${stockOpen}</td>
+                    <td class="tabular-nums">${stockHigh}</td>
+                    <td class="tabular-nums">${stockLow}</td>
+                    <td class="tabular-nums">${stockVol}</td>
+                    <td class="${stockClass} tabular-nums">${stockChangeStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -5498,9 +4504,7 @@
 
         const SECTION_TITLES = {
             overview: 'Overview',
-            stock: 'Stock Analysis',
             content: 'Content Analytics',
-            correlation: 'Correlation Analysis',
             anomalies: 'Anomalies',
             datatable: 'Data Table'
         };
@@ -5539,28 +4543,11 @@
                 renderAllChartsDebounced();
             }
 
-            // Re-render stock charts when navigating to stock section
-            if (section === 'stock') {
-                setTimeout(() => {
-                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
-                    renderStockSection(filteredStock);
-                }, 50);
-            }
-
             // Re-render content charts when navigating to content section
             if (section === 'content') {
                 setTimeout(() => {
                     const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
                     renderContentSection(filteredYT);
-                }, 50);
-            }
-
-            // Re-render correlation charts when navigating to correlation section
-            if (section === 'correlation') {
-                setTimeout(() => {
-                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
-                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
-                    renderCorrelationSection(filteredYT, filteredStock);
                 }, 50);
             }
 
@@ -5940,36 +4927,8 @@
         // ==========================================
         // INIT
         // ==========================================
-        function wireCorrToggleButtons() {
-            document.querySelectorAll('.corr-window-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    corrWindow = parseInt(btn.getAttribute('data-window'), 10);
-                    document.querySelectorAll('.corr-window-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    // Re-render rolling chart only
-                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
-                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
-                    renderCorrelationSection(filteredYT, filteredStock);
-                });
-            });
-
-            document.querySelectorAll('.corr-type-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    corrWindow_type = btn.getAttribute('data-type');
-                    document.querySelectorAll('.corr-type-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    // Re-render rolling chart + stats
-                    const filteredYT = filterDataByTimePeriod([...allYoutubeData].reverse());
-                    const filteredStock = filterDataByTimePeriod([...allStockData].reverse());
-                    renderCorrelationSection(filteredYT, filteredStock);
-                });
-            });
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             console.log('Dashboard initialized');
-            wireStockToggleButtons();
-            wireCorrToggleButtons();
             wireAnomalyButtons();
             wireDataTableSection();
             fetchData();

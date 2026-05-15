@@ -3,8 +3,6 @@ import { requireCronAuth } from '@/lib/cron-auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { env } from '@/lib/env';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
 /**

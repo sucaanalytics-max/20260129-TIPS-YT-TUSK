@@ -2,10 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "crons": [
-    { "path": "/api/cron/youtube-channels",   "schedule": "30 0 * * *"   },
-    { "path": "/api/cron/youtube-videos",     "schedule": "0 1 * * *"    },
+    { "path": "/api/cron/youtube-channels",   "schedule": "30 0 * * *"    },
+    { "path": "/api/cron/youtube-videos",     "schedule": "0 1 * * *"     },
     { "path": "/api/cron/stocks",             "schedule": "30 10 * * 1-5" },
+    { "path": "/api/cron/market-index",       "schedule": "35 10 * * 1-5" },
     { "path": "/api/cron/corporate-actions",  "schedule": "0 11 * * 1-5"  },
+    { "path": "/api/cron/earnings",           "schedule": "5 11 * * 1-5"  },
+    { "path": "/api/stats/recompute",         "schedule": "15 11 * * 1-5" },
+    { "path": "/api/stats/event_study",       "schedule": "20 11 * * 1-5" },
     { "path": "/api/cron/health",             "schedule": "0 12 * * *"    }
   ]
 }

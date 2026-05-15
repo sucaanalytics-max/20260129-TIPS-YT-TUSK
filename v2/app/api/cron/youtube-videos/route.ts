@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireCronAuth } from '@/lib/cron-auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { fetchUploadIds, fetchVideos } from '@/lib/youtube';
+import { bumpTags, CACHE_TAGS } from '@/lib/revalidate';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 /**
@@ -65,7 +64,9 @@ export async function GET(req: Request) {
           description: v.snippet.description ?? null,
           published_at: v.snippet.publishedAt,
           duration_seconds: parseDurationSeconds(v.contentDetails?.duration),
-          is_short: isShort(v.contentDetails?.duration),
+          // is_short is NOT NULL in schema with default false; coerce missing
+          // duration to false rather than sending null which overrides default.
+          is_short: isShort(v.contentDetails?.duration) ?? false,
           category_id: v.snippet.categoryId ?? null,
           language: v.snippet.defaultLanguage ?? v.snippet.defaultAudioLanguage ?? null,
           tags: v.snippet.tags ?? null,
@@ -76,6 +77,24 @@ export async function GET(req: Request) {
           .upsert(dimRows, { onConflict: 'video_id' });
         if (dimErr) throw new Error(`dim_video: ${dimErr.message}`);
         videosUpserted += dimRows.length;
+
+        // Emit dim_event 'release' rows for the event-study pipeline. Idempotent
+        // via uq_dim_event_video (event_type='release', video_id).
+        const eventRows = videos.map((v) => ({
+          event_type: 'release',
+          event_date: v.snippet.publishedAt.slice(0, 10),
+          label: v.snippet.title.slice(0, 200),
+          channel_id: v.snippet.channelId,
+          video_id: v.id,
+          meta: {
+            duration_seconds: parseDurationSeconds(v.contentDetails?.duration),
+            is_short: isShort(v.contentDetails?.duration),
+            language: v.snippet.defaultLanguage ?? v.snippet.defaultAudioLanguage ?? null,
+          },
+        }));
+        await supabase
+          .from('dim_event')
+          .upsert(eventRows, { onConflict: 'event_type,video_id', ignoreDuplicates: false });
 
         // Prior video views for delta math (today's run's prior is yesterday's facts)
         const { data: priorRows } = await supabase
@@ -127,6 +146,11 @@ export async function GET(req: Request) {
       facts_upserted: factsUpserted,
       errors,
     });
+
+    if (videosUpserted > 0 || factsUpserted > 0) {
+      bumpTags(CACHE_TAGS.videos, CACHE_TAGS.events, CACHE_TAGS.overview, CACHE_TAGS.ops);
+    }
+
     return NextResponse.json({
       ok: true,
       run_id: runId,

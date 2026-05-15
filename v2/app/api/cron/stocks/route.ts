@@ -3,9 +3,8 @@ import { requireCronAuth } from '@/lib/cron-auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { fetchStockPrice } from '@/lib/stocks';
 import { stockSymbols } from '@/lib/env';
+import { bumpTags, CACHE_TAGS } from '@/lib/revalidate';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
@@ -68,8 +67,26 @@ export async function GET(req: Request) {
 
     const okCount = results.filter((r) => r.ok).length;
     const status = okCount === results.length ? 'ok' : okCount > 0 ? 'partial' : 'failed';
-    await closeRun(supabase, runId, status, results.length, okCount, { results });
-    return NextResponse.json({ ok: status !== 'failed', run_id: runId, results });
+
+    // Refresh adjusted_close so log-returns are continuous through any
+    // ex-date that fell between runs. RPC defined in 0005_adjusted_close.sql.
+    const recomputed: Array<{ symbol: string; rows_written: number | null; error?: string }> = [];
+    for (const r of results) {
+      if (!r.ok) continue;
+      const { data, error } = await supabase.rpc('recompute_adjusted_close', { target_symbol: r.symbol });
+      if (error) {
+        recomputed.push({ symbol: r.symbol, rows_written: null, error: error.message });
+      } else {
+        const row = Array.isArray(data) ? data[0] : data;
+        recomputed.push({ symbol: r.symbol, rows_written: row?.rows_written ?? null });
+      }
+    }
+
+    await closeRun(supabase, runId, status, results.length, okCount, { results, recomputed });
+
+    if (okCount > 0) bumpTags(CACHE_TAGS.stock, CACHE_TAGS.overview, CACHE_TAGS.ops);
+
+    return NextResponse.json({ ok: status !== 'failed', run_id: runId, results, recomputed });
   } catch (err) {
     const message = (err as Error).message;
     await supabase.from('ops_error_log').insert({

@@ -1,16 +1,28 @@
 import 'server-only';
 import { getServiceSupabase } from '@/lib/supabase/server';
+import {
+  viewMomentum,
+  catalogFreshness,
+  leadLagRead,
+  relativeStrength,
+  divergence,
+  subscriberDrift,
+  type SignalsSnapshot,
+  type VideoFreshnessInput,
+} from '@/lib/signals';
+
+export type { SignalsSnapshot } from '@/lib/signals';
 
 /**
  * Server-only data layer for the Tusk v2 dashboard.
  *
- * Tables are all under the public schema in the configured Supabase project:
- *   dim_channel, dim_video, fct_channel_daily, fct_video_daily, fct_price_daily.
- *
- * These functions are designed to be call-once-per-render and tolerate the
- * tables not existing yet (returns nulls / empty arrays). The frontend renders
- * placeholders in that state.
+ * Every function is designed to call-once-per-render and tolerate missing
+ * tables/rows during early ingest (returns nulls / empty arrays). The route
+ * components render placeholders in that state. Cache invalidation is via
+ * cacheTag()s named in [v2/lib/revalidate.ts](v2/lib/revalidate.ts).
  */
+
+// ---- Types ------------------------------------------------------------------
 
 export interface OverviewKpi {
   label: string;
@@ -30,6 +42,94 @@ export interface FreshnessRow {
   row_count: number;
 }
 
+export interface DualAxisRow {
+  date: string;
+  daily_views: number | null;
+  close: number | null;
+  adjusted_close: number | null;
+}
+
+export interface RollingCorrelationRow {
+  asof: string;
+  window_days: number;
+  lag_days: number;
+  pearson_r: number;
+  spearman_rho: number | null;
+  n_obs: number;
+  p_value_raw: number | null;
+  p_value_fdr: number | null;
+  is_significant: boolean | null;
+}
+
+export interface LeadLagRow {
+  lag_days: number;
+  pearson_r: number;
+  p_value_fdr: number | null;
+  is_significant: boolean | null;
+}
+
+export interface EventStudyRow {
+  event_type: string;
+  day_offset: number;
+  mean_ar: number;
+  mean_car: number;
+  ci_lo: number;
+  ci_hi: number;
+  n_obs: number;
+}
+
+export interface ChannelLeaderboardRow {
+  channel_id: string;
+  channel_name: string;
+  company: string;
+  language: string | null;
+  date: string;
+  total_views: number | null;
+  subscribers: number | null;
+  daily_views: number | null;
+  daily_subscribers: number | null;
+  daily_videos: number | null;
+}
+
+export interface LanguageRollupRow {
+  language: string | null;
+  company: string;
+  channel_count: number;
+  total_views: number | null;
+  subscribers: number | null;
+  daily_views_7d_avg: number | null;
+}
+
+export interface EventTimelineRow {
+  event_id: number;
+  event_date: string;
+  event_type: string;
+  label: string;
+  channel_id: string | null;
+  company: string | null;
+}
+
+export interface OpsRunRow {
+  run_id: number;
+  source: string;
+  started_at: string;
+  ended_at: string | null;
+  status: string;
+  rows_in: number | null;
+  rows_out: number | null;
+  detail: Record<string, unknown> | null;
+}
+
+export interface OpsErrorRow {
+  id: number;
+  error_type: string;
+  error_message: string;
+  ingest_run_id: number | null;
+  created_at: string;
+}
+
+// ---- Freshness + Overview (existing, expanded) -----------------------------
+
 export async function getFreshness(): Promise<FreshnessRow[]> {
   const supabase = getServiceSupabase();
 
@@ -42,7 +142,7 @@ export async function getFreshness(): Promise<FreshnessRow[]> {
         .limit(1);
       return {
         source: table,
-        latest_date: data?.[0]?.date ?? null,
+        latest_date: (data?.[0] as { date?: string } | undefined)?.date ?? null,
         row_count: count ?? 0,
       };
     } catch {
@@ -54,13 +154,13 @@ export async function getFreshness(): Promise<FreshnessRow[]> {
     one('fct_channel_daily'),
     one('fct_video_daily'),
     one('fct_price_daily'),
+    one('dim_market_index'),
   ]);
 }
 
 export async function getOverview(): Promise<OverviewData> {
   const supabase = getServiceSupabase();
 
-  // Latest price (TIPSMUSIC)
   const { data: priceRows } = await supabase
     .from('fct_price_daily')
     .select('date, close, daily_change, daily_change_pct')
@@ -69,10 +169,10 @@ export async function getOverview(): Promise<OverviewData> {
     .limit(1);
   const latestPrice = priceRows?.[0];
 
-  // Latest aggregate Tips channel-day
   const { data: channelRows } = await supabase
-    .from('fct_channel_daily')
+    .from('v_company_daily')
     .select('date, daily_views, daily_subscribers, total_views, subscribers')
+    .eq('company', 'TIPSMUSIC')
     .order('date', { ascending: false })
     .limit(1);
   const latestChannel = channelRows?.[0];
@@ -103,15 +203,15 @@ export async function getOverview(): Promise<OverviewData> {
       hint: latestChannel?.date ? `as of ${latestChannel.date}` : 'no data',
     },
     {
-      label: 'Daily new subscribers',
+      label: 'Subscribers (Tips total)',
       value:
-        latestChannel?.daily_subscribers != null
-          ? Number(latestChannel.daily_subscribers).toLocaleString()
+        latestChannel?.subscribers != null
+          ? Number(latestChannel.subscribers).toLocaleString()
           : '—',
       hint: 'YouTube rounds subs > 1k',
     },
     {
-      label: 'Total cumulative views',
+      label: 'Cumulative views (Tips)',
       value:
         latestChannel?.total_views != null
           ? Number(latestChannel.total_views).toLocaleString()
@@ -121,3 +221,821 @@ export async function getOverview(): Promise<OverviewData> {
 
   return { asOf, kpis };
 }
+
+// ---- Dual-axis time series --------------------------------------------------
+
+export async function getDualAxisSeries(opts: {
+  from?: string;
+  to?: string;
+  company?: 'TIPSMUSIC' | 'SAREGAMA';
+}): Promise<DualAxisRow[]> {
+  const supabase = getServiceSupabase();
+  const company = opts.company ?? 'TIPSMUSIC';
+  const from = opts.from ?? defaultFromDate(180);
+  const to = opts.to ?? new Date().toISOString().slice(0, 10);
+
+  const [viewsRes, priceRes, adjRes] = await Promise.all([
+    supabase
+      .from('v_company_daily')
+      .select('date, daily_views')
+      .eq('company', company)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('fct_price_daily')
+      .select('date, close')
+      .eq('symbol', company)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, adjusted_close')
+      .eq('symbol', company)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+  ]);
+
+  const viewsByDate = new Map(
+    (viewsRes.data ?? []).map((r) => [r.date as string, Number(r.daily_views ?? 0)]),
+  );
+  const priceByDate = new Map(
+    (priceRes.data ?? []).map((r) => [r.date as string, Number(r.close ?? 0)]),
+  );
+  const adjByDate = new Map(
+    (adjRes.data ?? []).map((r) => [r.date as string, Number(r.adjusted_close ?? 0)]),
+  );
+
+  const dates = new Set<string>([
+    ...viewsByDate.keys(),
+    ...priceByDate.keys(),
+  ]);
+
+  return Array.from(dates)
+    .sort()
+    .map((date) => ({
+      date,
+      daily_views: viewsByDate.has(date) ? viewsByDate.get(date)! : null,
+      close: priceByDate.has(date) ? priceByDate.get(date)! : null,
+      adjusted_close: adjByDate.has(date) ? adjByDate.get(date)! : null,
+    }));
+}
+
+// ---- Correlation ------------------------------------------------------------
+
+export async function getRollingCorrelation(opts: {
+  window: 7 | 30 | 60 | 120;
+  lag?: number;
+}): Promise<RollingCorrelationRow[]> {
+  const supabase = getServiceSupabase();
+  const lag = opts.lag ?? 0;
+  const { data } = await supabase
+    .from('fct_correlation_window')
+    .select('asof, window_days, lag_days, pearson_r, spearman_rho, n_obs, p_value_raw, p_value_fdr, is_significant')
+    .eq('window_days', opts.window)
+    .eq('lag_days', lag)
+    .order('asof', { ascending: true });
+  return (data as RollingCorrelationRow[] | null) ?? [];
+}
+
+export async function getLeadLagScan(opts: { window: 7 | 30 | 60 | 120 }): Promise<LeadLagRow[]> {
+  const supabase = getServiceSupabase();
+  const { data: latest } = await supabase
+    .from('fct_correlation_window')
+    .select('asof')
+    .order('asof', { ascending: false })
+    .limit(1);
+  const asof = latest?.[0]?.asof;
+  if (!asof) return [];
+  const { data } = await supabase
+    .from('fct_correlation_window')
+    .select('lag_days, pearson_r, p_value_fdr, is_significant')
+    .eq('window_days', opts.window)
+    .eq('asof', asof)
+    .order('lag_days', { ascending: true });
+  return (data as LeadLagRow[] | null) ?? [];
+}
+
+// ---- Event study ------------------------------------------------------------
+
+export async function getEventStudy(opts: { eventType?: string }): Promise<EventStudyRow[]> {
+  const supabase = getServiceSupabase();
+  const { data: latest } = await supabase
+    .from('fct_event_study')
+    .select('asof')
+    .order('asof', { ascending: false })
+    .limit(1);
+  const asof = latest?.[0]?.asof;
+  if (!asof) return [];
+
+  let q = supabase
+    .from('fct_event_study')
+    .select('event_type, day_offset, mean_ar, mean_car, ci_lo, ci_hi, n_obs')
+    .eq('asof', asof)
+    .order('day_offset', { ascending: true });
+  if (opts.eventType) q = q.eq('event_type', opts.eventType);
+  const { data } = await q;
+  return (data as EventStudyRow[] | null) ?? [];
+}
+
+export async function getEventTimeline(opts: { since?: string; eventType?: string }): Promise<EventTimelineRow[]> {
+  const supabase = getServiceSupabase();
+  const since = opts.since ?? defaultFromDate(365);
+  let q = supabase
+    .from('dim_event')
+    .select('event_id, event_date, event_type, label, channel_id, company')
+    .gte('event_date', since)
+    .order('event_date', { ascending: false })
+    .limit(500);
+  if (opts.eventType) q = q.eq('event_type', opts.eventType);
+  const { data } = await q;
+  return (data as EventTimelineRow[] | null) ?? [];
+}
+
+// ---- Channels / language breakdown -----------------------------------------
+
+export async function getChannelLeaderboard(opts: { company?: string }): Promise<ChannelLeaderboardRow[]> {
+  const supabase = getServiceSupabase();
+  let q = supabase
+    .from('v_channel_latest')
+    .select('channel_id, channel_name, company, language, date, total_views, subscribers, daily_views, daily_subscribers, daily_videos');
+  if (opts.company) q = q.eq('company', opts.company);
+  const { data } = await q;
+  return (data as ChannelLeaderboardRow[] | null) ?? [];
+}
+
+export async function getLanguageRollup(opts: { from?: string; to?: string }): Promise<LanguageRollupRow[]> {
+  const supabase = getServiceSupabase();
+  const from = opts.from ?? defaultFromDate(7);
+  const to = opts.to ?? new Date().toISOString().slice(0, 10);
+
+  const { data: latest } = await supabase
+    .from('v_channel_latest')
+    .select('channel_id, company, language, total_views, subscribers');
+  const latestRows = (latest as Array<{
+    channel_id: string;
+    company: string;
+    language: string | null;
+    total_views: number | null;
+    subscribers: number | null;
+  }> | null) ?? [];
+
+  const { data: window7 } = await supabase
+    .from('fct_channel_daily')
+    .select('channel_id, daily_views')
+    .gte('date', from)
+    .lte('date', to);
+  const sumByChannel = new Map<string, { sum: number; n: number }>();
+  for (const r of window7 ?? []) {
+    if (r.daily_views == null) continue;
+    const cur = sumByChannel.get(r.channel_id) ?? { sum: 0, n: 0 };
+    cur.sum += Number(r.daily_views);
+    cur.n += 1;
+    sumByChannel.set(r.channel_id, cur);
+  }
+
+  const byKey = new Map<string, LanguageRollupRow>();
+  for (const r of latestRows) {
+    const key = `${r.company}|${r.language ?? 'unknown'}`;
+    const w = sumByChannel.get(r.channel_id);
+    const cur =
+      byKey.get(key) ??
+      ({
+        language: r.language,
+        company: r.company,
+        channel_count: 0,
+        total_views: 0,
+        subscribers: 0,
+        daily_views_7d_avg: 0,
+      } as LanguageRollupRow);
+    cur.channel_count += 1;
+    cur.total_views = (cur.total_views ?? 0) + Number(r.total_views ?? 0);
+    cur.subscribers = (cur.subscribers ?? 0) + Number(r.subscribers ?? 0);
+    cur.daily_views_7d_avg = (cur.daily_views_7d_avg ?? 0) + (w ? w.sum / Math.max(1, w.n) : 0);
+    byKey.set(key, cur);
+  }
+  return Array.from(byKey.values()).sort((a, b) =>
+    (b.daily_views_7d_avg ?? 0) - (a.daily_views_7d_avg ?? 0),
+  );
+}
+
+// ---- Stock-tab data ---------------------------------------------------------
+
+export async function getPriceWithEvents(opts: {
+  from?: string;
+  to?: string;
+  symbol?: string;
+}): Promise<{
+  prices: Array<{ date: string; close: number; adjusted_close: number | null; volume: number | null }>;
+  corp_actions: Array<{ ex_date: string; action_type: string; label: string }>;
+}> {
+  const supabase = getServiceSupabase();
+  const symbol = opts.symbol ?? 'TIPSMUSIC';
+  const from = opts.from ?? defaultFromDate(365);
+  const to = opts.to ?? new Date().toISOString().slice(0, 10);
+
+  const [pRes, aRes, caRes] = await Promise.all([
+    supabase
+      .from('fct_price_daily')
+      .select('date, close, volume')
+      .eq('symbol', symbol)
+      .gte('date', from)
+      .lte('date', to)
+      .order('date', { ascending: true }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, adjusted_close')
+      .eq('symbol', symbol)
+      .gte('date', from)
+      .lte('date', to),
+    supabase
+      .from('dim_corporate_action')
+      .select('ex_date, action_type, ratio_num, ratio_den, cash_per_share')
+      .eq('symbol', symbol)
+      .gte('ex_date', from),
+  ]);
+
+  const adjMap = new Map((aRes.data ?? []).map((r) => [r.date as string, Number(r.adjusted_close ?? 0)]));
+  const prices = (pRes.data ?? []).map((r) => ({
+    date: r.date as string,
+    close: Number(r.close ?? 0),
+    adjusted_close: adjMap.has(r.date as string) ? adjMap.get(r.date as string)! : null,
+    volume: r.volume != null ? Number(r.volume) : null,
+  }));
+
+  const corp_actions = (caRes.data ?? []).map((r) => {
+    const label =
+      r.action_type === 'split' || r.action_type === 'bonus'
+        ? `${r.action_type} ${r.ratio_num ?? '?'}:${r.ratio_den ?? '?'}`
+        : r.action_type === 'dividend' && r.cash_per_share
+          ? `dividend ₹${r.cash_per_share}`
+          : r.action_type;
+    return { ex_date: r.ex_date as string, action_type: r.action_type as string, label };
+  });
+
+  return { prices, corp_actions };
+}
+
+// ---- Data table -------------------------------------------------------------
+
+export interface DataTableRow {
+  date: string;
+  channel_id: string;
+  channel_name: string;
+  company: string;
+  language: string | null;
+  total_views: number | null;
+  subscribers: number | null;
+  daily_views: number | null;
+  daily_subscribers: number | null;
+}
+
+export async function getDataTable(opts: {
+  from: string;
+  to: string;
+  channelIds?: string[];
+  limit?: number;
+}): Promise<DataTableRow[]> {
+  const supabase = getServiceSupabase();
+  const { data: channels } = await supabase
+    .from('dim_channel')
+    .select('channel_id, channel_name, company, language');
+  const chMap = new Map(
+    (channels ?? []).map((c) => [c.channel_id as string, c]),
+  );
+
+  let q = supabase
+    .from('fct_channel_daily')
+    .select('date, channel_id, total_views, subscribers, daily_views, daily_subscribers')
+    .gte('date', opts.from)
+    .lte('date', opts.to)
+    .order('date', { ascending: false })
+    .limit(opts.limit ?? 5000);
+  if (opts.channelIds?.length) q = q.in('channel_id', opts.channelIds);
+
+  const { data } = await q;
+  return (data ?? []).map((r) => {
+    const ch = chMap.get(r.channel_id as string);
+    return {
+      date: r.date as string,
+      channel_id: r.channel_id as string,
+      channel_name: (ch?.channel_name as string) ?? r.channel_id,
+      company: (ch?.company as string) ?? '',
+      language: (ch?.language as string | null) ?? null,
+      total_views: r.total_views as number | null,
+      subscribers: r.subscribers as number | null,
+      daily_views: r.daily_views as number | null,
+      daily_subscribers: r.daily_subscribers as number | null,
+    };
+  });
+}
+
+// ---- Ops audit --------------------------------------------------------------
+
+export async function getOpsRunHistory(opts: { since?: string; limit?: number }): Promise<OpsRunRow[]> {
+  const supabase = getServiceSupabase();
+  const since = opts.since ?? defaultFromDate(7);
+  const { data } = await supabase
+    .from('ops_ingest_run')
+    .select('run_id, source, started_at, ended_at, status, rows_in, rows_out, detail')
+    .gte('started_at', since)
+    .order('started_at', { ascending: false })
+    .limit(opts.limit ?? 200);
+  return (data as OpsRunRow[] | null) ?? [];
+}
+
+export async function getRecentErrors(opts: { since?: string; limit?: number }): Promise<OpsErrorRow[]> {
+  const supabase = getServiceSupabase();
+  const since = opts.since ?? defaultFromDate(7);
+  const { data } = await supabase
+    .from('ops_error_log')
+    .select('id, error_type, error_message, ingest_run_id, created_at')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(opts.limit ?? 50);
+  return (data as OpsErrorRow[] | null) ?? [];
+}
+
+// ---- Growth matrix (W/M/Q/Y for both companies) ----------------------------
+
+export type PeriodLabel = '1d' | '7d' | '30d' | '90d' | 'QTD' | 'YTD' | '365d';
+
+export interface GrowthRow {
+  company: string;
+  period: PeriodLabel;
+  current_sum: number | null;       // sum(daily_views) in current window
+  current_n: number;                // days with data in current window
+  prior_sum: number | null;         // sum(daily_views) in prior window of same length
+  prior_n: number;
+  growth_pct: number | null;        // (current_avg / prior_avg - 1) * 100; null if prior is empty/zero
+}
+
+export interface CompanySnapshot {
+  company: string;
+  channels_active: number;
+  latest_date: string | null;
+  cumulative_views: number | null;
+  cumulative_subscribers: number | null;
+  subscribers_year_ago: number | null;
+  subscribers_yoy_delta: number | null;
+  rows: GrowthRow[];
+}
+
+export async function getCompanyGrowth(): Promise<CompanySnapshot[]> {
+  const supabase = getServiceSupabase();
+
+  // Pull last ~800 days of company-day rows. v_company_daily aggregates by
+  // is_active with legacy fallback for pre-2026 dates.
+  const since = new Date(Date.now() - 800 * 86_400_000).toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from('v_company_daily')
+    .select('date, company, daily_views, subscribers, total_views, channels_with_data')
+    .gte('date', since)
+    .order('date', { ascending: false });
+
+  const rows = (data ?? []) as Array<{
+    date: string;
+    company: string;
+    daily_views: number | null;
+    subscribers: number | null;
+    total_views: number | null;
+    channels_with_data: number | null;
+  }>;
+
+  const today = new Date();
+  const yyyymmdd = (d: Date) => d.toISOString().slice(0, 10);
+  const startOfQuarter = (() => {
+    const q = Math.floor(today.getMonth() / 3);
+    return new Date(Date.UTC(today.getUTCFullYear(), q * 3, 1));
+  })();
+  const startOfYear = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
+
+  const periods: Array<{ label: PeriodLabel; from: Date; to: Date; priorFrom: Date; priorTo: Date }> = (() => {
+    const todayD = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const minus = (d: Date, days: number) => new Date(d.getTime() - days * 86_400_000);
+    const span = (days: number): { from: Date; to: Date; priorFrom: Date; priorTo: Date } => ({
+      from: minus(todayD, days),
+      to: todayD,
+      priorFrom: minus(todayD, 2 * days),
+      priorTo: minus(todayD, days),
+    });
+    const qtdLen = Math.floor((todayD.getTime() - startOfQuarter.getTime()) / 86_400_000) + 1;
+    const ytdLen = Math.floor((todayD.getTime() - startOfYear.getTime()) / 86_400_000) + 1;
+    return [
+      { label: '1d',   ...span(1)   },
+      { label: '7d',   ...span(7)   },
+      { label: '30d',  ...span(30)  },
+      { label: '90d',  ...span(90)  },
+      { label: 'QTD',  from: startOfQuarter, to: todayD, priorFrom: minus(startOfQuarter, qtdLen), priorTo: startOfQuarter },
+      { label: 'YTD',  from: startOfYear,    to: todayD, priorFrom: minus(startOfYear, ytdLen),    priorTo: startOfYear },
+      { label: '365d', ...span(365) },
+    ];
+  })();
+
+  const byCompany = new Map<string, typeof rows>();
+  for (const r of rows) {
+    if (!byCompany.has(r.company)) byCompany.set(r.company, []);
+    byCompany.get(r.company)!.push(r);
+  }
+
+  const snapshots: CompanySnapshot[] = [];
+  for (const company of ['TIPSMUSIC', 'SAREGAMA'] as const) {
+    const companyRows = byCompany.get(company) ?? [];
+    const latest = companyRows[0];
+    const yearAgoRow = companyRows.find(
+      (r) => Math.abs(daysBetween(r.date, yyyymmdd(today)) - 365) <= 3,
+    );
+
+    const growthRows: GrowthRow[] = periods.map(({ label, from, to, priorFrom, priorTo }) => {
+      let curSum = 0, curN = 0, priSum = 0, priN = 0;
+      for (const r of companyRows) {
+        if (r.daily_views == null) continue;
+        const t = new Date(r.date + 'T00:00:00Z').getTime();
+        if (t >= from.getTime() && t < to.getTime() + 86_400_000) { curSum += Number(r.daily_views); curN++; }
+        else if (t >= priorFrom.getTime() && t < priorTo.getTime()) { priSum += Number(r.daily_views); priN++; }
+      }
+      const curAvg = curN > 0 ? curSum / curN : null;
+      const priAvg = priN > 0 ? priSum / priN : null;
+      const growth_pct =
+        curAvg != null && priAvg != null && priAvg !== 0 ? (curAvg / priAvg - 1) * 100 : null;
+      return { company, period: label, current_sum: curN ? curSum : null, current_n: curN, prior_sum: priN ? priSum : null, prior_n: priN, growth_pct };
+    });
+
+    snapshots.push({
+      company,
+      channels_active: latest?.channels_with_data ?? 0,
+      latest_date: latest?.date ?? null,
+      cumulative_views: latest?.total_views != null ? Number(latest.total_views) : null,
+      cumulative_subscribers: latest?.subscribers != null ? Number(latest.subscribers) : null,
+      subscribers_year_ago: yearAgoRow?.subscribers != null ? Number(yearAgoRow.subscribers) : null,
+      subscribers_yoy_delta:
+        latest?.subscribers != null && yearAgoRow?.subscribers != null
+          ? Number(latest.subscribers) - Number(yearAgoRow.subscribers)
+          : null,
+      rows: growthRows,
+    });
+  }
+  return snapshots;
+}
+
+function daysBetween(a: string, b: string): number {
+  return Math.round((new Date(b + 'T00:00:00Z').getTime() - new Date(a + 'T00:00:00Z').getTime()) / 86_400_000);
+}
+
+// Per-channel growth table — for /channels and /growth pages.
+export interface ChannelGrowthRow {
+  channel_id: string;
+  channel_name: string;
+  company: string;
+  language: string | null;
+  daily_views_yesterday: number | null;
+  avg_7d: number | null;
+  avg_30d: number | null;
+  avg_90d: number | null;
+  growth_7d_pct: number | null;       // 7d avg vs prior 7d avg
+  growth_30d_pct: number | null;
+  growth_90d_pct: number | null;
+  subscribers: number | null;
+  total_views: number | null;
+  daily_series_60d: Array<number | null>; // chronological last 60 days for sparkline
+}
+
+export interface CompanyViewsRow {
+  date: string;
+  tipsmusic: number | null;
+  saregama: number | null;
+}
+
+export async function getCompanyViewsSeries(opts: { from?: string; to?: string }): Promise<CompanyViewsRow[]> {
+  const supabase = getServiceSupabase();
+  const from = opts.from ?? new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
+  const to = opts.to ?? new Date().toISOString().slice(0, 10);
+
+  const { data } = await supabase
+    .from('v_company_daily')
+    .select('date, company, daily_views')
+    .gte('date', from)
+    .lte('date', to)
+    .order('date', { ascending: true });
+
+  const rows = (data ?? []) as Array<{ date: string; company: string; daily_views: number | null }>;
+  const byDate = new Map<string, CompanyViewsRow>();
+  for (const r of rows) {
+    const slot = byDate.get(r.date) ?? { date: r.date, tipsmusic: null, saregama: null };
+    if (r.company === 'TIPSMUSIC') slot.tipsmusic = r.daily_views != null ? Number(r.daily_views) : null;
+    if (r.company === 'SAREGAMA') slot.saregama = r.daily_views != null ? Number(r.daily_views) : null;
+    byDate.set(r.date, slot);
+  }
+  return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function getChannelGrowth(opts: { company?: string }): Promise<ChannelGrowthRow[]> {
+  const supabase = getServiceSupabase();
+
+  const since = new Date(Date.now() - 200 * 86_400_000).toISOString().slice(0, 10);
+  const { data: channels } = await supabase
+    .from('dim_channel')
+    .select('channel_id, channel_name, company, language, is_active');
+  const active = ((channels as Array<{
+    channel_id: string;
+    channel_name: string;
+    company: string;
+    language: string | null;
+    is_active: boolean;
+  }> | null) ?? []).filter((c) => c.is_active && (!opts.company || c.company === opts.company));
+
+  const { data: facts } = await supabase
+    .from('fct_channel_daily')
+    .select('channel_id, date, daily_views, subscribers, total_views')
+    .gte('date', since)
+    .order('date', { ascending: false });
+
+  const byChannel = new Map<string, Array<{ date: string; daily_views: number | null; subscribers: number | null; total_views: number | null }>>();
+  for (const r of (facts ?? []) as Array<{
+    channel_id: string;
+    date: string;
+    daily_views: number | null;
+    subscribers: number | null;
+    total_views: number | null;
+  }>) {
+    if (!byChannel.has(r.channel_id)) byChannel.set(r.channel_id, []);
+    byChannel.get(r.channel_id)!.push(r);
+  }
+
+  const todayMs = Date.now();
+  const days = (n: number) => todayMs - n * 86_400_000;
+  const sumAvg = (
+    rows: Array<{ date: string; daily_views: number | null }>,
+    fromMs: number,
+    toMs: number,
+  ): { sum: number; n: number } => {
+    let sum = 0, n = 0;
+    for (const r of rows) {
+      if (r.daily_views == null) continue;
+      const t = new Date(r.date + 'T00:00:00Z').getTime();
+      if (t >= fromMs && t < toMs) { sum += Number(r.daily_views); n += 1; }
+    }
+    return { sum, n };
+  };
+
+  return active.map((c) => {
+    const rows = byChannel.get(c.channel_id) ?? [];
+    const yesterday = rows.find((r) => r.daily_views != null);
+    const latest = rows[0];
+
+    const w = (n: number) => {
+      const cur = sumAvg(rows, days(n), todayMs);
+      const pri = sumAvg(rows, days(2 * n), days(n));
+      const ca = cur.n ? cur.sum / cur.n : null;
+      const pa = pri.n ? pri.sum / pri.n : null;
+      return {
+        avg: ca,
+        pct: ca != null && pa != null && pa !== 0 ? (ca / pa - 1) * 100 : null,
+      };
+    };
+    const w7 = w(7);
+    const w30 = w(30);
+    const w90 = w(90);
+
+    // Build last 60 days of daily_views, chronological (oldest→newest).
+    // Fill missing days with null so the sparkline's x-axis is uniform.
+    const cutoffMs = todayMs - 60 * 86_400_000;
+    const recent = rows
+      .filter((r) => new Date(r.date + 'T00:00:00Z').getTime() >= cutoffMs)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const series: Array<number | null> = [];
+    const todayDate = new Date();
+    for (let i = 59; i >= 0; i--) {
+      const d = new Date(todayDate.getTime() - i * 86_400_000).toISOString().slice(0, 10);
+      const hit = recent.find((r) => r.date === d);
+      series.push(hit?.daily_views ?? null);
+    }
+
+    return {
+      channel_id: c.channel_id,
+      channel_name: c.channel_name,
+      company: c.company,
+      language: c.language,
+      daily_views_yesterday: yesterday?.daily_views ?? null,
+      avg_7d: w7.avg,
+      avg_30d: w30.avg,
+      avg_90d: w90.avg,
+      growth_7d_pct: w7.pct,
+      growth_30d_pct: w30.pct,
+      growth_90d_pct: w90.pct,
+      subscribers: latest?.subscribers != null ? Number(latest.subscribers) : null,
+      total_views: latest?.total_views != null ? Number(latest.total_views) : null,
+      daily_series_60d: series,
+    };
+  });
+}
+
+// ---- Signals (IR cockpit) ---------------------------------------------------
+
+/**
+ * Fan-out fetch + signal composition for one company. All math lives in
+ * lib/signals.ts (pure). This function is the I/O boundary: it pulls the
+ * minimal shape needed and feeds the pure layer.
+ *
+ * Lead-lag math is currently TIPSMUSIC-only (fct_correlation_window is keyed
+ * to TIPSMUSIC via v_returns_join). Saregama lead-lag will stay in 'warming'
+ * state until the Python stats service is extended.
+ */
+export async function getSignalsSnapshot(opts: {
+  company: 'TIPSMUSIC' | 'SAREGAMA';
+}): Promise<SignalsSnapshot> {
+  const supabase = getServiceSupabase();
+  const today = new Date();
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const since180 = iso(new Date(today.getTime() - 180 * 86_400_000));
+  const since90 = iso(new Date(today.getTime() - 90 * 86_400_000));
+  const last30 = iso(new Date(today.getTime() - 30 * 86_400_000));
+
+  type EmptyResult<T> = { data: T };
+  const emptyResult = <T>(data: T): Promise<EmptyResult<T>> => Promise.resolve({ data });
+
+  // Phase 1: independent fetches.
+  const [companyDailyRes, channelsRes, priceRes, indexRes, corrAsofRes] = await Promise.all([
+    supabase
+      .from('v_company_daily')
+      .select('date, daily_views, subscribers')
+      .eq('company', opts.company)
+      .gte('date', since180)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_channel')
+      .select('channel_id')
+      .eq('company', opts.company)
+      .eq('is_active', true),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('date, adjusted_close')
+      .eq('symbol', opts.company)
+      .gte('date', since90)
+      .order('date', { ascending: true }),
+    supabase
+      .from('dim_market_index')
+      .select('date, close')
+      .eq('index_name', 'NIFTY_MIDCAP_150')
+      .gte('date', since90)
+      .order('date', { ascending: true }),
+    opts.company === 'TIPSMUSIC'
+      ? supabase
+          .from('fct_correlation_window')
+          .select('asof')
+          .order('asof', { ascending: false })
+          .limit(1)
+      : emptyResult<Array<{ asof: string }>>([]),
+  ]);
+
+  const companyDaily = (companyDailyRes.data ?? []) as Array<{
+    date: string;
+    daily_views: number | null;
+    subscribers: number | null;
+  }>;
+  const channelIds = ((channelsRes.data ?? []) as Array<{ channel_id: string }>).map(
+    (c) => c.channel_id,
+  );
+  const stock = (priceRes.data ?? []) as Array<{ date: string; adjusted_close: number | null }>;
+  const index = (indexRes.data ?? []) as Array<{ date: string; close: number | null }>;
+  const corrAsof =
+    ((corrAsofRes.data ?? []) as Array<{ asof: string }>)[0]?.asof ?? null;
+
+  // Phase 2: dependent fetches (videos + lead-lag rows for that asof).
+  const [videosRes, videoFactsRes, leadLagRowsRes] = await Promise.all([
+    channelIds.length > 0
+      ? supabase
+          .from('dim_video')
+          .select('video_id, published_at, channel_id')
+          .in('channel_id', channelIds)
+      : emptyResult<Array<{ video_id: string; published_at: string; channel_id: string }>>([]),
+    channelIds.length > 0
+      ? supabase
+          .from('fct_video_daily')
+          .select('video_id, daily_views, date')
+          .gte('date', last30)
+      : emptyResult<Array<{ video_id: string; daily_views: number | null; date: string }>>([]),
+    corrAsof
+      ? supabase
+          .from('fct_correlation_window')
+          .select('lag_days, pearson_r, p_value_fdr, is_significant')
+          .eq('window_days', 30)
+          .eq('asof', corrAsof)
+          .order('lag_days', { ascending: true })
+      : emptyResult<
+          Array<{
+            lag_days: number;
+            pearson_r: number;
+            p_value_fdr: number | null;
+            is_significant: boolean | null;
+          }>
+        >([]),
+  ]);
+
+  const videos = (videosRes.data ?? []) as Array<{
+    video_id: string;
+    published_at: string;
+    channel_id: string;
+  }>;
+  const videoFacts = (videoFactsRes.data ?? []) as Array<{
+    video_id: string;
+    daily_views: number | null;
+    date: string;
+  }>;
+  const leadLagRows = (leadLagRowsRes.data ?? []) as Array<{
+    lag_days: number;
+    pearson_r: number;
+    p_value_fdr: number | null;
+    is_significant: boolean | null;
+  }>;
+
+  // Build per-video sum of daily_views in last 30d, then pair with publish date.
+  const viewsByVideo = new Map<string, number>();
+  for (const r of videoFacts) {
+    if (r.daily_views == null) continue;
+    viewsByVideo.set(r.video_id, (viewsByVideo.get(r.video_id) ?? 0) + Number(r.daily_views));
+  }
+  const channelSet = new Set(channelIds);
+  const videoInputs: VideoFreshnessInput[] = videos
+    .filter((v) => channelSet.has(v.channel_id))
+    .map((v) => ({
+      published_at: v.published_at,
+      views_last_30d: viewsByVideo.get(v.video_id) ?? 0,
+    }))
+    .filter((v) => v.views_last_30d > 0);
+
+  // Compute price momentum (z-score of 7d-avg adjusted_close) for divergence.
+  // We re-use viewMomentum on a price-shaped series for consistency.
+  const priceShaped = stock.map((r) => ({ date: r.date, daily_views: r.adjusted_close }));
+  const priceMom = viewMomentum(priceShaped);
+
+  const viewMom = viewMomentum(
+    companyDaily.map((r) => ({ date: r.date, daily_views: r.daily_views })),
+  );
+  const fresh = catalogFreshness(videoInputs);
+  const ll = leadLagRead(leadLagRows);
+  const rs = relativeStrength(stock, index, 30);
+  const div = divergence(viewMom.sigma ?? null, priceMom.sigma ?? null);
+  const subs = subscriberDrift(
+    companyDaily.map((r) => ({ date: r.date, subscribers: r.subscribers })),
+  );
+
+  const asOf = companyDaily.length > 0 ? companyDaily[companyDaily.length - 1].date : null;
+  const daysAvailable = companyDaily.filter((r) => r.daily_views != null).length;
+
+  return {
+    company: opts.company,
+    asOf,
+    daysAvailable,
+    viewMomentum: viewMom,
+    catalogFreshness: fresh,
+    leadLag: ll,
+    relativeStrength: rs,
+    divergence: div,
+    subscriberDrift: subs,
+  };
+}
+
+/**
+ * Upcoming events for the next N days. Variant of getEventTimeline with a
+ * forward-looking window — drives the Event Horizon strip on /signals.
+ */
+export async function getEventHorizon(opts: { days?: number } = {}): Promise<EventTimelineRow[]> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 30;
+  const today = new Date().toISOString().slice(0, 10);
+  const until = new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from('dim_event')
+    .select('event_id, event_date, event_type, label, channel_id, company')
+    .gte('event_date', today)
+    .lte('event_date', until)
+    .order('event_date', { ascending: true })
+    .limit(100);
+  return (data as EventTimelineRow[] | null) ?? [];
+}
+
+/**
+ * Lead-lag rows for the latest asof (any window). Used by the
+ * LeadLagPanorama on /signals to render bars without a separate fetch.
+ */
+export async function getLeadLagPanorama(opts: { window: 7 | 30 | 60 | 120 } = { window: 30 }): Promise<LeadLagRow[]> {
+  return getLeadLagScan({ window: opts.window });
+}
+
+// ---- helpers ----------------------------------------------------------------
+
+function defaultFromDate(daysBack: number): string {
+  return new Date(Date.now() - daysBack * 86_400_000).toISOString().slice(0, 10);
+}
+
+export const formatNumber = (n: number | null | undefined): string =>
+  n == null ? '—' : Number(n).toLocaleString();
+
+export const formatPct = (n: number | null | undefined, digits = 2): string =>
+  n == null ? '—' : `${Number(n).toFixed(digits)}%`;
+
+export const formatPrice = (n: number | null | undefined): string =>
+  n == null ? '—' : `₹${Number(n).toFixed(2)}`;

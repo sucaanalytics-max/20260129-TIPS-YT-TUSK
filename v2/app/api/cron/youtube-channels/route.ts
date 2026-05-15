@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { requireCronAuth } from '@/lib/cron-auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { fetchChannels, type YTChannel } from '@/lib/youtube';
+import { bumpTags, CACHE_TAGS } from '@/lib/revalidate';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
 /**
@@ -142,7 +141,6 @@ export async function GET(req: Request) {
         channelDimUpdates.push({
           channel_id: ch.channel_id,
           uploads_playlist_id: uploads,
-          updated_at: new Date().toISOString(),
         });
       }
     }
@@ -169,7 +167,19 @@ export async function GET(req: Request) {
 
     // 6) Refresh dim_channel.uploads_playlist_id
     if (channelDimUpdates.length) {
-      await supabase.from('dim_channel').upsert(channelDimUpdates, { onConflict: 'channel_id' });
+      const { error: dimUpErr } = await supabase
+        .from('dim_channel')
+        .upsert(channelDimUpdates, { onConflict: 'channel_id' });
+      if (dimUpErr) {
+        // Don't fail the whole run; surface to ops_error_log so the next
+        // /api/cron/youtube-videos still has the prior playlist IDs.
+        await supabase.from('ops_error_log').insert({
+          error_type: 'channels_dim_upsert_failed',
+          error_message: dimUpErr.message,
+          detail: { sample: channelDimUpdates.slice(0, 3) },
+          ingest_run_id: runId,
+        });
+      }
     }
 
     const status = failed.length || missing.length ? 'partial' : 'ok';
@@ -179,6 +189,8 @@ export async function GET(req: Request) {
       quota_units: Math.ceil(channels.length / 50),
       duration_ms: Date.now() - runStart.getTime(),
     });
+
+    if (upserted > 0) bumpTags(CACHE_TAGS.overview, CACHE_TAGS.channels, CACHE_TAGS.ops);
 
     return NextResponse.json({
       ok: true,

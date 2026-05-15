@@ -4,6 +4,9 @@
 -- =============================================================================
 
 -- Company-level rollup of channel-day facts.
+-- Mirrors v1 migration-002 UNION ALL semantics: active channels always counted;
+-- legacy aggregates (is_active=false, e.g. TIPSMUSIC_LEGACY) counted only on
+-- dates where no active channel has data. Preserves pre-2026 history.
 CREATE OR REPLACE VIEW public.v_company_daily
 WITH (security_invoker = true)
 AS
@@ -19,6 +22,30 @@ SELECT
 FROM public.fct_channel_daily f
 JOIN public.dim_channel c ON c.channel_id = f.channel_id
 WHERE c.is_active = true
+GROUP BY f.date, c.company
+
+UNION ALL
+
+SELECT
+    f.date,
+    c.company,
+    SUM(f.daily_views)       AS daily_views,
+    SUM(f.daily_subscribers) AS daily_subscribers,
+    SUM(f.daily_videos)      AS daily_videos,
+    SUM(f.total_views)       AS total_views,
+    SUM(f.subscribers)       AS subscribers,
+    COUNT(DISTINCT f.channel_id) AS channels_with_data
+FROM public.fct_channel_daily f
+JOIN public.dim_channel c ON c.channel_id = f.channel_id
+WHERE c.is_active = false
+  AND NOT EXISTS (
+      SELECT 1
+      FROM public.fct_channel_daily f2
+      JOIN public.dim_channel c2 ON c2.channel_id = f2.channel_id
+      WHERE c2.company = c.company
+        AND c2.is_active = true
+        AND f2.date = f.date
+  )
 GROUP BY f.date, c.company;
 
 -- Latest stats per channel (drives the channel-leaderboard panel).

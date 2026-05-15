@@ -6,11 +6,13 @@
 #   2. vercel link          # interactive — pick "Create new project", name "tusk-yt-v2"
 #                           # DO NOT link to the existing tips-yt-tusk project.
 #
-# Then run this script. It will:
-#   - prompt for the 3 secret values I couldn't fetch via MCP
-#   - push all 11 env vars to Vercel (production scope)
-#   - deploy to production
-#   - print follow-up curl commands to trigger first cron run
+# Secrets sourcing — in priority order:
+#   1. shell env vars (set them before running this script)
+#   2. v2/.env.local (loaded via `set -a; source v2/.env.local; set +a`)
+#   3. interactive prompt (last resort)
+#
+# Never hardcode secrets in this file. If you see one, treat it as a leaked
+# secret and rotate immediately.
 
 set -euo pipefail
 
@@ -29,43 +31,55 @@ fi
 echo "Deploying to Vercel project: $PROJ_NAME"
 echo
 
-# ---- known values (fetched via Supabase MCP) -------------------------------
-SUPABASE_URL='https://bfafqccvzboyfjewzvhk.supabase.co'
-CRON_SECRET='ee04389406f6e528d347ce814709e5c1c35e7b77ac4976ec5f90f17b39d84e33'
-YOUTUBE_API_KEY='AIzaSyDr2qyiUIWnA5bB_HFb4EXUdFILXFI8QS4'
-STOCK_SYMBOLS='TIPSMUSIC,SAREGAMA'
-MARKET_INDEX_SYMBOLS='NIFTY_MIDCAP_150:^CRSMID,NIFTY_50:^NSEI'
-BSE_SCRIP_CODES='TIPSMUSIC:532375,SAREGAMA:532163'
-TUSK_ALLOWED_EMAIL_DOMAINS='tuskinvest.com'
+# ---- non-secret defaults ----------------------------------------------------
+# These are project config, not secrets. Safe to live in source.
+SUPABASE_URL="${SUPABASE_URL:-https://bfafqccvzboyfjewzvhk.supabase.co}"
+STOCK_SYMBOLS="${STOCK_SYMBOLS:-TIPSMUSIC,SAREGAMA}"
+MARKET_INDEX_SYMBOLS="${MARKET_INDEX_SYMBOLS:-NIFTY_MIDCAP_150:^CRSMID,NIFTY_50:^NSEI}"
+BSE_SCRIP_CODES="${BSE_SCRIP_CODES:-TIPSMUSIC:532375,SAREGAMA:532163}"
+TUSK_ALLOWED_EMAIL_DOMAINS="${TUSK_ALLOWED_EMAIL_DOMAINS:-tuskinvest.com}"
 
-# ---- values I couldn't fetch ------------------------------------------------
-echo "Need 3 values I couldn't fetch via MCP:"
-echo
-echo "  SUPABASE_SERVICE_ROLE_KEY  →  https://supabase.com/dashboard/project/bfafqccvzboyfjewzvhk/settings/api-keys"
-echo "                                (under 'service_role' secret)"
-read -r -s -p "Paste SUPABASE_SERVICE_ROLE_KEY: " SUPABASE_SERVICE_ROLE_KEY
-echo
-echo
-echo "  CLERK keys  →  https://dashboard.clerk.com  →  new app  →  API Keys"
-read -r -s -p "Paste NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_...): " NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-echo
-read -r -s -p "Paste CLERK_SECRET_KEY (sk_...): " CLERK_SECRET_KEY
-echo
-echo
+# ---- secrets: env > .env.local > prompt -------------------------------------
+# Auto-load .env.local if present and any required secret is missing.
+if [ -f .env.local ]; then
+  if [ -z "${CRON_SECRET:-}" ] || [ -z "${YOUTUBE_API_KEY:-}" ] \
+     || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ] \
+     || [ -z "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}" ] \
+     || [ -z "${CLERK_SECRET_KEY:-}" ]; then
+    echo "Sourcing secrets from .env.local..."
+    set -a
+    # shellcheck disable=SC1091
+    source .env.local
+    set +a
+  fi
+fi
 
-# Resolve deployment URL after first deploy so NEXT_PUBLIC_APP_URL can be set
-# in a second pass. For now, leave it blank and patch after the first deploy
-# prints the assigned domain.
+prompt_secret () {
+  local var=$1
+  local hint=$2
+  if [ -z "${!var:-}" ]; then
+    echo "  $var needed.  Hint: $hint"
+    read -r -s -p "  Paste $var: " value
+    echo
+    eval "$var=\$value"
+  fi
+}
+
+prompt_secret CRON_SECRET                    "generate: openssl rand -hex 32"
+prompt_secret YOUTUBE_API_KEY                "Google Cloud Console → APIs & Services → Credentials"
+prompt_secret SUPABASE_SERVICE_ROLE_KEY      "Supabase dashboard → Settings → API keys → service_role"
+prompt_secret NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY "Clerk dashboard → API Keys (pk_…)"
+prompt_secret CLERK_SECRET_KEY               "Clerk dashboard → API Keys (sk_…)"
 
 push_env () {
   local key=$1
   local value=$2
-  # Remove first so we don't get "exists" errors; ignore failure if missing.
   echo "$value" | vercel env add "$key" production --force >/dev/null 2>&1 \
     || echo "$value" | vercel env add "$key" production >/dev/null
   echo "  ✓ $key"
 }
 
+echo
 echo "Pushing env vars to Vercel (production)..."
 push_env SUPABASE_URL                  "$SUPABASE_URL"
 push_env SUPABASE_SERVICE_ROLE_KEY     "$SUPABASE_SERVICE_ROLE_KEY"
@@ -98,18 +112,18 @@ vercel deploy --prod --yes >/dev/null
 echo
 echo "Deploy complete: $DEPLOY_URL"
 echo
-echo "Next: trigger the first cron run to populate market-index + corp-actions + earnings."
-echo "       Crons fire automatically on the schedule in vercel.json, but you can warm them:"
+echo "Next: trigger the first cron run to populate ingest tables."
+echo "      Crons fire automatically on the schedule in vercel.json."
 echo
 cat <<EOF
-for path in youtube-channels youtube-videos stocks market-index corporate-actions earnings; do
+for path in seed youtube-channels youtube-videos stocks market-index corporate-actions earnings; do
   echo "→ /api/cron/\$path"
-  curl -fsS -H "Authorization: Bearer $CRON_SECRET" \\
+  curl -fsS -H "Authorization: Bearer \$CRON_SECRET" \\
     "$DEPLOY_URL/api/cron/\$path" | jq .
 done
 
-curl -fsS -H "Authorization: Bearer $CRON_SECRET" \\
+curl -fsS -H "Authorization: Bearer \$CRON_SECRET" \\
   "$DEPLOY_URL/api/stats/recompute" | jq .
-curl -fsS -H "Authorization: Bearer $CRON_SECRET" \\
+curl -fsS -H "Authorization: Bearer \$CRON_SECRET" \\
   "$DEPLOY_URL/api/stats/event-study" | jq .
 EOF

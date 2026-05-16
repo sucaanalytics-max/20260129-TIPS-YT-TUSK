@@ -1,5 +1,6 @@
 import type { DualSymbolHeadlineRow } from '@/lib/queries';
 import { Sparkline } from '@/components/charts/sparkline';
+import { STOCK_RANGE_LABEL } from '@/lib/stock-range';
 
 function fmtInt(n: number | null): string {
   if (n == null) return '—';
@@ -11,6 +12,13 @@ function fmtPrice(n: number | null): string {
   return `₹${n.toFixed(2)}`;
 }
 
+/** Format a log-return-style value as a percentage (multiplied by 100). */
+function fmtLogPct(n: number | null, digits = 2): string {
+  if (n == null) return '—';
+  return `${n >= 0 ? '+' : ''}${(n * 100).toFixed(digits)}%`;
+}
+
+/** Format an already-percent value (e.g. views delta_pct). */
 function fmtPct(n: number | null, digits = 2): string {
   if (n == null) return '—';
   return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}%`;
@@ -22,6 +30,11 @@ function deltaColor(n: number | null): string {
 }
 
 function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
+  const rangeLabel = STOCK_RANGE_LABEL[row.range];
+  const viewsHint =
+    row.range === 'all'
+      ? 'YoY (last 365d vs prior 365d)'
+      : `${row.views_window_days}d avg vs prior ${row.views_window_days}d`;
   return (
     <div className="contents">
       <div className="border-border bg-card rounded-lg border p-4">
@@ -31,8 +44,9 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
         <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
           {fmtPrice(row.close)}
         </p>
-        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.close_delta_pct)}`}>
-          {fmtPct(row.close_delta_pct)} <span className="text-muted-foreground">1d</span>
+        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.close_return)}`}>
+          {fmtLogPct(row.close_return)}{' '}
+          <span className="text-muted-foreground">{rangeLabel} return (log)</span>
         </p>
       </div>
 
@@ -44,7 +58,7 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
           {fmtInt(row.daily_views_latest)}
         </p>
         <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.views_delta_pct)}`}>
-          {fmtPct(row.views_delta_pct)} <span className="text-muted-foreground">7d avg vs prior 7d</span>
+          {fmtPct(row.views_delta_pct)} <span className="text-muted-foreground">{viewsHint}</span>
         </p>
       </div>
 
@@ -55,21 +69,21 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
         <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
           {fmtInt(row.subscribers)}
         </p>
-        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.subscribers_yoy_delta)}`}>
-          {row.subscribers_yoy_delta != null
-            ? `${row.subscribers_yoy_delta >= 0 ? '+' : ''}${fmtInt(row.subscribers_yoy_delta)}`
+        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.subs_delta)}`}>
+          {row.subs_delta != null
+            ? `${row.subs_delta >= 0 ? '+' : ''}${fmtInt(row.subs_delta)}`
             : '—'}{' '}
-          <span className="text-muted-foreground">YoY</span>
+          <span className="text-muted-foreground">{rangeLabel} Δ</span>
         </p>
       </div>
 
       <div className="border-border bg-card rounded-lg border p-4">
         <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
-          Views · 60d trend
+          Views · {rangeLabel} trend
         </p>
         <div className="mt-3">
           <Sparkline
-            values={row.sparkline_60d}
+            values={row.sparkline}
             width={200}
             height={48}
             color={row.company === 'TIPSMUSIC' ? '#60a5fa' : '#a78bfa'}

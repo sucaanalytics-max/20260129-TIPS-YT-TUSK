@@ -1063,41 +1063,73 @@ type Company = 'TIPSMUSIC' | 'SAREGAMA';
 export interface DualSymbolHeadlineRow {
   company: Company;
   latest_date: string | null;
+  range: StockRange;
+  range_label: string;
+  // Close: latest + return over selected range (log return on adjusted close)
   close: number | null;
-  close_prev: number | null;
-  close_delta_pct: number | null;
+  close_return: number | null;
+  // Views: latest daily + range avg vs prior-equal-range avg
   daily_views_latest: number | null;
-  views_7d_avg: number | null;
-  views_prior_7d_avg: number | null;
+  views_avg_current: number | null;
+  views_avg_prior: number | null;
   views_delta_pct: number | null;
+  views_window_days: number;            // for the "Nd avg vs prior Nd" tile hint
+  // Subscribers: latest + Δ over range (subs[latest] - subs[range start])
   subscribers: number | null;
-  subscribers_yoy_delta: number | null;
-  sparkline_60d: Array<number | null>;
+  subs_delta: number | null;
+  // Daily-views sparkline: length matches range, capped at 365 points
+  sparkline: Array<number | null>;
 }
 
 /**
  * Single fan-out for the Overview KPI strip — returns one row per company
  * (TIPSMUSIC, SAREGAMA) with latest close, daily views, subscribers and a
- * 60-day daily-views sparkline.
+ * sparkline, anchored to the selected range. Deltas are computed against the
+ * range start (or, for `all`, against inception / YoY where prior-equal-range
+ * is undefined).
  */
-export async function getDualSymbolHeadline(): Promise<DualSymbolHeadlineRow[]> {
+export async function getDualSymbolHeadline(
+  opts: { range?: StockRange } = {},
+): Promise<DualSymbolHeadlineRow[]> {
   const supabase = getServiceSupabase();
+  const range: StockRange = opts.range ?? '1y';
+  const resolved = resolveStockRange(range);
   const todayIso = new Date().toISOString().slice(0, 10);
-  const since400 = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
+  // Range length in days (used for prior-equal-range comparison + sparkline length)
+  const rangeDays = Math.max(
+    1,
+    Math.round(
+      (new Date(resolved.to + 'T00:00:00Z').getTime() -
+        new Date(resolved.from + 'T00:00:00Z').getTime()) /
+        86_400_000,
+    ),
+  );
+  // For range='all', sparkline capped at 365 days; otherwise match the range.
+  const sparkDays = range === 'all' ? 365 : Math.min(rangeDays, 365);
+  // Pull enough history for the range plus prior-equal-range comparison (2x).
+  const historyDays = range === 'all' ? 365 * 6 : rangeDays * 2 + 10;
+  const since = new Date(Date.now() - historyDays * 86_400_000).toISOString().slice(0, 10);
 
-  const [priceRes, viewsRes] = await Promise.all([
+  const [priceRes, adjPriceRes, viewsRes] = await Promise.all([
     supabase
       .from('fct_price_daily')
       .select('symbol, date, close')
       .in('symbol', ['TIPSMUSIC', 'SAREGAMA'])
-      .gte('date', since400)
+      .gte('date', since)
+      .lte('date', todayIso)
+      .order('date', { ascending: true }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('symbol, date, adjusted_close')
+      .in('symbol', ['TIPSMUSIC', 'SAREGAMA'])
+      .gte('date', since)
       .lte('date', todayIso)
       .order('date', { ascending: true }),
     supabase
       .from('v_company_daily')
       .select('company, date, daily_views, subscribers')
       .in('company', ['TIPSMUSIC', 'SAREGAMA'])
-      .gte('date', since400)
+      .gte('date', since)
       .lte('date', todayIso)
       .order('date', { ascending: true }),
   ]);
@@ -1106,6 +1138,11 @@ export async function getDualSymbolHeadline(): Promise<DualSymbolHeadlineRow[]> 
     symbol: string;
     date: string;
     close: number | null;
+  }>;
+  const adjPrices = (adjPriceRes.data ?? []) as Array<{
+    symbol: string;
+    date: string;
+    adjusted_close: number | null;
   }>;
   const views = (viewsRes.data ?? []) as Array<{
     company: string;
@@ -1118,72 +1155,106 @@ export async function getDualSymbolHeadline(): Promise<DualSymbolHeadlineRow[]> 
 
   for (const company of ['TIPSMUSIC', 'SAREGAMA'] as const) {
     const pricesC = prices.filter((p) => p.symbol === company);
+    const adjPricesC = adjPrices.filter((p) => p.symbol === company);
     const viewsC = views.filter((v) => v.company === company);
 
     const latestPrice = pricesC[pricesC.length - 1];
-    const prevPrice = pricesC[pricesC.length - 2];
     const close = latestPrice?.close != null ? Number(latestPrice.close) : null;
-    const close_prev = prevPrice?.close != null ? Number(prevPrice.close) : null;
-    const close_delta_pct =
-      close != null && close_prev != null && close_prev !== 0
-        ? ((close - close_prev) / close_prev) * 100
-        : null;
+
+    // Close return = log(adj_close[latest] / adj_close[at-or-after range.from])
+    let close_return: number | null = null;
+    if (adjPricesC.length > 0) {
+      const last = adjPricesC[adjPricesC.length - 1];
+      const anchor = adjPricesC.find(
+        (p) => p.date >= resolved.from && p.adjusted_close != null && Number(p.adjusted_close) > 0,
+      );
+      if (
+        last?.adjusted_close != null &&
+        anchor?.adjusted_close != null &&
+        Number(anchor.adjusted_close) > 0
+      ) {
+        close_return = Math.log(Number(last.adjusted_close) / Number(anchor.adjusted_close));
+      }
+    }
 
     const latestViews = viewsC[viewsC.length - 1];
     const daily_views_latest =
       latestViews?.daily_views != null ? Number(latestViews.daily_views) : null;
 
-    // 7d avg of daily_views vs prior 7d avg.
-    const tail = viewsC.slice(-14);
-    function avg(rows: typeof viewsC) {
-      const nums = rows
+    // Views avg over the current range and prior-equal-range
+    function avgInRange(fromDate: string, toDate: string): number | null {
+      const nums = viewsC
+        .filter((r) => r.date >= fromDate && r.date <= toDate)
         .map((r) => (r.daily_views == null ? null : Number(r.daily_views)))
         .filter((n): n is number => n != null);
       return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
     }
-    const cur7 = tail.length >= 7 ? avg(tail.slice(-7)) : null;
-    const pri7 = tail.length >= 14 ? avg(tail.slice(-14, -7)) : null;
-    const views_delta_pct =
-      cur7 != null && pri7 != null && pri7 !== 0 ? ((cur7 - pri7) / pri7) * 100 : null;
 
-    // 60-day sparkline (chronological, oldest→newest). Fill missing days as null.
+    const views_avg_current = avgInRange(resolved.from, resolved.to);
+
+    // Prior-equal-range: shift the window back by `rangeDays`. For 'all',
+    // there is no prior range — fall back to YoY (last 365d vs prior 365d).
+    let views_avg_prior: number | null = null;
+    let views_window_days = rangeDays;
+    if (range === 'all') {
+      const oneYearAgo = new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
+      const twoYearsAgo = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
+      views_avg_prior = avgInRange(twoYearsAgo, oneYearAgo);
+      views_window_days = 365;
+    } else {
+      const priorTo = new Date(new Date(resolved.from + 'T00:00:00Z').getTime() - 86_400_000)
+        .toISOString()
+        .slice(0, 10);
+      const priorFrom = new Date(
+        new Date(resolved.from + 'T00:00:00Z').getTime() - rangeDays * 86_400_000,
+      )
+        .toISOString()
+        .slice(0, 10);
+      views_avg_prior = avgInRange(priorFrom, priorTo);
+    }
+    const views_delta_pct =
+      views_avg_current != null && views_avg_prior != null && views_avg_prior !== 0
+        ? ((views_avg_current - views_avg_prior) / views_avg_prior) * 100
+        : null;
+
+    // Sparkline: last `sparkDays` chronological values (oldest→newest).
     const todayMs = Date.now();
-    const sparkline_60d: Array<number | null> = [];
-    for (let i = 59; i >= 0; i--) {
+    const sparkline: Array<number | null> = [];
+    for (let i = sparkDays - 1; i >= 0; i--) {
       const d = new Date(todayMs - i * 86_400_000).toISOString().slice(0, 10);
       const hit = viewsC.find((v) => v.date === d);
-      sparkline_60d.push(hit?.daily_views != null ? Number(hit.daily_views) : null);
+      sparkline.push(hit?.daily_views != null ? Number(hit.daily_views) : null);
     }
 
-    // subscribers + YoY delta
+    // Subscribers + range Δ (subs[latest] - subs[at-or-after range start])
     const subscribers =
       latestViews?.subscribers != null ? Number(latestViews.subscribers) : null;
-    const yearAgo = viewsC.find((v) => {
-      if (!latestViews?.date) return false;
-      const diff =
-        (new Date(latestViews.date + 'T00:00:00Z').getTime() -
-          new Date(v.date + 'T00:00:00Z').getTime()) /
-        86_400_000;
-      return Math.abs(diff - 365) <= 3;
-    });
-    const subscribers_yoy_delta =
-      subscribers != null && yearAgo?.subscribers != null
-        ? subscribers - Number(yearAgo.subscribers)
-        : null;
+    let subs_delta: number | null = null;
+    if (subscribers != null) {
+      const anchorRow =
+        range === 'all'
+          ? viewsC.find((v) => v.subscribers != null)
+          : viewsC.find((v) => v.date >= resolved.from && v.subscribers != null);
+      if (anchorRow?.subscribers != null) {
+        subs_delta = subscribers - Number(anchorRow.subscribers);
+      }
+    }
 
     out.push({
       company,
       latest_date: latestPrice?.date ?? latestViews?.date ?? null,
+      range,
+      range_label: resolved.label,
       close,
-      close_prev,
-      close_delta_pct,
+      close_return,
       daily_views_latest,
-      views_7d_avg: cur7,
-      views_prior_7d_avg: pri7,
+      views_avg_current,
+      views_avg_prior,
       views_delta_pct,
+      views_window_days,
       subscribers,
-      subscribers_yoy_delta,
-      sparkline_60d,
+      subs_delta,
+      sparkline,
     });
   }
 

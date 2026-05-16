@@ -10,6 +10,12 @@ import {
   getEventHorizon,
   getOpsRunHistory,
 } from '@/lib/queries';
+import {
+  parseStockRange,
+  resolveStockRange,
+  STOCK_RANGE_LABEL,
+  type StockRange,
+} from '@/lib/stock-range';
 import { CACHE_TAGS } from '@/lib/revalidate';
 import { FreshnessBadge } from '@/components/freshness-badge';
 import { CompanyGrowth } from '@/components/breakdowns/company-growth';
@@ -17,33 +23,44 @@ import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
 import { DualSymbolKpiStrip } from '@/components/overview/dual-symbol-kpi-strip';
 import { DualSymbolChart } from '@/components/overview/dual-symbol-chart';
 import { PipelinePulse } from '@/components/overview/pipeline-pulse';
+import { RangeSelector } from '@/components/stock/range-selector';
 
-export default function OverviewPage() {
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { userId } = await auth();
+  if (!userId) redirect('/sign-in');
+
+  const params = await searchParams;
+  const range: StockRange = parseStockRange(params.range);
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
-      <Suspense fallback={null}>
-        <AuthGate />
-      </Suspense>
-
-      <header className="mb-8 flex items-baseline justify-between">
+      <header className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">TUSK · YT × NSE</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Daily monitor — TIPSMUSIC + SAREGAMA · headline data, freshness, events
+            Daily monitor — TIPSMUSIC + SAREGAMA · range:{' '}
+            <span className="text-foreground font-medium">{STOCK_RANGE_LABEL[range]}</span>
           </p>
         </div>
-        <Suspense fallback={<span className="text-muted-foreground text-xs">checking…</span>}>
-          <Freshness />
-        </Suspense>
+        <div className="flex flex-wrap items-center gap-3">
+          <RangeSelector active={range} />
+          <Suspense fallback={<span className="text-muted-foreground text-xs">checking…</span>}>
+            <Freshness />
+          </Suspense>
+        </div>
       </header>
 
       <Suspense fallback={<KpiSkeleton />}>
-        <Headline />
+        <Headline range={range} />
       </Suspense>
 
       <section className="mt-8">
         <Suspense fallback={<ChartSkeleton />}>
-          <ChartBlock />
+          <ChartBlock range={range} />
         </Suspense>
       </section>
 
@@ -51,6 +68,9 @@ export default function OverviewPage() {
         <h2 className="text-foreground mb-4 text-sm font-medium uppercase tracking-wider">
           Growth — daily views, current vs prior period
         </h2>
+        <p className="text-muted-foreground mb-3 text-xs">
+          Multi-period reference (independent of the page range selector).
+        </p>
         <Suspense fallback={<MatrixSkeleton />}>
           <Growth />
         </Suspense>
@@ -68,12 +88,6 @@ export default function OverviewPage() {
   );
 }
 
-async function AuthGate() {
-  const { userId } = await auth();
-  if (!userId) redirect('/sign-in');
-  return null;
-}
-
 async function Freshness() {
   'use cache';
   cacheLife('minutes');
@@ -82,19 +96,20 @@ async function Freshness() {
   return <FreshnessBadge status={status} />;
 }
 
-async function Headline() {
+async function Headline({ range }: { range: StockRange }) {
   'use cache';
   cacheLife('hours');
   cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
-  const rows = await getDualSymbolHeadline();
+  const rows = await getDualSymbolHeadline({ range });
   return <DualSymbolKpiStrip rows={rows} />;
 }
 
-async function ChartBlock() {
+async function ChartBlock({ range }: { range: StockRange }) {
   'use cache';
   cacheLife('hours');
   cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
-  const data = await getDualSymbolChartSeries({});
+  const { from, to } = resolveStockRange(range);
+  const data = await getDualSymbolChartSeries({ from, to });
   return <DualSymbolChart data={data} />;
 }
 

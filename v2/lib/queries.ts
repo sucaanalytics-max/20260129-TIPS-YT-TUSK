@@ -1278,6 +1278,7 @@ export interface StockDeepDive {
   from: string;
   to: string;
   prices: StockPriceRow[];
+  views: Array<{ date: string; daily_views: number | null }>;
   corp_actions: Array<{ ex_date: string; action_type: string; label: string }>;
   index_midcap150: Array<{ date: string; close: number | null }>;
   index_nifty50: Array<{ date: string; close: number | null }>;
@@ -1297,7 +1298,7 @@ export async function getStockDeepDive(opts: {
   // For 52-week range we need at least 365 days regardless of selected range.
   const since52w = new Date(Date.now() - 400 * 86_400_000).toISOString().slice(0, 10);
 
-  const [pRes, aRes, caRes, mRes, n50Res, p52Res] = await Promise.all([
+  const [pRes, aRes, caRes, mRes, n50Res, p52Res, vRes] = await Promise.all([
     supabase
       .from('fct_price_daily')
       .select('date, open, high, low, close, volume')
@@ -1339,6 +1340,14 @@ export async function getStockDeepDive(opts: {
       .select('date, close')
       .eq('symbol', opts.symbol)
       .gte('date', since52w)
+      .order('date', { ascending: true }),
+    // YouTube daily views aggregated to the company (symbol ↔ company 1:1).
+    supabase
+      .from('v_company_daily')
+      .select('date, daily_views')
+      .eq('company', opts.symbol)
+      .gte('date', from)
+      .lte('date', to)
       .order('date', { ascending: true }),
   ]);
 
@@ -1393,12 +1402,21 @@ export async function getStockDeepDive(opts: {
     p52.map((r) => ({ date: r.date, close: r.close != null ? Number(r.close) : null })),
   );
 
+  const views = ((vRes.data ?? []) as Array<{
+    date: string;
+    daily_views: number | null;
+  }>).map((r) => ({
+    date: r.date,
+    daily_views: r.daily_views != null ? Number(r.daily_views) : null,
+  }));
+
   return {
     symbol: opts.symbol,
     range: opts.range,
     from,
     to,
     prices,
+    views,
     corp_actions,
     index_midcap150,
     index_nifty50,

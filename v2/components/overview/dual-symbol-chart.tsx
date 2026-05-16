@@ -22,8 +22,46 @@ function abbrev(n: number): string {
   return String(n);
 }
 
+type TickerFilter = 'both' | 'tips' | 'sare';
+
+const TICKER_OPTIONS: { value: TickerFilter; label: string }[] = [
+  { value: 'both', label: 'Both' },
+  { value: 'tips', label: 'TIPS' },
+  { value: 'sare', label: 'SARE' },
+];
+
+function TickerSelector({
+  value,
+  onChange,
+}: {
+  value: TickerFilter;
+  onChange: (v: TickerFilter) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 text-xs">
+      <span className="text-muted-foreground mr-1">Show:</span>
+      {TICKER_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`rounded-md border px-2.5 py-1 transition-colors ${
+            value === opt.value
+              ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+              : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
   const [smoothing, setSmoothing] = useState<MASmoothing>('7d');
+  const [ticker, setTicker] = useState<TickerFilter>('both');
+  const showTips = ticker !== 'sare';
+  const showSare = ticker !== 'tips';
 
   const smoothed = useMemo(() => {
     if (!data.length) return data;
@@ -58,7 +96,10 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
             {smoothing !== 'abs' ? ` · views smoothed (${smoothing.toUpperCase()})` : null}
           </p>
         </div>
-        <MASelector value={smoothing} onChange={setSmoothing} />
+        <div className="flex flex-wrap items-center gap-3">
+          <TickerSelector value={ticker} onChange={setTicker} />
+          <MASelector value={smoothing} onChange={setSmoothing} />
+        </div>
       </header>
 
       <ResponsiveContainer width="100%" height={360}>
@@ -88,47 +129,55 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
             labelStyle={{ color: '#cbd5e1' }}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />
-          <Line
-            yAxisId="views"
-            type="monotone"
-            dataKey="tips_views"
-            name="TIPS views"
-            stroke="#60a5fa"
-            strokeWidth={1.5}
-            dot={false}
-            connectNulls
-          />
-          <Line
-            yAxisId="views"
-            type="monotone"
-            dataKey="sare_views"
-            name="SARE views"
-            stroke="#a78bfa"
-            strokeWidth={1.5}
-            dot={false}
-            connectNulls
-          />
-          <Line
-            yAxisId="price"
-            type="monotone"
-            dataKey="tips_close"
-            name="TIPS price"
-            stroke="#fbbf24"
-            strokeWidth={1.5}
-            dot={false}
-            connectNulls
-          />
-          <Line
-            yAxisId="price"
-            type="monotone"
-            dataKey="sare_close"
-            name="SARE price"
-            stroke="#f97316"
-            strokeWidth={1.5}
-            strokeDasharray="3 3"
-            dot={false}
-            connectNulls
-          />
+          {showTips && (
+            <Line
+              yAxisId="views"
+              type="monotone"
+              dataKey="tips_views"
+              name="TIPS views"
+              stroke="#60a5fa"
+              strokeWidth={1.5}
+              dot={false}
+              connectNulls
+            />
+          )}
+          {showSare && (
+            <Line
+              yAxisId="views"
+              type="monotone"
+              dataKey="sare_views"
+              name="SARE views"
+              stroke="#a78bfa"
+              strokeWidth={1.5}
+              dot={false}
+              connectNulls
+            />
+          )}
+          {showTips && (
+            <Line
+              yAxisId="price"
+              type="monotone"
+              dataKey="tips_close"
+              name="TIPS price"
+              stroke="#fbbf24"
+              strokeWidth={1.5}
+              dot={false}
+              connectNulls
+            />
+          )}
+          {showSare && (
+            <Line
+              yAxisId="price"
+              type="monotone"
+              dataKey="sare_close"
+              name="SARE price"
+              stroke="#f97316"
+              strokeWidth={1.5}
+              strokeDasharray="3 3"
+              dot={false}
+              connectNulls
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>

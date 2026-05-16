@@ -116,7 +116,7 @@ async function Hero({ symbols, range }: { symbols: string[]; range: StockRange }
 async function PriceBlock({ symbols, range }: { symbols: string[]; range: StockRange }) {
   'use cache';
   cacheLife('hours');
-  cacheTag(CACHE_TAGS.stock, CACHE_TAGS.events);
+  cacheTag(CACHE_TAGS.stock, CACHE_TAGS.events, CACHE_TAGS.channels);
   const deepDives = await Promise.all(
     symbols.map((s) => getStockDeepDive({ symbol: s, range })),
   );

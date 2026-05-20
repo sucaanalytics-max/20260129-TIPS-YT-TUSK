@@ -130,18 +130,25 @@ def handler(request: Any) -> Any:
 def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
     """Pull (date, price, views) per symbol from base tables and compute
     log-return + log-growth-views in pandas. Replaces the original MV path
-    which was TIPSMUSIC-hardcoded.
+    which was TIPSMUSIC-hardcoded — and which also silently broke once total
+    rows exceeded the implicit `.limit(days)` (got first N dates, not last).
+
+    Use a date floor instead of limit ordering so the row-window is correct
+    regardless of how much history accumulates.
 
     Joins on trading dates only (inner join price ⋈ views) — non-trading
     days don't get a log_return so excluding them is the right move.
     """
+    from datetime import date as _date, timedelta as _td
+    # Calendar days × 1.6 ~ trading days × 1 with weekends + holiday buffer.
+    floor = (_date.today() - _td(days=int(days * 1.6))).isoformat()
     # Price series (adjusted close, trading days only)
     res_price = (
         sb.table("fct_adjusted_price_daily")
         .select("date, adjusted_close")
         .eq("symbol", symbol)
+        .gte("date", floor)
         .order("date", desc=False)
-        .limit(days * 2)  # over-fetch in case of weekends/holidays; pandas dedupes
         .execute()
     )
     price_df = pd.DataFrame(res_price.data or [])
@@ -157,6 +164,7 @@ def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
         sb.table("v_company_daily")
         .select("date, daily_views")
         .eq("company", symbol)
+        .gte("date", floor)
         .order("date", desc=False)
         .execute()
     )

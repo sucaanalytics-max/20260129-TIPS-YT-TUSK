@@ -3,6 +3,7 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import {
   viewMomentum,
   catalogFreshness,
+  freshnessRatioAsOf,
   leadLagRead,
   relativeStrength,
   divergence,
@@ -866,6 +867,10 @@ export async function getSignalsSnapshot(opts: {
   const since180 = iso(new Date(today.getTime() - 180 * 86_400_000));
   const since90 = iso(new Date(today.getTime() - 90 * 86_400_000));
   const last30 = iso(new Date(today.getTime() - 30 * 86_400_000));
+  // Catalog-freshness baseline needs 60 historical 30d-rolling windows;
+  // the earliest window starts at today-90, so we need fct_video_daily
+  // from today-90 forward.
+  const since90forFacts = since90;
 
   type EmptyResult<T> = { data: T };
   const emptyResult = <T>(data: T): Promise<EmptyResult<T>> => Promise.resolve({ data });
@@ -929,7 +934,7 @@ export async function getSignalsSnapshot(opts: {
       ? supabase
           .from('fct_video_daily')
           .select('video_id, daily_views, date')
-          .gte('date', last30)
+          .gte('date', since90forFacts)
       : emptyResult<Array<{ video_id: string; daily_views: number | null; date: string }>>([]),
     corrAsof
       ? supabase
@@ -965,20 +970,37 @@ export async function getSignalsSnapshot(opts: {
     is_significant: boolean | null;
   }>;
 
-  // Build per-video sum of daily_views in last 30d, then pair with publish date.
+  // videoFacts is fetched over the wider 90d window for the baseline below.
+  // For the current-window signal input, sum only the trailing 30d.
+  const last30Ms = new Date(last30 + 'T00:00:00Z').getTime();
   const viewsByVideo = new Map<string, number>();
   for (const r of videoFacts) {
     if (r.daily_views == null) continue;
+    const dMs = new Date(r.date + 'T00:00:00Z').getTime();
+    if (dMs < last30Ms) continue;
     viewsByVideo.set(r.video_id, (viewsByVideo.get(r.video_id) ?? 0) + Number(r.daily_views));
   }
   const channelSet = new Set(channelIds);
-  const videoInputs: VideoFreshnessInput[] = videos
-    .filter((v) => channelSet.has(v.channel_id))
+  const ourVideos = videos.filter((v) => channelSet.has(v.channel_id));
+  const videoInputs: VideoFreshnessInput[] = ourVideos
     .map((v) => ({
       published_at: v.published_at,
       views_last_30d: viewsByVideo.get(v.video_id) ?? 0,
     }))
     .filter((v) => v.views_last_30d > 0);
+
+  // Build catalog-freshness baseline: 60 historical 30d-rolling ratios.
+  // catalogFreshness() uses this distribution to z-score the current ratio,
+  // sidestepping the structural bias of static thresholds (Saregama legacy
+  // would always sit < 0.3, TIPS frontline always > 0.6).
+  const ourVideoIds = new Set(ourVideos.map((v) => v.video_id));
+  const ourFacts = videoFacts.filter((f) => ourVideoIds.has(f.video_id));
+  const baselineRatios: number[] = [];
+  for (let i = 1; i <= 60; i++) {
+    const asOf = new Date(today.getTime() - i * 86_400_000);
+    const r = freshnessRatioAsOf(ourVideos, ourFacts, asOf);
+    if (r != null) baselineRatios.push(r);
+  }
 
   // Compute price momentum (z-score of 7d-avg adjusted_close) for divergence.
   // We re-use viewMomentum on a price-shaped series for consistency.
@@ -988,7 +1010,7 @@ export async function getSignalsSnapshot(opts: {
   const viewMom = viewMomentum(
     companyDaily.map((r) => ({ date: r.date, daily_views: r.daily_views })),
   );
-  const fresh = catalogFreshness(videoInputs);
+  const fresh = catalogFreshness(videoInputs, today, baselineRatios);
   const ll = leadLagRead(leadLagRows);
   const rs = relativeStrength(stock, index, 30);
   const div = divergence(viewMom.sigma ?? null, priceMom.sigma ?? null);

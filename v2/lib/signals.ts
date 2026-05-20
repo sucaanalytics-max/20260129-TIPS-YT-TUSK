@@ -114,12 +114,21 @@ export interface VideoFreshnessInput {
 
 /**
  * Share of last-30d views coming from videos published in the last 90 days.
- * High → label is actively producing hits, not riding catalog. Strong leading
- * indicator of revenue durability.
+ * High → label is actively producing hits, not riding catalog.
+ *
+ * Direction interpretation depends on whether a baseline of historical ratios
+ * for the same label is supplied:
+ *   - With baseline (≥ 14 daily ratios): direction comes from z-score against
+ *     the label's own distribution. This is the correct mode for IR work
+ *     because freshness is structurally label-dependent (Saregama legacy will
+ *     always sit at ~5–10% ratio; TIPS frontline at ~50–60%).
+ *   - Without baseline: falls back to static thresholds (> 0.6 = up,
+ *     < 0.3 = down). Kept for tests / cold-start.
  */
 export function catalogFreshness(
   videos: VideoFreshnessInput[],
   asOf: Date = new Date(),
+  baselineRatios?: number[],
 ): SignalCell {
   if (videos.length === 0) {
     return { value: null, direction: 'flat', significant: false, warming: true };
@@ -136,6 +145,22 @@ export function catalogFreshness(
     return { value: null, direction: 'flat', significant: false, warming: true };
   }
   const ratio = fresh / total;
+
+  if (baselineRatios && baselineRatios.length >= 14) {
+    const baseline = baselineRatios.filter((r) => Number.isFinite(r));
+    const mu = mean(baseline);
+    const sd = std(baseline);
+    const z = sd > 0 ? (ratio - mu) / sd : null;
+    return {
+      value: ratio,
+      sigma: z,
+      direction: directionFromZ(z),
+      significant: z != null && Math.abs(z) > Z_SIG,
+      warming: false,
+    };
+  }
+
+  // Cold-start fallback: static thresholds. Acceptable for tests / fresh DBs.
   let direction: Direction = 'flat';
   if (ratio > 0.6) direction = 'up';
   else if (ratio < 0.3) direction = 'down';
@@ -145,6 +170,42 @@ export function catalogFreshness(
     significant: ratio > 0.6,
     warming: false,
   };
+}
+
+/**
+ * Compute the catalogFreshness ratio *as of* a given historical date. Used
+ * by callers to build a baseline distribution of past ratios for the
+ * company-relative z-score in catalogFreshness().
+ *
+ * For each video in `videos`, sums fct_video_daily.daily_views over the
+ * 30 days ending at `asOf`. Videos published within 90 days of `asOf`
+ * contribute to the "fresh" bucket; all contribute to the total. Returns
+ * null when no views were observed in the window.
+ */
+export function freshnessRatioAsOf(
+  videos: Array<{ video_id: string; published_at: string }>,
+  facts: Array<{ video_id: string; daily_views: number | null; date: string }>,
+  asOf: Date,
+): number | null {
+  const asOfMs = asOf.getTime();
+  const windowStartMs = asOfMs - 30 * 86_400_000;
+  const freshCutoffMs = asOfMs - 90 * 86_400_000;
+  const publishedAt = new Map(
+    videos.map((v) => [v.video_id, new Date(v.published_at).getTime()]),
+  );
+  let total = 0;
+  let fresh = 0;
+  for (const r of facts) {
+    if (r.daily_views == null) continue;
+    const dMs = new Date(r.date + 'T00:00:00Z').getTime();
+    if (dMs < windowStartMs || dMs > asOfMs) continue;
+    const pub = publishedAt.get(r.video_id);
+    if (pub == null) continue;
+    const v = Number(r.daily_views);
+    total += v;
+    if (pub >= freshCutoffMs) fresh += v;
+  }
+  return total > 0 ? fresh / total : null;
 }
 
 // --- leadLag -----------------------------------------------------------------

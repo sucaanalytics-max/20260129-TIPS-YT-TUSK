@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import {
   viewMomentum,
   catalogFreshness,
+  freshnessRatioAsOf,
   leadLagRead,
   relativeStrength,
   divergence,
@@ -20,6 +21,7 @@ import {
   liveEventDensity,
   fitCatalogDecay,
   type SignalsSnapshot,
+  type VideoFreshnessInput,
   WARMUP_DAYS,
 } from './signals';
 
@@ -75,6 +77,59 @@ test('catalogFreshness: all old catalog → low ratio, down direction', () => {
   assert.equal(r.warming, false);
   assert.equal(r.value, 0);
   assert.equal(r.direction, 'down');
+});
+
+test('catalogFreshness: with baseline → company-relative z-score, not static threshold', () => {
+  // Saregama-shaped: structurally low ratio (legacy catalog). Static thresholds
+  // would mark this "down". With a baseline of similarly-low ratios it should
+  // be flat / unsurprising.
+  const videos: VideoFreshnessInput[] = [
+    { published_at: '2020-01-01', views_last_30d: 9_000_000 },
+    { published_at: '2026-04-01', views_last_30d: 1_000_000 }, // 10% fresh
+  ];
+  const baselineRatios = Array.from({ length: 30 }, () => 0.08 + Math.random() * 0.04); // ~0.08–0.12
+  const r = catalogFreshness(videos, new Date('2026-05-15'), baselineRatios);
+  // Current ratio = 0.10. Baseline mean ≈ 0.10. z ≈ 0 → flat.
+  assert.equal(r.warming, false);
+  assert.ok(r.value != null && r.value > 0.05 && r.value < 0.15);
+  assert.equal(r.direction, 'flat');
+});
+
+test('catalogFreshness: with baseline → surge above own history flags up', () => {
+  // Same Saregama-shaped label but current ratio is 0.40 vs baseline 0.10 mean.
+  // Statically that'd be "flat" (between 0.3 and 0.6). With baseline it's
+  // clearly a positive surprise.
+  const videos: VideoFreshnessInput[] = [
+    { published_at: '2020-01-01', views_last_30d: 6_000_000 },
+    { published_at: '2026-04-01', views_last_30d: 4_000_000 }, // 40% fresh
+  ];
+  const baselineRatios = Array.from({ length: 30 }, () => 0.08 + Math.random() * 0.04);
+  const r = catalogFreshness(videos, new Date('2026-05-15'), baselineRatios);
+  assert.equal(r.direction, 'up');
+  assert.equal(r.significant, true);
+});
+
+test('freshnessRatioAsOf: returns null on empty facts', () => {
+  const r = freshnessRatioAsOf([], [], new Date('2026-05-15'));
+  assert.equal(r, null);
+});
+
+test('freshnessRatioAsOf: computes ratio at a specific date', () => {
+  const videos = [
+    { video_id: 'old1', published_at: '2020-01-01' },
+    { video_id: 'new1', published_at: '2026-03-15' },
+  ];
+  const facts = [
+    { video_id: 'old1', daily_views: 100, date: '2026-05-14' },
+    { video_id: 'new1', daily_views: 400, date: '2026-05-14' },
+    { video_id: 'old1', daily_views: 100, date: '2026-05-13' },
+  ];
+  // As of 2026-05-15, window is (2026-04-15, 2026-05-15].
+  // old1: 100 (5/14 inside) + 100 (5/13 inside) = 200, fresh=false
+  // new1: 400 (5/14 inside) = 400, fresh=true (pub 2026-03-15 within 90d)
+  // ratio = 400 / 600 ≈ 0.667
+  const r = freshnessRatioAsOf(videos, facts, new Date('2026-05-15'));
+  assert.ok(r != null && Math.abs(r - 400 / 600) < 1e-9);
 });
 
 test('catalogFreshness: mostly-fresh catalog → high ratio, up direction', () => {

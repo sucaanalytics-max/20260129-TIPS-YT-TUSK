@@ -154,36 +154,65 @@ export async function GET(req: Request) {
             });
         }
 
-        // Prior video views for delta math (today's run's prior is yesterday's facts)
+        // Prior video stats for delta math (today's run's prior is yesterday's facts).
+        // Pull views/likes/comments together so all three deltas use the same
+        // anchor day — keeps engagement ratios self-consistent.
         const { data: priorRows } = await supabase
           .from('fct_video_daily')
-          .select('video_id, date, views')
+          .select('video_id, date, views, likes, comments')
           .in('video_id', videoIds)
           .gte('date', new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10))
           .lt('date', today)
           .order('date', { ascending: false });
-        const priorBy = new Map<string, { date: string; views: number }>();
+        const priorBy = new Map<
+          string,
+          { date: string; views: number; likes: number | null; comments: number | null }
+        >();
         for (const r of priorRows ?? []) {
           if (!priorBy.has(r.video_id)) {
-            priorBy.set(r.video_id, { date: r.date, views: Number(r.views ?? 0) });
+            priorBy.set(r.video_id, {
+              date: r.date,
+              views: Number(r.views ?? 0),
+              likes: r.likes != null ? Number(r.likes) : null,
+              comments: r.comments != null ? Number(r.comments) : null,
+            });
           }
         }
 
         const factRows = videos.map((v) => {
           const views = v.statistics?.viewCount != null ? Number(v.statistics.viewCount) : null;
+          const likes = v.statistics?.likeCount != null ? Number(v.statistics.likeCount) : null;
+          const comments =
+            v.statistics?.commentCount != null ? Number(v.statistics.commentCount) : null;
           const prior = priorBy.get(v.id);
+          const oneDayPrior = prior != null && diffDays(today, prior.date) === 1;
           let daily_views: number | null = null;
-          if (views != null && prior && diffDays(today, prior.date) === 1) {
+          let daily_likes: number | null = null;
+          let daily_comments: number | null = null;
+          if (oneDayPrior && views != null && prior) {
             const dv = views - prior.views;
             if (dv >= 0 && dv <= 200_000_000) daily_views = dv;
+          }
+          // Likes / comments can have negative deltas (moderation, spam
+          // removal). Allow them, but cap absolute magnitude to filter
+          // sensor-glitch outliers.
+          if (oneDayPrior && likes != null && prior && prior.likes != null) {
+            const dl = likes - prior.likes;
+            if (Math.abs(dl) <= 50_000_000) daily_likes = dl;
+          }
+          if (oneDayPrior && comments != null && prior && prior.comments != null) {
+            const dc = comments - prior.comments;
+            if (Math.abs(dc) <= 10_000_000) daily_comments = dc;
           }
           return {
             video_id: v.id,
             date: today,
             views,
-            likes: v.statistics?.likeCount != null ? Number(v.statistics.likeCount) : null,
-            comments: v.statistics?.commentCount != null ? Number(v.statistics.commentCount) : null,
+            likes,
+            comments,
             daily_views,
+            daily_likes,
+            daily_comments,
             ingest_run_id: runId,
           };
         });

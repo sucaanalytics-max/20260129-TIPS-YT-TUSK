@@ -16,6 +16,10 @@ const Schema = z.object({
   // YouTube
   YOUTUBE_API_KEY: z.string().min(20),
 
+  // SocialBlade Matrix API (optional — if absent, the SB cron is no-op)
+  SOCIALBLADE_CLIENT_ID: z.string().min(8).optional().or(z.literal('')),
+  SOCIALBLADE_TOKEN: z.string().min(20).optional().or(z.literal('')),
+
   // Stock symbols (CSV)
   STOCK_SYMBOLS: z.string().default('TIPSMUSIC,SAREGAMA'),
 
@@ -42,6 +46,8 @@ export const env = Schema.parse({
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   CRON_SECRET: process.env.CRON_SECRET,
   YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
+  SOCIALBLADE_CLIENT_ID: process.env.SOCIALBLADE_CLIENT_ID,
+  SOCIALBLADE_TOKEN: process.env.SOCIALBLADE_TOKEN,
   STOCK_SYMBOLS: process.env.STOCK_SYMBOLS,
   MARKET_INDEX_SYMBOLS: process.env.MARKET_INDEX_SYMBOLS,
   BSE_SCRIP_CODES: process.env.BSE_SCRIP_CODES,

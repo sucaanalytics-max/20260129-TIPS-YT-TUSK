@@ -29,4 +29,5 @@ export const CACHE_TAGS = {
   events: 'events',
   ops: 'ops',
   signals: 'signals',
+  rank: 'rank',
 } as const;

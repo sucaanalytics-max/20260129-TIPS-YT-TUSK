@@ -4,6 +4,7 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import {
   creditsRemaining,
   fetchSocialBladeChannel,
+  isSocialBladeNotIndexed,
   snapshotRowFromResponse,
   socialBladeConfigured,
 } from '@/lib/socialblade';
@@ -85,7 +86,11 @@ export async function GET(req: Request) {
         const row = snapshotRowFromResponse(ch.channel_id, today, res, runId);
         if (row) rows.push(row);
       } catch (e) {
-        failed.push({ channel_id: ch.channel_id, error: (e as Error).message });
+        if (isSocialBladeNotIndexed(e)) {
+          skipped.push({ channel_id: ch.channel_id, reason: 'sb-not-indexed (404)' });
+        } else {
+          failed.push({ channel_id: ch.channel_id, error: (e as Error).message });
+        }
       }
     }
 

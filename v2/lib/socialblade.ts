@@ -83,11 +83,21 @@ export async function fetchSocialBladeChannel(
     },
   });
   if (!res.ok) {
-    throw new Error(
+    const err = new Error(
       `socialblade ${res.status}: ${(await res.text()).slice(0, 200)}`,
-    );
+    ) as Error & { httpStatus: number };
+    err.httpStatus = res.status;
+    throw err;
   }
   return (await res.json()) as SBYouTubeResponse;
+}
+
+/**
+ * 404s from the SB index mean the channel is dormant / not tracked, not a
+ * transient error. Callers should treat them as `skipped`, not `failed`.
+ */
+export function isSocialBladeNotIndexed(err: unknown): boolean {
+  return (err as { httpStatus?: number })?.httpStatus === 404;
 }
 
 /**

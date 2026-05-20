@@ -38,6 +38,7 @@ from _common import (  # noqa: E402
 
 WINDOWS = (7, 30, 60, 120)
 LAGS = tuple(range(-10, 11))
+SYMBOLS = ("TIPSMUSIC", "SAREGAMA")
 
 
 def handler(request: Any) -> Any:
@@ -51,55 +52,70 @@ def handler(request: Any) -> Any:
     run_id = open_run(sb, "stats_recompute")
 
     try:
-        # 1) Refresh the materialized view so we read a stable snapshot.
-        sb.rpc("refresh_fct_returns_daily").execute() if _rpc_exists(sb) else _manual_refresh(sb)
+        per_symbol_summary: dict[str, Any] = {}
+        total_corr_rows = 0
+        total_granger_rows = 0
 
-        # 2) Pull last 730 days
-        df = _fetch_returns(sb, days=730)
-        if df.empty or len(df) < 30:
-            close_run(sb, run_id, "partial", rows_in=len(df), rows_out=0, detail={"note": "insufficient data"})
-            return json_response(200, {"ok": True, "run_id": run_id, "rows": len(df), "note": "insufficient data"})
+        for symbol in SYMBOLS:
+            df = _fetch_returns_for_symbol(sb, symbol=symbol, days=730)
+            if df.empty or len(df) < 30:
+                per_symbol_summary[symbol] = {"rows": len(df), "note": "insufficient data"}
+                continue
 
-        # 3) ADF stationarity diagnostics
-        adf = {
-            "log_return":       _adf_summary(df["log_return"].dropna()),
-            "log_growth_views": _adf_summary(df["log_growth_views"].dropna()),
-        }
+            asof = df["date"].max()
+            adf = {
+                "log_return":       _adf_summary(df["log_return"].dropna()),
+                "log_growth_views": _adf_summary(df["log_growth_views"].dropna()),
+            }
 
-        # 4) Rolling correlation grid
-        corr_rows, raw_pvals = _compute_correlation_grid(df, asof=df["date"].max())
-        if raw_pvals:
-            _, p_fdr, _, _ = multipletests(raw_pvals, method="fdr_bh")
-            for row, p_adj in zip(corr_rows, p_fdr):
-                row["p_value_fdr"] = float(p_adj)
-                row["is_significant"] = bool(p_adj < 0.05 and row["n_obs"] >= max(10, row["window_days"] // 2))
-                row["ingest_run_id"] = run_id
+            corr_rows, raw_pvals = _compute_correlation_grid(df, asof=asof)
+            if raw_pvals:
+                _, p_fdr, _, _ = multipletests(raw_pvals, method="fdr_bh")
+                for row, p_adj in zip(corr_rows, p_fdr):
+                    row["symbol"] = symbol
+                    row["p_value_fdr"] = float(p_adj)
+                    row["is_significant"] = bool(p_adj < 0.05 and row["n_obs"] >= max(10, row["window_days"] // 2))
+                    row["ingest_run_id"] = run_id
 
-        if corr_rows:
-            _chunked_upsert(sb, "fct_correlation_window", corr_rows, on_conflict="asof,window_days,lag_days", chunk=200)
+            if corr_rows:
+                _chunked_upsert(sb, "fct_correlation_window", corr_rows, on_conflict="symbol,asof,window_days,lag_days", chunk=200)
+                total_corr_rows += len(corr_rows)
 
-        # 5) Granger causality
-        granger_rows = _compute_granger(df, asof=df["date"].max(), max_lag=10, run_id=run_id)
-        if granger_rows:
-            _chunked_upsert(sb, "fct_granger_summary", granger_rows, on_conflict="asof,direction,lag", chunk=100)
+            granger_rows = _compute_granger(df, asof=asof, max_lag=10, run_id=run_id)
+            for row in granger_rows:
+                row["symbol"] = symbol
+            if granger_rows:
+                _chunked_upsert(sb, "fct_granger_summary", granger_rows, on_conflict="symbol,asof,direction,lag", chunk=100)
+                total_granger_rows += len(granger_rows)
+
+            per_symbol_summary[symbol] = {
+                "rows": len(df),
+                "asof": str(asof),
+                "correlation_rows": len(corr_rows),
+                "granger_rows": len(granger_rows),
+                "adf": adf,
+            }
 
         close_run(
             sb,
             run_id,
-            "ok",
-            rows_in=len(df),
-            rows_out=len(corr_rows) + len(granger_rows),
-            detail={"adf": adf, "windows": list(WINDOWS), "lags": list(LAGS), "asof": str(df["date"].max())},
+            "ok" if any("correlation_rows" in v for v in per_symbol_summary.values()) else "partial",
+            rows_in=sum(v.get("rows", 0) for v in per_symbol_summary.values()),
+            rows_out=total_corr_rows + total_granger_rows,
+            detail={"per_symbol": per_symbol_summary, "windows": list(WINDOWS), "lags": list(LAGS)},
         )
 
-        # Cache invalidation handled by the Next.js side via a webhook to
-        # /api/internal/revalidate (POST { tag: 'correlation' }). Implemented
-        # only if NEXT_PUBLIC_APP_URL + an internal secret are set.
         _try_revalidate("correlation", "events", "overview", "signals")
 
         return json_response(
             200,
-            {"ok": True, "run_id": run_id, "rows": len(df), "correlation_rows": len(corr_rows), "granger_rows": len(granger_rows)},
+            {
+                "ok": True,
+                "run_id": run_id,
+                "per_symbol": per_symbol_summary,
+                "correlation_rows": total_corr_rows,
+                "granger_rows": total_granger_rows,
+            },
         )
 
     except Exception as exc:  # noqa: BLE001
@@ -111,38 +127,63 @@ def handler(request: Any) -> Any:
 
 # ---- Internals --------------------------------------------------------------
 
-def _rpc_exists(sb: Any) -> bool:
-    # Reserved for if/when we add a refresh_fct_returns_daily RPC. For now
-    # we fall back to a raw REFRESH MATERIALIZED VIEW via execute().
-    return False
+def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
+    """Pull (date, price, views) per symbol from base tables and compute
+    log-return + log-growth-views in pandas. Replaces the original MV path
+    which was TIPSMUSIC-hardcoded.
 
-
-def _manual_refresh(sb: Any) -> None:
-    # Supabase-py doesn't expose raw SQL; rely on a SECURITY DEFINER function.
-    # We provision this in migration 0006 (see below) named refresh_fct_returns.
-    try:
-        sb.rpc("refresh_fct_returns").execute()
-    except Exception as exc:  # noqa: BLE001
-        # MV may not exist yet (fresh project, no data). Continue without refresh.
-        print(f"refresh_fct_returns failed (continuing): {exc}", flush=True)
-
-
-def _fetch_returns(sb: Any, days: int) -> pd.DataFrame:
-    res = (
-        sb.table("fct_returns_daily")
-        .select("date, close, log_return, daily_views, log_growth_views, index_close, log_return_mkt")
+    Joins on trading dates only (inner join price ⋈ views) — non-trading
+    days don't get a log_return so excluding them is the right move.
+    """
+    # Price series (adjusted close, trading days only)
+    res_price = (
+        sb.table("fct_adjusted_price_daily")
+        .select("date, adjusted_close")
+        .eq("symbol", symbol)
         .order("date", desc=False)
-        .limit(days)
+        .limit(days * 2)  # over-fetch in case of weekends/holidays; pandas dedupes
         .execute()
     )
-    df = pd.DataFrame(res.data or [])
-    if df.empty:
-        return df
-    df["date"] = pd.to_datetime(df["date"]).dt.date
-    for col in ("log_return", "log_growth_views", "log_return_mkt"):
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-    return df.dropna(subset=["log_return", "log_growth_views"]).reset_index(drop=True)
+    price_df = pd.DataFrame(res_price.data or [])
+    if price_df.empty:
+        return pd.DataFrame()
+    price_df["date"] = pd.to_datetime(price_df["date"]).dt.date
+    price_df["adjusted_close"] = pd.to_numeric(price_df["adjusted_close"], errors="coerce")
+    price_df = price_df.dropna().sort_values("date").reset_index(drop=True)
+    price_df["log_return"] = np.log(price_df["adjusted_close"]) - np.log(price_df["adjusted_close"].shift(1))
+
+    # Views series (v_company_daily — already SUM'd across owned channels)
+    res_views = (
+        sb.table("v_company_daily")
+        .select("date, daily_views")
+        .eq("company", symbol)
+        .order("date", desc=False)
+        .execute()
+    )
+    views_df = pd.DataFrame(res_views.data or [])
+    if views_df.empty:
+        return pd.DataFrame()
+    views_df["date"] = pd.to_datetime(views_df["date"]).dt.date
+    views_df["daily_views"] = pd.to_numeric(views_df["daily_views"], errors="coerce")
+    views_df = views_df.dropna().sort_values("date").reset_index(drop=True)
+    # Log-growth of views: treat zero/missing as missing, lag by 1
+    views_df["log_growth_views"] = np.log(views_df["daily_views"].replace(0, np.nan)) - np.log(
+        views_df["daily_views"].shift(1).replace(0, np.nan)
+    )
+
+    # Inner join on trading dates only (non-trading dates have no price → dropped)
+    df = price_df.merge(
+        views_df[["date", "daily_views", "log_growth_views"]],
+        on="date",
+        how="inner",
+    )
+    df = df.rename(columns={"adjusted_close": "close"})
+
+    # Drop the first row (NaN log_return / log_growth_views from the shift)
+    df = df.dropna(subset=["log_return", "log_growth_views"]).reset_index(drop=True)
+
+    # Trim to last `days` trading days
+    return df.tail(days).reset_index(drop=True)
 
 
 def _adf_summary(series: pd.Series) -> dict[str, Any]:

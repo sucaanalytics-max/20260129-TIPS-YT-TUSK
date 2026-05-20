@@ -303,23 +303,31 @@ export async function getDualAxisSeries(opts: {
 export async function getRollingCorrelation(opts: {
   window: 7 | 30 | 60 | 120;
   lag?: number;
+  symbol?: 'TIPSMUSIC' | 'SAREGAMA';
 }): Promise<RollingCorrelationRow[]> {
   const supabase = getServiceSupabase();
   const lag = opts.lag ?? 0;
+  const symbol = opts.symbol ?? 'TIPSMUSIC';
   const { data } = await supabase
     .from('fct_correlation_window')
     .select('asof, window_days, lag_days, pearson_r, spearman_rho, n_obs, p_value_raw, p_value_fdr, is_significant')
+    .eq('symbol', symbol)
     .eq('window_days', opts.window)
     .eq('lag_days', lag)
     .order('asof', { ascending: true });
   return (data as RollingCorrelationRow[] | null) ?? [];
 }
 
-export async function getLeadLagScan(opts: { window: 7 | 30 | 60 | 120 }): Promise<LeadLagRow[]> {
+export async function getLeadLagScan(opts: {
+  window: 7 | 30 | 60 | 120;
+  symbol?: 'TIPSMUSIC' | 'SAREGAMA';
+}): Promise<LeadLagRow[]> {
   const supabase = getServiceSupabase();
+  const symbol = opts.symbol ?? 'TIPSMUSIC';
   const { data: latest } = await supabase
     .from('fct_correlation_window')
     .select('asof')
+    .eq('symbol', symbol)
     .order('asof', { ascending: false })
     .limit(1);
   const asof = latest?.[0]?.asof;
@@ -327,6 +335,7 @@ export async function getLeadLagScan(opts: { window: 7 | 30 | 60 | 120 }): Promi
   const { data } = await supabase
     .from('fct_correlation_window')
     .select('lag_days, pearson_r, p_value_fdr, is_significant')
+    .eq('symbol', symbol)
     .eq('window_days', opts.window)
     .eq('asof', asof)
     .order('lag_days', { ascending: true });
@@ -854,9 +863,10 @@ export async function getChannelGrowth(opts: { company?: string }): Promise<Chan
  * lib/signals.ts (pure). This function is the I/O boundary: it pulls the
  * minimal shape needed and feeds the pure layer.
  *
- * Lead-lag math is currently TIPSMUSIC-only (fct_correlation_window is keyed
- * to TIPSMUSIC via v_returns_join). Saregama lead-lag will stay in 'warming'
- * state until the Python stats service is extended.
+ * Lead-lag math is computed per-symbol by the Python stats service
+ * (api/stats/recompute.py loops over SYMBOLS and writes fct_correlation_window
+ * rows tagged by `symbol`). Both TIPSMUSIC and SAREGAMA participate as of
+ * migration 0013.
  */
 export async function getSignalsSnapshot(opts: {
   company: 'TIPSMUSIC' | 'SAREGAMA';
@@ -900,13 +910,12 @@ export async function getSignalsSnapshot(opts: {
       .eq('index_name', 'NIFTY_MIDCAP_150')
       .gte('date', since90)
       .order('date', { ascending: true }),
-    opts.company === 'TIPSMUSIC'
-      ? supabase
-          .from('fct_correlation_window')
-          .select('asof')
-          .order('asof', { ascending: false })
-          .limit(1)
-      : emptyResult<Array<{ asof: string }>>([]),
+    supabase
+      .from('fct_correlation_window')
+      .select('asof')
+      .eq('symbol', opts.company)
+      .order('asof', { ascending: false })
+      .limit(1),
   ]);
 
   const companyDaily = (companyDailyRes.data ?? []) as Array<{
@@ -940,6 +949,7 @@ export async function getSignalsSnapshot(opts: {
       ? supabase
           .from('fct_correlation_window')
           .select('lag_days, pearson_r, p_value_fdr, is_significant')
+          .eq('symbol', opts.company)
           .eq('window_days', 30)
           .eq('asof', corrAsof)
           .order('lag_days', { ascending: true })

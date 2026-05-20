@@ -51,9 +51,12 @@ async function GrangerBlock() {
   cacheLife('hours');
   cacheTag(CACHE_TAGS.correlation);
   const supabase = getServiceSupabase();
+  // /correlation page is TIPSMUSIC-deep-dive; Granger results for other
+  // symbols are kept in the same table but scoped via the symbol column.
   const { data: latestAsof } = await supabase
     .from('fct_granger_summary')
     .select('asof')
+    .eq('symbol', 'TIPSMUSIC')
     .order('asof', { ascending: false })
     .limit(1);
   const asof = latestAsof?.[0]?.asof;
@@ -67,6 +70,7 @@ async function GrangerBlock() {
   const { data } = await supabase
     .from('fct_granger_summary')
     .select('direction, lag, f_statistic, p_value, n_obs')
+    .eq('symbol', 'TIPSMUSIC')
     .eq('asof', asof)
     .order('direction', { ascending: true })
     .order('lag', { ascending: true });

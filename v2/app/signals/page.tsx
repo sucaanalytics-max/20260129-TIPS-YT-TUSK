@@ -7,6 +7,7 @@ import {
   getLeadLagPanorama,
   getEventHorizon,
   getFreshness,
+  getRankTrajectory,
 } from '@/lib/queries';
 import { composeRead } from '@/lib/signals';
 import { CACHE_TAGS } from '@/lib/revalidate';
@@ -16,6 +17,7 @@ import { SignalGrid } from '@/components/signals/signal-grid';
 import { LeadLagPanorama } from '@/components/signals/lead-lag-panorama';
 import { DivergenceCard } from '@/components/signals/divergence-card';
 import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
+import { RankTrajectoryStrip } from '@/components/signals/rank-trajectory-strip';
 
 export default function SignalsPage() {
   return (
@@ -48,6 +50,12 @@ export default function SignalsPage() {
       <Suspense fallback={<GridSkeleton />}>
         <Grid />
       </Suspense>
+
+      <section className="mt-8">
+        <Suspense fallback={<PanoramaSkeleton />}>
+          <RankTrajectory />
+        </Suspense>
+      </section>
 
       <section className="mt-8 grid gap-4 lg:grid-cols-2">
         <Suspense fallback={<PanoramaSkeleton />}>
@@ -130,6 +138,24 @@ async function Horizon() {
   cacheTag(CACHE_TAGS.signals, CACHE_TAGS.events);
   const events = await getEventHorizon({ days: 30 });
   return <EventHorizonStrip events={events} />;
+}
+
+async function RankTrajectory() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.signals, CACHE_TAGS.rank);
+  const [tips, sare] = await Promise.all([
+    getRankTrajectory({ company: 'TIPSMUSIC', days: 180 }),
+    getRankTrajectory({ company: 'SAREGAMA', days: 180 }),
+  ]);
+  return (
+    <RankTrajectoryStrip
+      trajectories={[
+        { company: 'TIPSMUSIC', points: tips },
+        { company: 'SAREGAMA', points: sare },
+      ]}
+    />
+  );
 }
 
 function ReadSkeleton() {

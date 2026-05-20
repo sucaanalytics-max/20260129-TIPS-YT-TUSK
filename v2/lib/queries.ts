@@ -7,6 +7,8 @@ import {
   relativeStrength,
   divergence,
   subscriberDrift,
+  peerRankMomentum,
+  liveEventDensity,
   type SignalsSnapshot,
   type VideoFreshnessInput,
 } from '@/lib/signals';
@@ -994,6 +996,15 @@ export async function getSignalsSnapshot(opts: {
     companyDaily.map((r) => ({ date: r.date, subscribers: r.subscribers })),
   );
 
+  // PR 3a additions: peer rank + live event density. Fail-soft if SB data
+  // hasn't landed yet (returns warming cells per the pure-fn contract).
+  const [rankTraj, liveEvts] = await Promise.all([
+    getRankTrajectory({ company: opts.company, days: 180 }),
+    getLiveEventInputs({ company: opts.company, days: 90 }),
+  ]);
+  const peerRank = peerRankMomentum(rankTraj);
+  const liveDen = liveEventDensity(liveEvts);
+
   const asOf = companyDaily.length > 0 ? companyDaily[companyDaily.length - 1].date : null;
   const daysAvailable = companyDaily.filter((r) => r.daily_views != null).length;
 
@@ -1007,6 +1018,8 @@ export async function getSignalsSnapshot(opts: {
     relativeStrength: rs,
     divergence: div,
     subscriberDrift: subs,
+    peerRankMomentum: peerRank,
+    liveEventDensity: liveDen,
   };
 }
 

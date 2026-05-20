@@ -8,6 +8,8 @@ const COLS = [
   { key: 'relativeStrength', label: 'Rel. strength', fmt: 'pct' as const, color: '#f59e0b' },
   { key: 'divergence', label: 'Divergence', fmt: 'sigma' as const, color: '#ef4444' },
   { key: 'subscriberDrift', label: 'Subs drift', fmt: 'sigma' as const, color: '#94a3b8' },
+  { key: 'peerRankMomentum', label: 'Peer rank Δ', fmt: 'count' as const, color: '#22d3ee' },
+  { key: 'liveEventDensity', label: 'Live events 30d', fmt: 'count' as const, color: '#f472b6' },
 ] as const;
 
 export function SignalGrid({ snapshots }: { snapshots: SignalsSnapshot[] }) {
@@ -24,7 +26,7 @@ export function SignalGrid({ snapshots }: { snapshots: SignalsSnapshot[] }) {
               {snap.daysAvailable} days of data
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
             {COLS.map((col) => (
               <SignalTile
                 key={col.key}

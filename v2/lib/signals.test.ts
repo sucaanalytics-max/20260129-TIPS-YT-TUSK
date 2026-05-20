@@ -192,6 +192,20 @@ function snap(overrides: Partial<SignalsSnapshot> = {}): SignalsSnapshot {
       significant: false,
       warming: false,
     },
+    peerRankMomentum: {
+      value: 0,
+      sigma: 0,
+      direction: 'flat',
+      significant: false,
+      warming: false,
+    },
+    liveEventDensity: {
+      value: 0,
+      sigma: 0,
+      direction: 'flat',
+      significant: false,
+      warming: false,
+    },
     ...overrides,
   };
 }

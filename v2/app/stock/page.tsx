@@ -8,7 +8,9 @@ import {
   getRiskMetrics,
   getEarningsCalendar,
   getRelativePerformanceSeries,
+  getCatalogDecayInputs,
 } from '@/lib/queries';
+import { fitCatalogDecay } from '@/lib/signals';
 import {
   parseStockRange,
   parseStockSymbol,
@@ -29,6 +31,7 @@ import {
   StockPriceChart,
   StockPriceChartCompare,
 } from '@/components/stock/price-chart';
+import { CatalogDecayChart } from '@/components/stock/catalog-decay-chart';
 
 export default async function StockPage({
   searchParams,
@@ -93,6 +96,14 @@ export default async function StockPage({
           <Earnings symbols={symbols} />
         </Suspense>
       </section>
+
+      {symbolParam !== 'compare' && (
+        <section className="mt-6">
+          <Suspense fallback={<ChartSkeleton />}>
+            <CatalogDecay symbol={symbols[0]} />
+          </Suspense>
+        </section>
+      )}
     </main>
   );
 }
@@ -184,6 +195,16 @@ async function Earnings({ symbols }: { symbols: string[] }) {
     await Promise.all(symbols.map((s) => getEarningsCalendar({ symbol: s })))
   ).flat();
   return <EarningsTable rows={rows} multi={symbols.length > 1} />;
+}
+
+async function CatalogDecay({ symbol }: { symbol: string }) {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.stock, CACHE_TAGS.channels);
+  const company = symbol === 'TIPSMUSIC' ? 'TIPSMUSIC' : 'SAREGAMA';
+  const observations = await getCatalogDecayInputs({ company });
+  const fit = fitCatalogDecay(observations);
+  return <CatalogDecayChart observations={observations} fit={fit} symbol={symbol} />;
 }
 
 function HeroSkeleton() {

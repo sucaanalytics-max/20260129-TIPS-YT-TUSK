@@ -32,6 +32,11 @@ export interface SignalsSnapshot {
   relativeStrength: SignalCell;
   divergence: SignalCell & { active: boolean };
   subscriberDrift: SignalCell;
+  // PR 3a additions — purely additive; composeRead's bias scoring still uses the
+  // original 6-signal weighting to keep the IR READ stable. These tiles surface
+  // alongside as additional context on the SignalGrid.
+  peerRankMomentum: SignalCell;
+  liveEventDensity: SignalCell;
 }
 
 // --- constants ---------------------------------------------------------------

@@ -38,6 +38,7 @@ export async function GET(req: Request) {
       .from('dim_channel')
       .select('channel_id, uploads_playlist_id, channel_name')
       .eq('is_active', true)
+      .eq('ingest_videos', true)
       .not('uploads_playlist_id', 'is', null);
     if (chErr) throw new Error(chErr.message);
     if (!channels?.length) {

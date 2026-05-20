@@ -16,6 +16,9 @@ import {
   divergence,
   subscriberDrift,
   composeRead,
+  peerRankMomentum,
+  liveEventDensity,
+  fitCatalogDecay,
   type SignalsSnapshot,
   WARMUP_DAYS,
 } from './signals';
@@ -243,6 +246,156 @@ test('composeRead: warming signals contribute 0 and show in sentence', () => {
   const r = composeRead(s);
   assert.equal(r.bias, 'MIXED');
   assert.match(r.sentence, new RegExp(`Warming up . 12/${WARMUP_DAYS} days`));
+});
+
+// --- peerRankMomentum -------------------------------------------------------
+
+test('peerRankMomentum: warming when fewer than 4 snapshots', () => {
+  const r = peerRankMomentum([
+    { asof: '2026-04-01', subs_rank: 30 },
+    { asof: '2026-04-15', subs_rank: 28 },
+    { asof: '2026-05-01', subs_rank: 25 },
+  ]);
+  assert.equal(r.warming, true);
+});
+
+test('peerRankMomentum: rank improving (lower number) → positive value, up direction', () => {
+  // rank 30 → 25 over 30+ days = climbing by 5 positions
+  const r = peerRankMomentum([
+    { asof: '2026-03-01', subs_rank: 30 },
+    { asof: '2026-03-15', subs_rank: 29 },
+    { asof: '2026-04-01', subs_rank: 28 },
+    { asof: '2026-04-15', subs_rank: 26 },
+    { asof: '2026-05-01', subs_rank: 25 },
+  ]);
+  assert.equal(r.warming, false);
+  assert.ok(r.value != null && r.value > 0, `expected positive value, got ${r.value}`);
+  assert.equal(r.direction, 'up');
+});
+
+test('peerRankMomentum: rank deteriorating → negative value, down direction', () => {
+  // rank 25 → 30 over 30+ days = falling 5 positions
+  const r = peerRankMomentum([
+    { asof: '2026-03-01', subs_rank: 25 },
+    { asof: '2026-03-15', subs_rank: 26 },
+    { asof: '2026-04-01', subs_rank: 27 },
+    { asof: '2026-04-15', subs_rank: 29 },
+    { asof: '2026-05-01', subs_rank: 30 },
+  ]);
+  assert.equal(r.warming, false);
+  assert.ok(r.value != null && r.value < 0);
+  assert.equal(r.direction, 'down');
+});
+
+test('peerRankMomentum: |delta| ≥ 3 is significant', () => {
+  const r = peerRankMomentum([
+    { asof: '2026-03-01', subs_rank: 30 },
+    { asof: '2026-03-15', subs_rank: 28 },
+    { asof: '2026-04-01', subs_rank: 27 },
+    { asof: '2026-04-15', subs_rank: 26 },
+    { asof: '2026-05-01', subs_rank: 25 },
+  ]);
+  assert.equal(r.significant, true);
+});
+
+// --- liveEventDensity -------------------------------------------------------
+
+test('liveEventDensity: zero events → flat, warming', () => {
+  const r = liveEventDensity([], new Date('2026-05-20'), 30);
+  assert.equal(r.warming, true);
+  assert.equal(r.value, 0);
+});
+
+test('liveEventDensity: cur > prior * 1.2 → up direction', () => {
+  // prior 30d: 5 events, current 30d: 10 events
+  const asOf = new Date('2026-05-20');
+  const events = [
+    // prior 30d window: 2026-03-21 → 2026-04-20
+    { event_date: '2026-04-01' },
+    { event_date: '2026-04-05' },
+    { event_date: '2026-04-10' },
+    { event_date: '2026-04-15' },
+    { event_date: '2026-04-19' },
+    // current 30d window: 2026-04-20 → 2026-05-20
+    { event_date: '2026-04-21' },
+    { event_date: '2026-04-25' },
+    { event_date: '2026-04-30' },
+    { event_date: '2026-05-03' },
+    { event_date: '2026-05-06' },
+    { event_date: '2026-05-09' },
+    { event_date: '2026-05-12' },
+    { event_date: '2026-05-15' },
+    { event_date: '2026-05-17' },
+    { event_date: '2026-05-19' },
+  ];
+  const r = liveEventDensity(events, asOf, 30);
+  assert.equal(r.warming, false);
+  assert.equal(r.value, 10);
+  assert.equal(r.direction, 'up');
+});
+
+test('liveEventDensity: cur < prior * 0.8 → down direction', () => {
+  const asOf = new Date('2026-05-20');
+  const events = [
+    // prior 30d: 10 events
+    { event_date: '2026-04-01' },
+    { event_date: '2026-04-02' },
+    { event_date: '2026-04-03' },
+    { event_date: '2026-04-04' },
+    { event_date: '2026-04-05' },
+    { event_date: '2026-04-06' },
+    { event_date: '2026-04-07' },
+    { event_date: '2026-04-08' },
+    { event_date: '2026-04-09' },
+    { event_date: '2026-04-10' },
+    // current 30d: 5 events
+    { event_date: '2026-05-01' },
+    { event_date: '2026-05-05' },
+    { event_date: '2026-05-09' },
+    { event_date: '2026-05-13' },
+    { event_date: '2026-05-17' },
+  ];
+  const r = liveEventDensity(events, asOf, 30);
+  assert.equal(r.value, 5);
+  assert.equal(r.direction, 'down');
+});
+
+// --- fitCatalogDecay --------------------------------------------------------
+
+test('fitCatalogDecay: null when too few observations', () => {
+  const obs = Array.from({ length: 20 }, (_, i) => ({
+    video_age_days: i,
+    daily_views: 1000 / (1 + i),
+  }));
+  assert.equal(fitCatalogDecay(obs), null);
+});
+
+test('fitCatalogDecay: recovers a known power-law decay (b=1)', () => {
+  // Synthetic: views = 10000 * (1+t)^-1, no noise
+  const obs = Array.from({ length: 100 }, (_, i) => ({
+    video_age_days: i,
+    daily_views: 10000 / (1 + i),
+  }));
+  const r = fitCatalogDecay(obs);
+  assert.ok(r != null);
+  assert.ok(Math.abs(r!.b - 1) < 0.01, `expected b≈1, got ${r!.b}`);
+  assert.ok(Math.abs(r!.a - 10000) / 10000 < 0.01, `expected a≈10000, got ${r!.a}`);
+  assert.ok(r!.r_squared > 0.99, `expected near-perfect R², got ${r!.r_squared}`);
+});
+
+test('fitCatalogDecay: filters non-positive views and negative ages', () => {
+  const obs = [
+    ...Array.from({ length: 50 }, (_, i) => ({
+      video_age_days: i,
+      daily_views: 1000 / (1 + i),
+    })),
+    { video_age_days: 10, daily_views: 0 },          // filtered
+    { video_age_days: -5, daily_views: 100 },         // filtered
+    { video_age_days: 5, daily_views: -10 },          // filtered
+  ];
+  const r = fitCatalogDecay(obs);
+  assert.ok(r != null);
+  assert.equal(r!.n_observations, 50);
 });
 
 test('composeRead: active divergence with view-up flips score positive', () => {

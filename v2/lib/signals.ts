@@ -311,6 +311,191 @@ export function subscriberDrift(
   };
 }
 
+// --- peerRankMomentum -------------------------------------------------------
+
+export interface SBSnapshot {
+  asof: string;          // YYYY-MM-DD
+  subs_rank: number | null;
+}
+
+/**
+ * Peer-relative subscriber-rank momentum. Lower rank number = climbing peers.
+ * Direction is *inverted* from the raw rank delta: rank dropping (e.g. 31 → 25)
+ * is a POSITIVE signal (climbing).
+ *
+ * Returns value = -(rank_today - rank_30d_ago)  i.e. positive when rank fell.
+ * Requires ≥ 4 snapshots in the window; otherwise warming.
+ */
+export function peerRankMomentum(snapshots: SBSnapshot[]): SignalCell {
+  // Sort ascending by asof so latest = last element
+  const sorted = [...snapshots]
+    .filter((s) => s.subs_rank != null && Number.isFinite(s.subs_rank))
+    .sort((a, b) => a.asof.localeCompare(b.asof));
+  if (sorted.length < 4) {
+    return { value: null, sigma: null, direction: 'flat', significant: false, warming: true };
+  }
+  const latest = sorted[sorted.length - 1];
+  const anchor =
+    sorted.find(
+      (s) =>
+        new Date(latest.asof + 'T00:00:00Z').getTime() -
+          new Date(s.asof + 'T00:00:00Z').getTime() >=
+        30 * 86_400_000,
+    ) ?? sorted[0];
+  const delta_inverted = (anchor.subs_rank as number) - (latest.subs_rank as number);
+
+  // Z-score against the distribution of all 30d-prior deltas in the window
+  const deltas: number[] = [];
+  for (const cur of sorted) {
+    const prior = sorted.find(
+      (p) =>
+        new Date(cur.asof + 'T00:00:00Z').getTime() -
+          new Date(p.asof + 'T00:00:00Z').getTime() >=
+        30 * 86_400_000,
+    );
+    if (prior && cur.subs_rank != null && prior.subs_rank != null) {
+      deltas.push((prior.subs_rank as number) - (cur.subs_rank as number));
+    }
+  }
+  let sigma: number | null = null;
+  if (deltas.length >= 2) {
+    const mu = mean(deltas);
+    const sd = std(deltas);
+    if (sd > 0) sigma = (delta_inverted - mu) / sd;
+  }
+  let direction: Direction = 'flat';
+  if (delta_inverted > 0) direction = 'up';
+  else if (delta_inverted < 0) direction = 'down';
+
+  return {
+    value: delta_inverted,
+    sigma,
+    direction,
+    significant: Math.abs(delta_inverted) >= 3, // 3+ position shift considered meaningful
+    warming: false,
+    caveat: 'Lower rank number = better. Value is rank improvement (positive = climbing peers).',
+  };
+}
+
+// --- liveEventDensity -------------------------------------------------------
+
+export interface LiveEventInput {
+  event_date: string;      // YYYY-MM-DD
+}
+
+/**
+ * Count of live broadcasts / premieres in the trailing window, with z-score
+ * against the prior equal-length window. Captures "release activity" beyond
+ * what catalogFreshness sees (catalog freshness misses live-only content).
+ */
+export function liveEventDensity(
+  events: LiveEventInput[],
+  asOf: Date = new Date(),
+  windowDays = 30,
+): SignalCell {
+  const todayMs = asOf.getTime();
+  const winMs = windowDays * 86_400_000;
+  const cutoffMs = todayMs - winMs;
+  const priorCutoffMs = todayMs - 2 * winMs;
+
+  let cur = 0;
+  let prior = 0;
+  for (const e of events) {
+    const t = new Date(e.event_date + 'T00:00:00Z').getTime();
+    if (t >= cutoffMs && t < todayMs) cur += 1;
+    else if (t >= priorCutoffMs && t < cutoffMs) prior += 1;
+  }
+
+  let direction: Direction = 'flat';
+  if (cur > prior * 1.2) direction = 'up';
+  else if (cur < prior * 0.8) direction = 'down';
+
+  // z-score against poisson-style baseline (prior count as expected mean)
+  let sigma: number | null = null;
+  if (prior >= 3) {
+    sigma = (cur - prior) / Math.sqrt(prior);
+  }
+
+  return {
+    value: cur,
+    sigma,
+    direction,
+    significant: sigma != null && Math.abs(sigma) > 1.5,
+    warming: cur + prior < 3,
+  };
+}
+
+// --- fitCatalogDecay --------------------------------------------------------
+
+export interface DecayInput {
+  video_age_days: number;  // days since published_at
+  daily_views: number;     // observed daily views
+}
+
+export interface DecayCurve {
+  a: number;             // intercept (estimated initial day-1 views)
+  b: number;             // decay exponent (positive = decaying)
+  r_squared: number;     // 0..1
+  n_observations: number;
+  n_videos?: number;     // optional context
+}
+
+/**
+ * Fit a power-law catalog decay: daily_views(t) = a * (1 + t)^(-b)
+ *
+ * Linearized: log(views) = log(a) - b * log(1 + t)
+ * Solved as ordinary least squares on the log-log pairs.
+ *
+ * Filters out daily_views <= 0 (log undefined) and any age < 0.
+ * Returns null if too few observations to fit.
+ */
+export function fitCatalogDecay(observations: DecayInput[]): DecayCurve | null {
+  const pairs: Array<{ x: number; y: number }> = [];
+  for (const o of observations) {
+    if (o.video_age_days < 0) continue;
+    if (o.daily_views <= 0) continue;
+    pairs.push({
+      x: Math.log(1 + o.video_age_days),
+      y: Math.log(o.daily_views),
+    });
+  }
+  if (pairs.length < 30) return null;
+
+  const n = pairs.length;
+  let sx = 0,
+    sy = 0,
+    sxx = 0,
+    sxy = 0;
+  for (const p of pairs) {
+    sx += p.x;
+    sy += p.y;
+    sxx += p.x * p.x;
+    sxy += p.x * p.y;
+  }
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return null;
+  const slope = (n * sxy - sx * sy) / denom;
+  const intercept = (sy - slope * sx) / n;
+
+  // R²
+  const mean_y = sy / n;
+  let ss_tot = 0;
+  let ss_res = 0;
+  for (const p of pairs) {
+    const yHat = intercept + slope * p.x;
+    ss_tot += (p.y - mean_y) ** 2;
+    ss_res += (p.y - yHat) ** 2;
+  }
+  const r_squared = ss_tot > 0 ? 1 - ss_res / ss_tot : 0;
+
+  return {
+    a: Math.exp(intercept),
+    b: -slope, // slope is typically negative; report b as positive decay rate
+    r_squared,
+    n_observations: n,
+  };
+}
+
 // --- composeRead -------------------------------------------------------------
 
 const WEIGHTS = {

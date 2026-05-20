@@ -1705,3 +1705,219 @@ export async function getRelativePerformanceSeries(opts: {
   }));
   return cumulativeRelativePerformance(stock, idx);
 }
+
+// =============================================================================
+// Raw-data depth phase (PR 3a) — SB snapshots + decay inputs
+// =============================================================================
+
+export interface SBCompanyGrowthRow {
+  company: Company;
+  asof: string;
+  subs_growth: Record<string, number | null>;
+  views_growth: Record<string, number | null>;
+  total_subscribers: number | null;
+  total_views: number | null;
+  flagship_grade: string | null;
+  flagship_sb_rank: number | null;
+}
+
+/**
+ * Company-level aggregation of the most-recent SocialBlade snapshot.
+ *
+ * For each (company, latest_asof_per_channel), sums the per-channel growth
+ * windows since growth values are additive. Reports the flagship channel's
+ * grade and sb_rank (Tips Official for TIPS, Saregama for SARE) — those
+ * single-channel attributes don't aggregate meaningfully via sum.
+ */
+const FLAGSHIP_CHANNEL: Record<Company, string> = {
+  TIPSMUSIC: 'UCJrDMFOdv1I2k8n9oK_V21w',     // Tips Official
+  SAREGAMA: 'UC_A7K2dXFsTMAciGmnNxy-Q',       // Saregama (flagship)
+};
+
+export async function getSBCompanyGrowth(): Promise<SBCompanyGrowthRow[]> {
+  const supabase = getServiceSupabase();
+  // Latest snapshot per channel
+  const { data } = await supabase
+    .from('fct_channel_sb_snapshot')
+    .select(
+      'channel_id, asof, subs_growth_1, subs_growth_3, subs_growth_7, subs_growth_14, subs_growth_30, subs_growth_60, subs_growth_90, subs_growth_180, subs_growth_365, views_growth_1, views_growth_3, views_growth_7, views_growth_14, views_growth_30, views_growth_60, views_growth_90, views_growth_180, views_growth_365, total_subscribers, total_views, grade, sb_rank',
+    )
+    .order('asof', { ascending: false });
+
+  type Row = {
+    channel_id: string;
+    asof: string;
+    [k: string]: string | number | null;
+  };
+  const rows = ((data ?? []) as Row[]) ?? [];
+  // Pick latest per channel
+  const latestByChannel = new Map<string, Row>();
+  for (const r of rows) {
+    if (!latestByChannel.has(r.channel_id)) latestByChannel.set(r.channel_id, r);
+  }
+
+  // Join channel → company
+  const { data: chData } = await supabase
+    .from('dim_channel')
+    .select('channel_id, company')
+    .eq('is_active', true);
+  const companyOf = new Map(
+    ((chData ?? []) as Array<{ channel_id: string; company: string }>).map((c) => [
+      c.channel_id,
+      c.company,
+    ]),
+  );
+
+  const out: SBCompanyGrowthRow[] = [];
+  for (const company of ['TIPSMUSIC', 'SAREGAMA'] as const) {
+    const windows: Array<'1' | '3' | '7' | '14' | '30' | '60' | '90' | '180' | '365'> = [
+      '1', '3', '7', '14', '30', '60', '90', '180', '365',
+    ];
+    const subs_growth: Record<string, number | null> = {};
+    const views_growth: Record<string, number | null> = {};
+    for (const w of windows) {
+      subs_growth[w] = 0;
+      views_growth[w] = 0;
+    }
+    let total_subscribers = 0;
+    let total_views = 0;
+    let any = false;
+    let latestAsof = '';
+    for (const [cid, row] of latestByChannel) {
+      if (companyOf.get(cid) !== company) continue;
+      any = true;
+      if (row.asof > latestAsof) latestAsof = String(row.asof);
+      for (const w of windows) {
+        const sv = row[`subs_growth_${w}`];
+        const vv = row[`views_growth_${w}`];
+        if (typeof sv === 'number') subs_growth[w] = (subs_growth[w] ?? 0) + sv;
+        if (typeof vv === 'number') views_growth[w] = (views_growth[w] ?? 0) + vv;
+      }
+      if (typeof row.total_subscribers === 'number') total_subscribers += row.total_subscribers;
+      if (typeof row.total_views === 'number') total_views += row.total_views;
+    }
+    const flagship = latestByChannel.get(FLAGSHIP_CHANNEL[company]);
+    out.push({
+      company,
+      asof: latestAsof,
+      subs_growth,
+      views_growth,
+      total_subscribers: any ? total_subscribers : null,
+      total_views: any ? total_views : null,
+      flagship_grade: (flagship?.grade as string | null) ?? null,
+      flagship_sb_rank: (flagship?.sb_rank as number | null) ?? null,
+    });
+  }
+  return out;
+}
+
+/**
+ * Time-series of subs_rank for the flagship channel of a company.
+ * Used by peerRankMomentum + the RankTrajectoryStrip UI.
+ */
+export async function getRankTrajectory(opts: {
+  company: Company;
+  days?: number;
+}): Promise<Array<{ asof: string; subs_rank: number | null; sb_rank: number | null }>> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 180;
+  const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const channelId = FLAGSHIP_CHANNEL[opts.company];
+  const { data } = await supabase
+    .from('fct_channel_sb_snapshot')
+    .select('asof, subs_rank, sb_rank')
+    .eq('channel_id', channelId)
+    .gte('asof', since)
+    .order('asof', { ascending: true });
+  return ((data ?? []) as Array<{ asof: string; subs_rank: number | null; sb_rank: number | null }>);
+}
+
+/**
+ * Recent live-premiere event dates for the company's channels.
+ * Feeds liveEventDensity().
+ */
+export async function getLiveEventInputs(opts: {
+  company: Company;
+  days?: number;
+}): Promise<Array<{ event_date: string }>> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 90;
+  const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const { data: channels } = await supabase
+    .from('dim_channel')
+    .select('channel_id')
+    .eq('company', opts.company)
+    .eq('is_active', true);
+  const channelIds = ((channels ?? []) as Array<{ channel_id: string }>).map((c) => c.channel_id);
+  if (channelIds.length === 0) return [];
+  const { data } = await supabase
+    .from('dim_event')
+    .select('event_date')
+    .eq('event_type', 'live_premiere')
+    .in('channel_id', channelIds)
+    .gte('event_date', since)
+    .order('event_date', { ascending: true });
+  return ((data ?? []) as Array<{ event_date: string }>);
+}
+
+/**
+ * Inputs for the catalog-decay power-law fit: (video_age_days, daily_views)
+ * pairs over the last ~90 days of fct_video_daily for the company's videos.
+ * Filters to videos published within the last 365 days so the fit isn't
+ * dominated by old back-catalog (which has near-zero daily views).
+ */
+export async function getCatalogDecayInputs(opts: {
+  company: Company;
+  recentVideoDays?: number;
+  factWindowDays?: number;
+}): Promise<Array<{ video_age_days: number; daily_views: number }>> {
+  const supabase = getServiceSupabase();
+  const recentVideoDays = opts.recentVideoDays ?? 365;
+  const factWindowDays = opts.factWindowDays ?? 90;
+  const videoPublishedSince = new Date(Date.now() - recentVideoDays * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const factDateSince = new Date(Date.now() - factWindowDays * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+
+  const { data: channels } = await supabase
+    .from('dim_channel')
+    .select('channel_id')
+    .eq('company', opts.company)
+    .eq('is_active', true);
+  const channelIds = ((channels ?? []) as Array<{ channel_id: string }>).map((c) => c.channel_id);
+  if (channelIds.length === 0) return [];
+
+  const { data: videos } = await supabase
+    .from('dim_video')
+    .select('video_id, published_at')
+    .in('channel_id', channelIds)
+    .gte('published_at', videoPublishedSince);
+  const videosTyped = ((videos ?? []) as Array<{ video_id: string; published_at: string }>);
+  if (videosTyped.length === 0) return [];
+
+  const videoIds = videosTyped.map((v) => v.video_id);
+  const publishedAt = new Map(videosTyped.map((v) => [v.video_id, v.published_at]));
+
+  const { data: facts } = await supabase
+    .from('fct_video_daily')
+    .select('video_id, date, daily_views')
+    .in('video_id', videoIds)
+    .gte('date', factDateSince);
+  const out: Array<{ video_age_days: number; daily_views: number }> = [];
+  for (const r of (facts ?? []) as Array<{
+    video_id: string;
+    date: string;
+    daily_views: number | null;
+  }>) {
+    if (r.daily_views == null || r.daily_views <= 0) continue;
+    const pub = publishedAt.get(r.video_id);
+    if (!pub) continue;
+    const age =
+      (new Date(r.date + 'T00:00:00Z').getTime() - new Date(pub).getTime()) / 86_400_000;
+    if (age < 0) continue;
+    out.push({ video_age_days: Math.floor(age), daily_views: Number(r.daily_views) });
+  }
+  return out;
+}

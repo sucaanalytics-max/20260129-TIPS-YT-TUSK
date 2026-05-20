@@ -57,21 +57,43 @@ export async function GET(req: Request) {
         const videos = await fetchVideos(videoIds);
 
         // dim_video upsert (one row per video; created or refreshed)
-        const dimRows = videos.map((v) => ({
-          video_id: v.id,
-          channel_id: v.snippet.channelId,
-          title: v.snippet.title,
-          description: v.snippet.description ?? null,
-          published_at: v.snippet.publishedAt,
-          duration_seconds: parseDurationSeconds(v.contentDetails?.duration),
-          // is_short is NOT NULL in schema with default false; coerce missing
-          // duration to false rather than sending null which overrides default.
-          is_short: isShort(v.contentDetails?.duration) ?? false,
-          category_id: v.snippet.categoryId ?? null,
-          language: v.snippet.defaultLanguage ?? v.snippet.defaultAudioLanguage ?? null,
-          tags: v.snippet.tags ?? null,
-          updated_at: new Date().toISOString(),
-        }));
+        const dimRows = videos.map((v) => {
+          const live = v.liveStreamingDetails;
+          // Merge topicDetails.topicIds + relevantTopicIds (deduped).
+          const tIds = new Set<string>([
+            ...(v.topicDetails?.topicIds ?? []),
+            ...(v.topicDetails?.relevantTopicIds ?? []),
+          ]);
+          const concurrent =
+            live?.concurrentViewers != null ? Number(live.concurrentViewers) : null;
+          return {
+            video_id: v.id,
+            channel_id: v.snippet.channelId,
+            title: v.snippet.title,
+            description: v.snippet.description ?? null,
+            published_at: v.snippet.publishedAt,
+            duration_seconds: parseDurationSeconds(v.contentDetails?.duration),
+            // is_short is NOT NULL in schema with default false; coerce missing
+            // duration to false rather than sending null which overrides default.
+            is_short: isShort(v.contentDetails?.duration) ?? false,
+            category_id: v.snippet.categoryId ?? null,
+            language: v.snippet.defaultLanguage ?? v.snippet.defaultAudioLanguage ?? null,
+            tags: v.snippet.tags ?? null,
+            // Topics: opaque entity IDs + human-readable Wikipedia categories
+            topic_ids: tIds.size > 0 ? Array.from(tIds) : null,
+            topic_categories: v.topicDetails?.topicCategories ?? null,
+            // Live-streaming metadata
+            is_live: live?.actualStartTime != null,
+            actual_start_time: live?.actualStartTime ?? null,
+            actual_end_time: live?.actualEndTime ?? null,
+            scheduled_start_time: live?.scheduledStartTime ?? null,
+            peak_concurrent_viewers: concurrent != null && Number.isFinite(concurrent) ? concurrent : null,
+            // Compliance
+            made_for_kids:
+              v.status?.madeForKids ?? v.status?.selfDeclaredMadeForKids ?? null,
+            updated_at: new Date().toISOString(),
+          };
+        });
         const { error: dimErr } = await supabase
           .from('dim_video')
           .upsert(dimRows, { onConflict: 'video_id' });
@@ -95,6 +117,41 @@ export async function GET(req: Request) {
         await supabase
           .from('dim_event')
           .upsert(eventRows, { onConflict: 'event_type,video_id', ignoreDuplicates: false });
+
+        // Emit 'live_premiere' events for completed live broadcasts. These have
+        // different abnormal-return profiles than catalog releases and need to
+        // be studied separately by the event-study pipeline. Keyed by video_id
+        // (same uq_dim_event_video index) so re-runs are idempotent.
+        const premiereRows = videos
+          .filter((v) => v.liveStreamingDetails?.actualStartTime != null)
+          .map((v) => {
+            const live = v.liveStreamingDetails!;
+            const concurrent =
+              live.concurrentViewers != null ? Number(live.concurrentViewers) : null;
+            return {
+              event_type: 'live_premiere',
+              event_date: (live.actualStartTime ?? v.snippet.publishedAt).slice(0, 10),
+              label: v.snippet.title.slice(0, 200),
+              channel_id: v.snippet.channelId,
+              video_id: v.id,
+              meta: {
+                actual_start_time: live.actualStartTime,
+                actual_end_time: live.actualEndTime ?? null,
+                scheduled_start_time: live.scheduledStartTime ?? null,
+                peak_concurrent_viewers:
+                  concurrent != null && Number.isFinite(concurrent) ? concurrent : null,
+                duration_seconds: parseDurationSeconds(v.contentDetails?.duration),
+              },
+            };
+          });
+        if (premiereRows.length > 0) {
+          await supabase
+            .from('dim_event')
+            .upsert(premiereRows, {
+              onConflict: 'event_type,video_id',
+              ignoreDuplicates: false,
+            });
+        }
 
         // Prior video views for delta math (today's run's prior is yesterday's facts)
         const { data: priorRows } = await supabase

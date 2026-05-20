@@ -34,6 +34,25 @@ export interface YTChannel {
   contentDetails: {
     relatedPlaylists: { uploads: string };
   };
+  topicDetails?: {
+    topicIds?: string[];
+    topicCategories?: string[];
+  };
+  brandingSettings?: {
+    channel?: {
+      title?: string;
+      description?: string;
+      keywords?: string;
+      country?: string;
+    };
+  };
+  status?: {
+    privacyStatus?: string;
+    isLinked?: boolean;
+    longUploadsStatus?: string;
+    madeForKids?: boolean;
+    selfDeclaredMadeForKids?: boolean;
+  };
 }
 
 export interface YTVideo {
@@ -59,14 +78,40 @@ export interface YTVideo {
     duration: string; // ISO 8601 PT#M#S
     definition?: string;
   };
+  topicDetails?: {
+    topicIds?: string[];
+    relevantTopicIds?: string[];
+    topicCategories?: string[];
+  };
+  liveStreamingDetails?: {
+    actualStartTime?: string;
+    actualEndTime?: string;
+    scheduledStartTime?: string;
+    scheduledEndTime?: string;
+    concurrentViewers?: string;
+    activeLiveChatId?: string;
+  };
+  status?: {
+    uploadStatus?: string;
+    privacyStatus?: string;
+    license?: string;
+    embeddable?: boolean;
+    publicStatsViewable?: boolean;
+    madeForKids?: boolean;
+    selfDeclaredMadeForKids?: boolean;
+  };
 }
+
+// part= expansion is FREE — quota cost is per-call (1 unit), not per-part.
+const CHANNEL_PARTS = 'snippet,statistics,contentDetails,topicDetails,brandingSettings,status';
+const VIDEO_PARTS = 'snippet,statistics,contentDetails,topicDetails,liveStreamingDetails,status';
 
 /** Batches up to 50 ids per call. Returns one item per id found. */
 export async function fetchChannels(channelIds: string[]): Promise<YTChannel[]> {
   const out: YTChannel[] = [];
   for (let i = 0; i < channelIds.length; i += BATCH) {
     const chunk = channelIds.slice(i, i + BATCH);
-    const url = `${YT}/channels?part=snippet,statistics,contentDetails&id=${chunk.join(',')}&maxResults=${BATCH}&key=${env.YOUTUBE_API_KEY}`;
+    const url = `${YT}/channels?part=${CHANNEL_PARTS}&id=${chunk.join(',')}&maxResults=${BATCH}&key=${env.YOUTUBE_API_KEY}`;
     const res = await fetchWithRetry(url);
     if (!res.ok) throw new Error(`channels.list ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const j = (await res.json()) as { items: YTChannel[] };
@@ -80,7 +125,7 @@ export async function fetchVideos(videoIds: string[]): Promise<YTVideo[]> {
   const out: YTVideo[] = [];
   for (let i = 0; i < videoIds.length; i += BATCH) {
     const chunk = videoIds.slice(i, i + BATCH);
-    const url = `${YT}/videos?part=snippet,statistics,contentDetails&id=${chunk.join(',')}&maxResults=${BATCH}&key=${env.YOUTUBE_API_KEY}`;
+    const url = `${YT}/videos?part=${VIDEO_PARTS}&id=${chunk.join(',')}&maxResults=${BATCH}&key=${env.YOUTUBE_API_KEY}`;
     const res = await fetchWithRetry(url);
     if (!res.ok) throw new Error(`videos.list ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const j = (await res.json()) as { items: YTVideo[] };

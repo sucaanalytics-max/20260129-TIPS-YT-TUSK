@@ -135,13 +135,17 @@ export async function GET(req: Request) {
         ingest_run_id: runId,
       });
 
-      // Opportunistic: keep dim_channel.uploads_playlist_id fresh.
+      // Opportunistic: keep dim_channel.uploads_playlist_id + status flags fresh.
       const uploads = it.contentDetails?.relatedPlaylists?.uploads;
-      if (uploads) {
-        channelDimUpdates.push({
-          channel_id: ch.channel_id,
-          uploads_playlist_id: uploads,
-        });
+      const made_for_kids =
+        it.status?.madeForKids ?? it.status?.selfDeclaredMadeForKids ?? null;
+      const privacy_status = it.status?.privacyStatus ?? null;
+      if (uploads || made_for_kids != null || privacy_status != null) {
+        const update: Record<string, unknown> = { channel_id: ch.channel_id };
+        if (uploads) update.uploads_playlist_id = uploads;
+        if (made_for_kids != null) update.made_for_kids = made_for_kids;
+        if (privacy_status != null) update.privacy_status = privacy_status;
+        channelDimUpdates.push(update);
       }
     }
 

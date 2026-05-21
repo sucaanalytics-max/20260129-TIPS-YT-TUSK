@@ -142,20 +142,31 @@ def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
     from datetime import date as _date, timedelta as _td
     # Calendar days × 1.6 ~ trading days × 1 with weekends + holiday buffer.
     floor = (_date.today() - _td(days=int(days * 1.6))).isoformat()
-    # Price series (adjusted close, trading days only).
-    # Explicit .limit(5000) overrides PostgREST's default 1000-row cap —
-    # views series has ~365 rows/year so the cap would silently truncate
-    # the tail of the window and skew asof.
-    res_price = (
-        sb.table("fct_adjusted_price_daily")
-        .select("date, adjusted_close")
-        .eq("symbol", symbol)
-        .gte("date", floor)
-        .order("date", desc=False)
-        .limit(5000)
-        .execute()
+
+    # PostgREST max-rows is enforced project-wide (≈ 1000). Explicit .limit()
+    # values larger than that are silently capped. Use .range() pagination to
+    # actually fetch the full window.
+    def _paginated_fetch(builder_fn, page_size: int = 1000, max_pages: int = 10):
+        rows: list[dict[str, Any]] = []
+        for page in range(max_pages):
+            lo = page * page_size
+            hi = lo + page_size - 1
+            res = builder_fn().range(lo, hi).execute()
+            chunk = res.data or []
+            rows.extend(chunk)
+            if len(chunk) < page_size:
+                break
+        return rows
+
+    # Price series (adjusted close, trading days only)
+    price_rows = _paginated_fetch(
+        lambda: sb.table("fct_adjusted_price_daily")
+            .select("date, adjusted_close")
+            .eq("symbol", symbol)
+            .gte("date", floor)
+            .order("date", desc=False)
     )
-    price_df = pd.DataFrame(res_price.data or [])
+    price_df = pd.DataFrame(price_rows)
     if price_df.empty:
         return pd.DataFrame()
     price_df["date"] = pd.to_datetime(price_df["date"]).dt.date
@@ -163,18 +174,15 @@ def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
     price_df = price_df.dropna().sort_values("date").reset_index(drop=True)
     price_df["log_return"] = np.log(price_df["adjusted_close"]) - np.log(price_df["adjusted_close"].shift(1))
 
-    # Views series (v_company_daily — already SUM'd across owned channels).
-    # .limit(5000) defeats PostgREST's 1000-row cap (v_company_daily ~365/year).
-    res_views = (
-        sb.table("v_company_daily")
-        .select("date, daily_views")
-        .eq("company", symbol)
-        .gte("date", floor)
-        .order("date", desc=False)
-        .limit(5000)
-        .execute()
+    # Views series (v_company_daily — already SUM'd across owned channels)
+    views_rows = _paginated_fetch(
+        lambda: sb.table("v_company_daily")
+            .select("date, daily_views")
+            .eq("company", symbol)
+            .gte("date", floor)
+            .order("date", desc=False)
     )
-    views_df = pd.DataFrame(res_views.data or [])
+    views_df = pd.DataFrame(views_rows)
     if views_df.empty:
         return pd.DataFrame()
     views_df["date"] = pd.to_datetime(views_df["date"]).dt.date

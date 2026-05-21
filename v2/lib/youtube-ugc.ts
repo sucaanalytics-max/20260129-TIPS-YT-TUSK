@@ -155,78 +155,91 @@ function parseAccessibility(text: string): {
 
 export interface MusicAttribution {
   kind: 'content_id' | 'sound_ref' | 'none';
-  label: string | null;
   song: string | null;
   artist: string | null;
+  // Linked source-audio video ID when present. Maps to the master audio
+  // upload that YT's Content ID matched against. Resolve to label via
+  // a downstream dim_video JOIN.
+  source_video_id: string | null;
+  // The old "Licensed to YouTube by ..." string. Modern panels (post
+  // ~2025-Q4) no longer expose this — left in the type for back-compat
+  // with infoRowRenderer-shaped panels still appearing on long-form
+  // videos. Will be null for most Shorts.
+  label: string | null;
 }
 
 /**
- * Fetch the watch page for a UGC video and parse the "Music in this video"
- * panel from ytInitialData. Returns:
- *   - kind='content_id' when the panel surfaces an explicit
- *     "Licensed to YouTube by ..." claim (i.e., the audio is matched via
- *     Content ID and the label is earning ad-share revenue)
- *   - kind='sound_ref' when the panel is absent but the video has a
- *     "Sound" reference back to another video (Shorts-sound system; label
- *     still earns via Shorts Creator Fund share, but through a different
- *     mechanism than Content ID)
- *   - kind='none' otherwise (no detectable music attribution)
+ * Fetch the watch page for a UGC video and parse the music-attribution
+ * panel from ytInitialData. Supports two shapes:
  *
- * Cost: 1 HTTP fetch per video, no YT API quota.
+ *   1. Modern (videoAttributeViewModel) — used on Shorts and increasingly
+ *      on long-form. Exposes title (song), subtitle (artist), and an
+ *      onTap.watchEndpoint.videoId pointing to the source audio video.
+ *      Label name is NOT in this shape.
+ *   2. Legacy (videoDescriptionMusicSectionRenderer → infoRows) — used on
+ *      older long-form watch pages. Exposes "Song", "Artist", "Licensed
+ *      to YouTube by" rows. Label name IS available here.
+ *
+ * Returns:
+ *   - kind='content_id' when either shape is found (label may be null if
+ *     only the modern shape was present)
+ *   - kind='sound_ref' for Shorts using YT's sound-system (no music panel
+ *     but a reelPlayerHeaderRenderer / source link is present)
+ *   - kind='none' otherwise
  */
 export async function fetchMusicAttribution(videoId: string): Promise<MusicAttribution> {
+  const empty: MusicAttribution = {
+    kind: 'none',
+    song: null,
+    artist: null,
+    source_video_id: null,
+    label: null,
+  };
   const res = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
     headers: { 'User-Agent': UA, 'Accept-Language': 'en-US,en;q=0.9' },
     cache: 'no-store',
   });
-  if (!res.ok) {
-    return { kind: 'none', label: null, song: null, artist: null };
-  }
+  if (!res.ok) return empty;
   const html = await res.text();
   const m = html.match(/var ytInitialData\s*=\s*({[\s\S]+?});\s*<\/script>/);
-  if (!m) return { kind: 'none', label: null, song: null, artist: null };
+  if (!m) return empty;
   let data: unknown;
   try {
     data = JSON.parse(m[1]);
   } catch {
-    return { kind: 'none', label: null, song: null, artist: null };
+    return empty;
   }
 
-  // The music panel is usually under engagementPanels →
-  // engagementPanelSectionListRenderer → content →
-  // structuredDescriptionContentRenderer → items → an item whose
-  // videoDescriptionMusicSectionRenderer contains the carouselLockups.
-  // YT also surfaces the same info via horizontalCardListRenderer.
-  // We walk the tree generically to find the first carouselLockup-shaped
-  // node that has song/artist/label text.
-  const carousel = findCarouselLockup(data);
-  if (carousel) {
-    return {
-      kind: 'content_id',
-      song: carousel.song,
-      artist: carousel.artist,
-      label: carousel.label,
-    };
-  }
+  // Try modern shape first (videoAttributeViewModel)
+  const modern = findVideoAttribute(data);
+  if (modern) return { ...modern, kind: 'content_id' };
 
-  // Fall-back: Shorts watch pages sometimes expose "Sound" attribution via
-  // a separate renderer (reelPlayerHeaderRenderer.reelTitleOnClickCommand
-  // → reelWatchEndpoint of the source video).
+  // Fall back to legacy infoRows shape
+  const legacy = findLegacyCarousel(data);
+  if (legacy) return { ...legacy, kind: 'content_id' };
+
+  // No music panel, but Shorts may have a sound-reference renderer
   if (findShortsSoundRef(data)) {
-    return { kind: 'sound_ref', label: null, song: null, artist: null };
+    return { ...empty, kind: 'sound_ref' };
   }
-
-  return { kind: 'none', label: null, song: null, artist: null };
+  return empty;
 }
 
-interface CarouselLockup {
+interface AttributionFields {
   song: string | null;
   artist: string | null;
+  source_video_id: string | null;
   label: string | null;
 }
 
-function findCarouselLockup(node: unknown): CarouselLockup | null {
-  let found: CarouselLockup | null = null;
+/**
+ * Walk the tree looking for a videoAttributeViewModel. This is the modern
+ * shape used on Shorts and increasingly on long-form watch pages. It
+ * carries title (song), subtitle (artist), and a deep link to the source
+ * audio video via onTap.innertubeCommand.watchEndpoint.videoId.
+ */
+function findVideoAttribute(node: unknown): AttributionFields | null {
+  let found: AttributionFields | null = null;
   const walk = (n: unknown): void => {
     if (found || n == null) return;
     if (Array.isArray(n)) {
@@ -235,28 +248,48 @@ function findCarouselLockup(node: unknown): CarouselLockup | null {
     }
     if (typeof n !== 'object') return;
     const o = n as Record<string, unknown>;
-    // Older shape: videoDescriptionMusicSectionRenderer.carouselLockups[]
+    if (o.videoAttributeViewModel && typeof o.videoAttributeViewModel === 'object') {
+      const v = o.videoAttributeViewModel as Record<string, unknown>;
+      const song = typeof v.title === 'string' ? v.title : null;
+      const artist = typeof v.subtitle === 'string' ? v.subtitle : null;
+      const tap = v.onTap as
+        | { innertubeCommand?: { watchEndpoint?: { videoId?: string } } }
+        | undefined;
+      const sourceVid = tap?.innertubeCommand?.watchEndpoint?.videoId ?? null;
+      if (song || artist || sourceVid) {
+        found = { song, artist, source_video_id: sourceVid, label: null };
+        return;
+      }
+    }
+    for (const val of Object.values(o)) walk(val);
+  };
+  walk(node);
+  return found;
+}
+
+/**
+ * Legacy shape (infoRows under videoDescriptionMusicSectionRenderer).
+ * Still present on some older long-form videos. Carries the label name.
+ */
+function findLegacyCarousel(node: unknown): AttributionFields | null {
+  let found: AttributionFields | null = null;
+  const walk = (n: unknown): void => {
+    if (found || n == null) return;
+    if (Array.isArray(n)) {
+      for (const v of n) walk(v);
+      return;
+    }
+    if (typeof n !== 'object') return;
+    const o = n as Record<string, unknown>;
     const sect = o.videoDescriptionMusicSectionRenderer as
       | { carouselLockups?: unknown[] }
       | undefined;
     if (sect?.carouselLockups?.length) {
       const lockup = sect.carouselLockups[0] as Record<string, unknown> | undefined;
-      // Lockup contains videoLockupViewModel or carouselLockupRenderer
       const inner =
         (lockup?.carouselLockupRenderer as Record<string, unknown> | undefined) ??
-        (lockup as Record<string, unknown> | undefined);
-      const parsed = parseCarousel(inner);
-      if (parsed) {
-        found = parsed;
-        return;
-      }
-    }
-    // Newer shape: horizontalCardListRenderer with cards[] each carrying
-    // videoAttributeViewModel.title, secondaryText, tertiaryText etc.
-    if (o.horizontalCardListRenderer) {
-      const list = o.horizontalCardListRenderer as { cards?: unknown[] };
-      const first = list.cards?.[0] as Record<string, unknown> | undefined;
-      const parsed = parseCarousel(first);
+        lockup;
+      const parsed = parseLegacyCarousel(inner);
       if (parsed) {
         found = parsed;
         return;
@@ -268,10 +301,10 @@ function findCarouselLockup(node: unknown): CarouselLockup | null {
   return found;
 }
 
-function parseCarousel(node: Record<string, unknown> | undefined): CarouselLockup | null {
+function parseLegacyCarousel(
+  node: Record<string, unknown> | undefined,
+): AttributionFields | null {
   if (!node) return null;
-  // Common shape: { infoRows: [ { infoRowRenderer: { title: {simpleText}, defaultMetadata: {simpleText} } } ] }
-  // Each row has a label like "Song", "Artist", "Licensed to YouTube by"
   const findInfoRows = (n: unknown): unknown[] => {
     if (!n) return [];
     if (Array.isArray(n)) return n.flatMap(findInfoRows);
@@ -295,11 +328,17 @@ function parseCarousel(node: Record<string, unknown> | undefined): CarouselLocku
     const t = title.toLowerCase();
     if (t.includes('song')) song = value;
     else if (t.includes('artist')) artist = value;
-    else if (t.includes('licensed to youtube by') || t.includes('licensed by') || t.includes('record label')) {
+    else if (
+      t.includes('licensed to youtube by') ||
+      t.includes('licensed by') ||
+      t.includes('record label')
+    ) {
       label = value;
     }
   }
-  if (song || artist || label) return { song, artist, label };
+  if (song || artist || label) {
+    return { song, artist, source_video_id: null, label };
+  }
   return null;
 }
 

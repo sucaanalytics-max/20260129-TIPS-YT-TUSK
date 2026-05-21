@@ -1992,6 +1992,11 @@ export interface UGCReachSnapshot {
   // attribution_kind ∈ { 'content_id', 'sound_ref', 'none', 'unknown' }.
   // 'content_id' = label confirmed to be earning via Content ID claim.
   attributionCounts: Record<string, number>;
+  // I4 (catalog-match): count of UGCs whose music-panel-extracted master
+  // audio source resolves to one of our owned/topic channels. Subset of
+  // attributionCounts.content_id — the strict-confirm path for "this UGC
+  // is monetizing OUR catalog specifically."
+  catalogMatchCount: number;
   topAnchors: UGCAnchorRow[];
 }
 
@@ -2091,32 +2096,96 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     byAnchor.set(r.source_video_id, bucket);
   }
 
-  // 6b) Enriched metadata for the discovered UGC ids (channel + attribution)
+  // 6b) Enriched metadata for the discovered UGC ids (channel + attribution
+  //     + source-channel resolution for catalog-match check)
   const distinctUgcIds = Array.from(new Set(latestRows.map((r) => r.ugc_video_id)));
   const enrichedByUgc = new Map<
     string,
-    { channel_name: string | null; attribution_kind: string | null }
+    {
+      channel_name: string | null;
+      attribution_kind: string | null;
+      attribution_source_channel_id: string | null;
+    }
   >();
   const attributionCounts: Record<string, number> = {};
   for (let i = 0; i < distinctUgcIds.length; i += 200) {
     const slice = distinctUgcIds.slice(i, i + 200);
     const { data: enriched } = await supabase
       .from('dim_ugc_video')
-      .select('ugc_video_id, channel_name, attribution_kind')
+      .select('ugc_video_id, channel_name, attribution_kind, attribution_source_channel_id')
       .in('ugc_video_id', slice);
     for (const e of (enriched ?? []) as Array<{
       ugc_video_id: string;
       channel_name: string | null;
       attribution_kind: string | null;
+      attribution_source_channel_id: string | null;
     }>) {
       enrichedByUgc.set(e.ugc_video_id, {
         channel_name: e.channel_name,
         attribution_kind: e.attribution_kind,
+        attribution_source_channel_id: e.attribution_source_channel_id,
       });
       if (e.attribution_kind) {
         attributionCounts[e.attribution_kind] =
           (attributionCounts[e.attribution_kind] ?? 0) + 1;
       }
+    }
+  }
+
+  // 6c) Catalog-match: how many UGCs have their attribution source resolved
+  // to one of OUR (owned + topic) channels for this company. Topic channels
+  // attribute via dim_artist_label, so for company=TIPSMUSIC we include any
+  // owned channel of TIPSMUSIC + any topic channel where the linked artist
+  // has a non-zero TIPSMUSIC catalog_share.
+  const sourceChannelIds = Array.from(
+    new Set(
+      [...enrichedByUgc.values()]
+        .map((e) => e.attribution_source_channel_id)
+        .filter((id): id is string => id != null),
+    ),
+  );
+  const ourChannelIds = new Set<string>();
+  if (sourceChannelIds.length > 0) {
+    // Owned channels of this company
+    const { data: ownedChans } = await supabase
+      .from('dim_channel')
+      .select('channel_id')
+      .eq('company', opts.company)
+      .in('channel_id', sourceChannelIds);
+    for (const c of (ownedChans ?? []) as Array<{ channel_id: string }>) {
+      ourChannelIds.add(c.channel_id);
+    }
+    // Topic channels whose artist has a non-zero catalog_share for this company
+    const { data: topicChans } = await supabase
+      .from('dim_channel')
+      .select('channel_id, artist_name')
+      .eq('channel_type', 'topic')
+      .in('channel_id', sourceChannelIds);
+    const topicArtists = ((topicChans ?? []) as Array<{
+      channel_id: string;
+      artist_name: string;
+    }>).filter((c) => c.artist_name);
+    if (topicArtists.length > 0) {
+      const { data: labels } = await supabase
+        .from('dim_artist_label')
+        .select('artist_name')
+        .eq('company', opts.company)
+        .in('artist_name', topicArtists.map((c) => c.artist_name));
+      const labelArtistSet = new Set(
+        ((labels ?? []) as Array<{ artist_name: string }>).map((l) => l.artist_name),
+      );
+      for (const c of topicArtists) {
+        if (labelArtistSet.has(c.artist_name)) ourChannelIds.add(c.channel_id);
+      }
+    }
+  }
+  let catalogMatchCount = 0;
+  for (const e of enrichedByUgc.values()) {
+    if (
+      e.attribution_source_channel_id != null &&
+      ourChannelIds.has(e.attribution_source_channel_id)
+    ) {
+      catalogMatchCount += 1;
     }
   }
 
@@ -2151,6 +2220,7 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     attributed_views: totalViewsLatest,
     weekOverWeek,
     attributionCounts,
+    catalogMatchCount,
     topAnchors,
   };
 }
@@ -2165,6 +2235,7 @@ function emptySnapshot(company: Company): UGCReachSnapshot {
     attributed_views: 0,
     weekOverWeek: null,
     attributionCounts: {},
+    catalogMatchCount: 0,
     topAnchors: [],
   };
 }

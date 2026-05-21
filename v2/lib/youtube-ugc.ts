@@ -467,6 +467,37 @@ function parseDurationSeconds(iso?: string): number | null {
   return Number(h) * 3600 + Number(mi) * 60 + Number(s);
 }
 
+/**
+ * Lightweight videos.list batch that only resolves channel info — used
+ * for the attribution_source_video_id resolution path where we don't
+ * care about statistics or contentDetails, just `whose channel is this
+ * master-audio video on?`
+ *
+ * 1 quota unit per 50 IDs (same cost as enrichUGCVideos).
+ */
+export async function resolveVideoChannels(
+  videoIds: string[],
+  apiKey: string,
+): Promise<Map<string, { channel_id: string | null; channel_name: string | null }>> {
+  const out = new Map<string, { channel_id: string | null; channel_name: string | null }>();
+  for (let i = 0; i < videoIds.length; i += 50) {
+    const batch = videoIds.slice(i, i + 50);
+    const url =
+      `https://www.googleapis.com/youtube/v3/videos?` +
+      `part=snippet&id=${batch.join(',')}&key=${apiKey}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) continue;
+    const data = (await res.json()) as { items?: YTVideoItem[] };
+    for (const it of data.items ?? []) {
+      out.set(it.id, {
+        channel_id: it.snippet?.channelId ?? null,
+        channel_name: it.snippet?.channelTitle ?? null,
+      });
+    }
+  }
+  return out;
+}
+
 function parseLockup(l: ShortsLockup): ShortMatch | null {
   const ugcId = l.onTap?.innertubeCommand?.reelWatchEndpoint?.videoId;
   if (!ugcId) return null;

@@ -5,6 +5,7 @@ import {
   enrichUGCVideos,
   fetchMusicAttribution,
   fetchShortsForSound,
+  resolveVideoChannels,
   type ShortMatch,
 } from '@/lib/youtube-ugc';
 import { bumpTags, CACHE_TAGS } from '@/lib/revalidate';
@@ -370,6 +371,46 @@ async function processAnchors(
     }
   }
 
+  // ---- Resolve source-audio channel ownership ----------------------------
+  // attribution_source_video_id is the master audio that YT's Content ID
+  // matched against. It's almost never in dim_video (masters live on
+  // Topic / audio-only channels). Batch-resolve channel info via
+  // videos.list so a downstream JOIN against dim_channel can determine
+  // whether the source is ours.
+  let sourceChannelsResolved = 0;
+  if (env.YOUTUBE_API_KEY) {
+    // Distinct source video ids that we haven't yet resolved
+    const { data: pending } = await supabase
+      .from('dim_ugc_video')
+      .select('attribution_source_video_id')
+      .not('attribution_source_video_id', 'is', null)
+      .is('attribution_source_channel_id', null)
+      .limit(2000);
+    const sourceIds = Array.from(
+      new Set(
+        ((pending ?? []) as Array<{ attribution_source_video_id: string }>)
+          .map((r) => r.attribution_source_video_id)
+          .filter(Boolean),
+      ),
+    );
+    if (sourceIds.length > 0) {
+      const resolved = await resolveVideoChannels(sourceIds, env.YOUTUBE_API_KEY);
+      // For each resolved source video, update every dim_ugc_video row that
+      // points at it
+      for (const [sourceVid, info] of resolved) {
+        if (info.channel_id == null) continue;
+        await supabase
+          .from('dim_ugc_video')
+          .update({
+            attribution_source_channel_id: info.channel_id,
+            attribution_source_channel_name: info.channel_name,
+          })
+          .eq('attribution_source_video_id', sourceVid);
+        sourceChannelsResolved += 1;
+      }
+    }
+  }
+
   const failed = perAnchor.filter((p) => p.error).length;
   const status: 'ok' | 'partial' | 'failed' =
     failed === 0 ? 'ok' : failed === anchors.length ? 'failed' : 'partial';
@@ -383,6 +424,7 @@ async function processAnchors(
     enriched_videos: enrichedCount,
     attribution_checked: attributionChecked,
     attribution_breakdown: attributionCounts,
+    source_channels_resolved: sourceChannelsResolved,
     per_anchor: perAnchor,
   });
 

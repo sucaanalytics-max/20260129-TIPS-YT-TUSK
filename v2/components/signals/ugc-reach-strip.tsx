@@ -111,12 +111,18 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
           </li>
         ))}
       </ul>
-      <AttributionBadge counts={snap.attributionCounts} />
+      <AttributionBadge counts={snap.attributionCounts} catalogMatches={snap.catalogMatchCount} />
     </div>
   );
 }
 
-function AttributionBadge({ counts }: { counts: Record<string, number> }) {
+function AttributionBadge({
+  counts,
+  catalogMatches,
+}: {
+  counts: Record<string, number>;
+  catalogMatches: number;
+}) {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   if (total === 0) {
     return (
@@ -130,19 +136,29 @@ function AttributionBadge({ counts }: { counts: Record<string, number> }) {
   const none = counts['none'] ?? 0;
   const pctCid = total > 0 ? Math.round((cid / total) * 100) : 0;
   return (
-    <div className="mt-3 flex items-center gap-2 text-[10px]">
-      <span className="text-muted-foreground/70">attribution (n={total}):</span>
-      <span className="text-emerald-400/90 tabular-nums" title="Content ID claim — label earning ad share">
-        {pctCid}% Content ID
-      </span>
-      <span className="text-muted-foreground/50 tabular-nums" title="Shorts sound system reference — different revenue mechanism">
-        {sound} sound-ref
-      </span>
-      {none > 0 ? (
-        <span className="text-muted-foreground/50 tabular-nums" title="No detected attribution panel">
-          {none} unattributed
+    <div className="mt-3 space-y-0.5 text-[10px]">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-muted-foreground/70">attribution (n={total}):</span>
+        <span className="text-emerald-400/90 tabular-nums" title="Content ID claim detected on watch page">
+          {pctCid}% Content ID
         </span>
-      ) : null}
+        <span className="text-muted-foreground/50 tabular-nums" title="Shorts sound-system reference">
+          {sound} sound-ref
+        </span>
+        {none > 0 ? (
+          <span className="text-muted-foreground/50 tabular-nums" title="No detected attribution panel">
+            {none} unattributed
+          </span>
+        ) : null}
+      </div>
+      <div className="text-muted-foreground/60">
+        <span
+          className={catalogMatches > 0 ? 'text-emerald-400/80' : 'text-muted-foreground/60'}
+          title="UGC where the master audio source resolves to our owned or topic channels — strict confirm that this label earns Content ID share"
+        >
+          {catalogMatches} of {total} match OUR catalog
+        </span>
+      </div>
     </div>
   );
 }

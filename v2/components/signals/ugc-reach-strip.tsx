@@ -80,38 +80,78 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
               ? `▼ ${fmtBig(wow.delta_views)} (${fmtPct(wow.pct)}) WoW`
               : 'flat WoW'}
       </p>
-      <ul className="mt-3 space-y-1.5">
-        {snap.topAnchors.map((a) => (
-          <li key={a.source_video_id} className="text-[11px]">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-foreground truncate" title={a.source_title}>
-                {a.source_title.length > 48 ? a.source_title.slice(0, 48) + '…' : a.source_title}
-              </span>
-              <span className="text-muted-foreground tabular-nums shrink-0">
-                {fmtBig(a.ugc_views_sum)}
-              </span>
-            </div>
-            <div className="text-muted-foreground/70 text-[10px] tabular-nums">
-              {a.ugc_count} Shorts · top:{' '}
-              <a
-                href={`https://www.youtube.com/shorts/${a.top_ugc_id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-foreground underline-offset-2 hover:underline"
-              >
-                {fmtBig(a.top_ugc_views)} views
-              </a>
-              {a.top_ugc_channel ? (
-                <span className="text-muted-foreground/60 ml-1">
-                  · @{a.top_ugc_channel.slice(0, 22)}
-                  {a.top_ugc_channel.length > 22 ? '…' : ''}
+      {snap.topSongs.length > 0 ? (
+        <div className="mt-3">
+          <p className="text-muted-foreground/70 mb-1 text-[10px] uppercase tracking-wider">
+            top songs by ugc reach
+          </p>
+          <ul className="space-y-1">
+            {snap.topSongs.map((s) => (
+              <li key={s.song} className="text-[11px]">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-foreground truncate" title={s.song}>
+                    {s.catalog_matched ? (
+                      <span className="text-emerald-400/80 mr-1" title="Master audio resolved to our catalog">
+                        ✓
+                      </span>
+                    ) : null}
+                    {s.song.length > 42 ? s.song.slice(0, 42) + '…' : s.song}
+                  </span>
+                  <span className="text-muted-foreground tabular-nums shrink-0">
+                    {fmtBig(s.ugc_views_sum)}
+                  </span>
+                </div>
+                <div className="text-muted-foreground/60 text-[10px]">
+                  {s.ugc_count} Shorts
+                  {s.artist ? ` · ${s.artist.slice(0, 36)}${s.artist.length > 36 ? '…' : ''}` : ''}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      <details className="mt-3">
+        <summary className="text-muted-foreground/70 cursor-pointer text-[10px] uppercase tracking-wider hover:text-muted-foreground">
+          top anchors by ugc reach
+        </summary>
+        <ul className="mt-1 space-y-1.5">
+          {snap.topAnchors.map((a) => (
+            <li key={a.source_video_id} className="text-[11px]">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-foreground truncate" title={a.source_title}>
+                  {a.source_title.length > 42 ? a.source_title.slice(0, 42) + '…' : a.source_title}
                 </span>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-      <AttributionBadge counts={snap.attributionCounts} catalogMatches={snap.catalogMatchCount} />
+                <span className="text-muted-foreground tabular-nums shrink-0">
+                  {fmtBig(a.ugc_views_sum)}
+                </span>
+              </div>
+              <div className="text-muted-foreground/70 text-[10px] tabular-nums">
+                {a.ugc_count} Shorts · top:{' '}
+                <a
+                  href={`https://www.youtube.com/shorts/${a.top_ugc_id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-foreground underline-offset-2 hover:underline"
+                >
+                  {fmtBig(a.top_ugc_views)} views
+                </a>
+                {a.top_ugc_channel ? (
+                  <span className="text-muted-foreground/60 ml-1">
+                    · @{a.top_ugc_channel.slice(0, 22)}
+                    {a.top_ugc_channel.length > 22 ? '…' : ''}
+                  </span>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </details>
+      <AttributionBadge
+        counts={snap.attributionCounts}
+        catalogMatches={snap.catalogMatchCount}
+        ytLicensed={snap.ytLicensedContentCount}
+        totalEnriched={snap.totalEnriched}
+      />
     </div>
   );
 }
@@ -119,12 +159,17 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
 function AttributionBadge({
   counts,
   catalogMatches,
+  ytLicensed,
+  totalEnriched,
 }: {
   counts: Record<string, number>;
   catalogMatches: number;
+  ytLicensed: number;
+  totalEnriched: number;
 }) {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
-  if (total === 0) {
+  const pctYtLic = totalEnriched > 0 ? Math.round((ytLicensed / totalEnriched) * 100) : 0;
+  if (total === 0 && totalEnriched === 0) {
     return (
       <p className="text-muted-foreground/60 mt-3 text-[10px]">
         attribution: not yet sampled
@@ -132,33 +177,36 @@ function AttributionBadge({
     );
   }
   const cid = counts['content_id'] ?? 0;
-  const sound = counts['sound_ref'] ?? 0;
-  const none = counts['none'] ?? 0;
   const pctCid = total > 0 ? Math.round((cid / total) * 100) : 0;
   return (
     <div className="mt-3 space-y-0.5 text-[10px]">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-muted-foreground/70">attribution (n={total}):</span>
-        <span className="text-emerald-400/90 tabular-nums" title="Content ID claim detected on watch page">
-          {pctCid}% Content ID
-        </span>
-        <span className="text-muted-foreground/50 tabular-nums" title="Shorts sound-system reference">
-          {sound} sound-ref
-        </span>
-        {none > 0 ? (
-          <span className="text-muted-foreground/50 tabular-nums" title="No detected attribution panel">
-            {none} unattributed
+      {totalEnriched > 0 ? (
+        <div className="text-muted-foreground/60">
+          <span
+            className="text-emerald-400/80"
+            title="YT's native licensedContent flag from videos.list — set when any partner has Content-ID-claimed the video. Broader than our sampled music-panel check."
+          >
+            {ytLicensed} of {totalEnriched} ({pctYtLic}%) carry licensedContent flag
           </span>
-        ) : null}
-      </div>
-      <div className="text-muted-foreground/60">
-        <span
-          className={catalogMatches > 0 ? 'text-emerald-400/80' : 'text-muted-foreground/60'}
-          title="UGC where the master audio source resolves to our owned or topic channels — strict confirm that this label earns Content ID share"
-        >
-          {catalogMatches} of {total} match OUR catalog
-        </span>
-      </div>
+        </div>
+      ) : null}
+      {total > 0 ? (
+        <div className="text-muted-foreground/60">
+          <span
+            className="text-emerald-400/80"
+            title="Music-panel-confirmed (deeper check, sampled subset)"
+          >
+            {cid}/{total} ({pctCid}%) music-panel confirmed
+          </span>
+          <span className="mx-1 text-muted-foreground/40">·</span>
+          <span
+            className={catalogMatches > 0 ? 'text-emerald-400/80' : 'text-muted-foreground/60'}
+            title="UGC where master audio resolves to our tracked owned/topic channels"
+          >
+            {catalogMatches} match OUR catalog
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }

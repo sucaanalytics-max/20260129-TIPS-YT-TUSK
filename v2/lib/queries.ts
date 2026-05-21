@@ -1979,6 +1979,15 @@ export interface UGCAnchorRow {
   top_ugc_channel: string | null;
 }
 
+export interface UGCSongAggRow {
+  song: string;
+  artist: string | null;
+  ugc_count: number;
+  ugc_views_sum: number;
+  source_channel_name: string | null;
+  catalog_matched: boolean;
+}
+
 export interface UGCReachSnapshot {
   company: Company;
   latestAsof: string | null;
@@ -1997,6 +2006,16 @@ export interface UGCReachSnapshot {
   // attributionCounts.content_id — the strict-confirm path for "this UGC
   // is monetizing OUR catalog specifically."
   catalogMatchCount: number;
+  // YT's NATIVE `licensedContent` flag from videos.list — set when ANY
+  // partner has Content-ID-claimed the video. Broader than our music-panel
+  // sample because it's populated on every enriched UGC, not just the
+  // ATTRIBUTION_SAMPLE_SIZE per run.
+  ytLicensedContentCount: number;
+  totalEnriched: number;
+  // Songs aggregated across the company's UGC snapshot, ordered by total
+  // attributed view volume. Many anchors share the same song (the master
+  // audio video for one song spawns many UGC clips across different pivots).
+  topSongs: UGCSongAggRow[];
   topAnchors: UGCAnchorRow[];
 }
 
@@ -2097,38 +2116,56 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
   }
 
   // 6b) Enriched metadata for the discovered UGC ids (channel + attribution
-  //     + source-channel resolution for catalog-match check)
+  //     + source-channel resolution + licensedContent flag)
   const distinctUgcIds = Array.from(new Set(latestRows.map((r) => r.ugc_video_id)));
   const enrichedByUgc = new Map<
     string,
     {
       channel_name: string | null;
       attribution_kind: string | null;
+      attribution_song: string | null;
+      attribution_artist: string | null;
       attribution_source_channel_id: string | null;
+      attribution_source_channel_name: string | null;
+      licensed_content: boolean | null;
     }
   >();
   const attributionCounts: Record<string, number> = {};
+  let ytLicensedContentCount = 0;
+  let totalEnriched = 0;
   for (let i = 0; i < distinctUgcIds.length; i += 200) {
     const slice = distinctUgcIds.slice(i, i + 200);
     const { data: enriched } = await supabase
       .from('dim_ugc_video')
-      .select('ugc_video_id, channel_name, attribution_kind, attribution_source_channel_id')
+      .select(
+        'ugc_video_id, channel_name, attribution_kind, attribution_song, attribution_artist, attribution_source_channel_id, attribution_source_channel_name, licensed_content',
+      )
       .in('ugc_video_id', slice);
     for (const e of (enriched ?? []) as Array<{
       ugc_video_id: string;
       channel_name: string | null;
       attribution_kind: string | null;
+      attribution_song: string | null;
+      attribution_artist: string | null;
       attribution_source_channel_id: string | null;
+      attribution_source_channel_name: string | null;
+      licensed_content: boolean | null;
     }>) {
       enrichedByUgc.set(e.ugc_video_id, {
         channel_name: e.channel_name,
         attribution_kind: e.attribution_kind,
+        attribution_song: e.attribution_song,
+        attribution_artist: e.attribution_artist,
         attribution_source_channel_id: e.attribution_source_channel_id,
+        attribution_source_channel_name: e.attribution_source_channel_name,
+        licensed_content: e.licensed_content,
       });
       if (e.attribution_kind) {
         attributionCounts[e.attribution_kind] =
           (attributionCounts[e.attribution_kind] ?? 0) + 1;
       }
+      totalEnriched += 1;
+      if (e.licensed_content === true) ytLicensedContentCount += 1;
     }
   }
 
@@ -2189,6 +2226,42 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     }
   }
 
+  // 6d) Songs aggregated across UGC for this snapshot. Same master-audio
+  // video drives multiple UGC clips; grouping by song surfaces this
+  // concentration cleanly. View sums use the per-snapshot view_count from
+  // fct_ugc_short_match (parsed approx). Catalog-match flag follows the
+  // source-channel resolution.
+  type SongAgg = {
+    song: string;
+    artist: string | null;
+    ugc_count: number;
+    ugc_views_sum: number;
+    source_channel_name: string | null;
+    catalog_matched: boolean;
+  };
+  const songMap = new Map<string, SongAgg>();
+  for (const r of latestRows) {
+    const enr = enrichedByUgc.get(r.ugc_video_id);
+    if (!enr || !enr.attribution_song) continue;
+    const key = enr.attribution_song;
+    const bucket = songMap.get(key) ?? {
+      song: enr.attribution_song,
+      artist: enr.attribution_artist,
+      ugc_count: 0,
+      ugc_views_sum: 0,
+      source_channel_name: enr.attribution_source_channel_name,
+      catalog_matched:
+        enr.attribution_source_channel_id != null &&
+        ourChannelIds.has(enr.attribution_source_channel_id),
+    };
+    bucket.ugc_count += 1;
+    bucket.ugc_views_sum += r.view_count ?? 0;
+    songMap.set(key, bucket);
+  }
+  const topSongs: UGCSongAggRow[] = [...songMap.values()]
+    .sort((a, b) => b.ugc_views_sum - a.ugc_views_sum)
+    .slice(0, 5);
+
   const topAnchors: UGCAnchorRow[] = [...byAnchor.entries()]
     .map(([source_video_id, a]) => ({
       source_video_id,
@@ -2221,6 +2294,9 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     weekOverWeek,
     attributionCounts,
     catalogMatchCount,
+    ytLicensedContentCount,
+    totalEnriched,
+    topSongs,
     topAnchors,
   };
 }
@@ -2236,6 +2312,9 @@ function emptySnapshot(company: Company): UGCReachSnapshot {
     weekOverWeek: null,
     attributionCounts: {},
     catalogMatchCount: 0,
+    ytLicensedContentCount: 0,
+    totalEnriched: 0,
+    topSongs: [],
     topAnchors: [],
   };
 }

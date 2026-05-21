@@ -37,11 +37,11 @@ export const maxDuration = 300;
 const TOP_N_PER_COMPANY = 25;
 const SCRAPE_DELAY_MS = 1500;
 // I3: number of high-view UGC Shorts we sample for music-panel attribution
-// each run. Capped to stay within the 5min function budget. 30 × ~1.8s
-// (fetch + delay) ≈ 54s on top of pivot (175s) + enrich (~10s) — total
-// envelope ~240s vs maxDuration 300. If we expand this, migrate the
-// route to a Vercel Workflow for unbounded runtime.
-const ATTRIBUTION_SAMPLE_SIZE = 30;
+// each run. 60 × ~1.8s ≈ 108s on top of pivot (~90s with 25 anchors) +
+// enrich (~12s) + source resolution (~5s) → total envelope ~215s vs
+// maxDuration 300. Safe headroom. If we increase TOP_N_PER_COMPANY past
+// 40 OR bump this past 90, migrate the route to Vercel Workflow.
+const ATTRIBUTION_SAMPLE_SIZE = 60;
 const ATTRIBUTION_DELAY_MS = 800;
 // I1: re-enrich a UGC row this often (days). Channel info rarely changes;
 // most UGC re-appears week-over-week so we don't need to refetch each time.

@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { requireCronAuth } from '@/lib/cron-auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
-import { fetchShortsForSound, type ShortMatch } from '@/lib/youtube-ugc';
+import {
+  enrichUGCVideos,
+  fetchMusicAttribution,
+  fetchShortsForSound,
+  type ShortMatch,
+} from '@/lib/youtube-ugc';
 import { bumpTags, CACHE_TAGS } from '@/lib/revalidate';
+import { env } from '@/lib/env';
 
 export const maxDuration = 300;
 
@@ -29,6 +35,16 @@ export const maxDuration = 300;
 
 const TOP_N_PER_COMPANY = 25;
 const SCRAPE_DELAY_MS = 1500;
+// I3: number of high-view UGC Shorts we sample for music-panel attribution
+// each run. Capped to stay within the 5min function budget. 30 × ~1.8s
+// (fetch + delay) ≈ 54s on top of pivot (175s) + enrich (~10s) — total
+// envelope ~240s vs maxDuration 300. If we expand this, migrate the
+// route to a Vercel Workflow for unbounded runtime.
+const ATTRIBUTION_SAMPLE_SIZE = 30;
+const ATTRIBUTION_DELAY_MS = 800;
+// I1: re-enrich a UGC row this often (days). Channel info rarely changes;
+// most UGC re-appears week-over-week so we don't need to refetch each time.
+const ENRICHMENT_TTL_DAYS = 14;
 
 export async function GET(req: Request) {
   const denied = requireCronAuth(req);
@@ -191,6 +207,120 @@ async function processAnchors(
     await new Promise((r) => setTimeout(r, SCRAPE_DELAY_MS));
   }
 
+  // ---- I1: Enrich every discovered UGC video via videos.list -----------
+  // Re-fetch today's UGC ids from the table — cleanest source of truth
+  // since perAnchor only tracks counts.
+  const { data: todayRows } = await supabase
+    .from('fct_ugc_short_match')
+    .select('ugc_video_id')
+    .eq('asof', today)
+    .in(
+      'source_video_id',
+      anchors.map((a) => a.video_id),
+    );
+  const ugcIds = Array.from(
+    new Set(((todayRows ?? []) as Array<{ ugc_video_id: string }>).map((r) => r.ugc_video_id)),
+  );
+
+  let enrichedCount = 0;
+  let attributionChecked = 0;
+  const attributionCounts: Record<string, number> = {};
+
+  if (ugcIds.length > 0 && env.YOUTUBE_API_KEY) {
+    // Skip videos we enriched recently (TTL filter)
+    const ttlCutoff = new Date(
+      Date.now() - ENRICHMENT_TTL_DAYS * 86_400_000,
+    ).toISOString();
+    const idsToEnrich: string[] = [];
+    for (let i = 0; i < ugcIds.length; i += 200) {
+      const slice = ugcIds.slice(i, i + 200);
+      const { data: existing } = await supabase
+        .from('dim_ugc_video')
+        .select('ugc_video_id, enriched_at')
+        .in('ugc_video_id', slice);
+      const recentlyEnriched = new Set(
+        ((existing ?? []) as Array<{ ugc_video_id: string; enriched_at: string | null }>)
+          .filter((r) => r.enriched_at != null && r.enriched_at > ttlCutoff)
+          .map((r) => r.ugc_video_id),
+      );
+      for (const id of slice) if (!recentlyEnriched.has(id)) idsToEnrich.push(id);
+    }
+
+    if (idsToEnrich.length > 0) {
+      const enrichment = await enrichUGCVideos(idsToEnrich, env.YOUTUBE_API_KEY);
+      enrichedCount = enrichment.size;
+      const nowIso = new Date().toISOString();
+      const dimRows = Array.from(enrichment.values()).map((e) => ({
+        ugc_video_id: e.ugc_video_id,
+        channel_id: e.channel_id,
+        channel_name: e.channel_name,
+        title: e.title,
+        description: e.description,
+        published_at: e.published_at,
+        duration_seconds: e.duration_seconds,
+        is_short: e.is_short,
+        licensed_content: e.licensed_content,
+        latest_view_count: e.view_count,
+        latest_like_count: e.like_count,
+        latest_comment_count: e.comment_count,
+        enriched_at: nowIso,
+      }));
+      for (let i = 0; i < dimRows.length; i += 200) {
+        await supabase
+          .from('dim_ugc_video')
+          .upsert(dimRows.slice(i, i + 200), { onConflict: 'ugc_video_id' });
+      }
+      // NOTE: per-snapshot views_exact backfill on fct_ugc_short_match is
+      // deliberately skipped — would need 425 individual UPDATEs per run
+      // (~21s), bumping us close to maxDuration. The precise view count
+      // already lives in dim_ugc_video.latest_view_count. If we need a
+      // per-snapshot precise series later, add a SECURITY DEFINER
+      // postgres function that bulk-updates via jsonb_to_recordset.
+    }
+  }
+
+  // ---- I3: Sampled music-panel attribution check ---------------------
+  // For the highest-view UGC Shorts where attribution hasn't been checked
+  // recently, fetch the watch page and classify the attribution kind.
+  if (ugcIds.length > 0) {
+    const ttlCutoff = new Date(
+      Date.now() - ENRICHMENT_TTL_DAYS * 86_400_000,
+    ).toISOString();
+    const { data: candidates } = await supabase
+      .from('dim_ugc_video')
+      .select('ugc_video_id, latest_view_count, attribution_checked_at')
+      .in('ugc_video_id', ugcIds)
+      .order('latest_view_count', { ascending: false, nullsFirst: false });
+    const queue = ((candidates ?? []) as Array<{
+      ugc_video_id: string;
+      latest_view_count: number | null;
+      attribution_checked_at: string | null;
+    }>)
+      .filter(
+        (r) => r.attribution_checked_at == null || r.attribution_checked_at < ttlCutoff,
+      )
+      .slice(0, ATTRIBUTION_SAMPLE_SIZE);
+
+    for (const c of queue) {
+      try {
+        const att = await fetchMusicAttribution(c.ugc_video_id);
+        await supabase
+          .from('dim_ugc_video')
+          .update({
+            attribution_kind: att.kind,
+            attribution_label: att.label,
+            attribution_checked_at: new Date().toISOString(),
+          })
+          .eq('ugc_video_id', c.ugc_video_id);
+        attributionChecked += 1;
+        attributionCounts[att.kind] = (attributionCounts[att.kind] ?? 0) + 1;
+      } catch {
+        // Individual failures don't fail the cron
+      }
+      await new Promise((r) => setTimeout(r, ATTRIBUTION_DELAY_MS));
+    }
+  }
+
   const failed = perAnchor.filter((p) => p.error).length;
   const status: 'ok' | 'partial' | 'failed' =
     failed === 0 ? 'ok' : failed === anchors.length ? 'failed' : 'partial';
@@ -201,6 +331,9 @@ async function processAnchors(
     total_matches: totalMatches,
     upserted: totalUpserted,
     failed,
+    enriched_videos: enrichedCount,
+    attribution_checked: attributionChecked,
+    attribution_breakdown: attributionCounts,
     per_anchor: perAnchor,
   });
 
@@ -215,6 +348,9 @@ async function processAnchors(
     total_matches: totalMatches,
     upserted: totalUpserted,
     failed,
+    enriched_videos: enrichedCount,
+    attribution_checked: attributionChecked,
+    attribution_breakdown: attributionCounts,
   });
 }
 

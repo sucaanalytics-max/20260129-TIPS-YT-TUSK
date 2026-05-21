@@ -1976,6 +1976,7 @@ export interface UGCAnchorRow {
   ugc_views_sum: number;
   top_ugc_id: string;
   top_ugc_views: number;
+  top_ugc_channel: string | null;
 }
 
 export interface UGCReachSnapshot {
@@ -1987,6 +1988,10 @@ export interface UGCReachSnapshot {
   attributed_views: number;
   // WoW delta (latest minus prior snapshot); null when only one snapshot exists.
   weekOverWeek: { delta_views: number; pct: number } | null;
+  // I3: attribution breakdown across UGC where we've checked the music panel.
+  // attribution_kind ∈ { 'content_id', 'sound_ref', 'none', 'unknown' }.
+  // 'content_id' = label confirmed to be earning via Content ID claim.
+  attributionCounts: Record<string, number>;
   topAnchors: UGCAnchorRow[];
 }
 
@@ -2086,6 +2091,35 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     byAnchor.set(r.source_video_id, bucket);
   }
 
+  // 6b) Enriched metadata for the discovered UGC ids (channel + attribution)
+  const distinctUgcIds = Array.from(new Set(latestRows.map((r) => r.ugc_video_id)));
+  const enrichedByUgc = new Map<
+    string,
+    { channel_name: string | null; attribution_kind: string | null }
+  >();
+  const attributionCounts: Record<string, number> = {};
+  for (let i = 0; i < distinctUgcIds.length; i += 200) {
+    const slice = distinctUgcIds.slice(i, i + 200);
+    const { data: enriched } = await supabase
+      .from('dim_ugc_video')
+      .select('ugc_video_id, channel_name, attribution_kind')
+      .in('ugc_video_id', slice);
+    for (const e of (enriched ?? []) as Array<{
+      ugc_video_id: string;
+      channel_name: string | null;
+      attribution_kind: string | null;
+    }>) {
+      enrichedByUgc.set(e.ugc_video_id, {
+        channel_name: e.channel_name,
+        attribution_kind: e.attribution_kind,
+      });
+      if (e.attribution_kind) {
+        attributionCounts[e.attribution_kind] =
+          (attributionCounts[e.attribution_kind] ?? 0) + 1;
+      }
+    }
+  }
+
   const topAnchors: UGCAnchorRow[] = [...byAnchor.entries()]
     .map(([source_video_id, a]) => ({
       source_video_id,
@@ -2094,6 +2128,7 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
       ugc_views_sum: a.views,
       top_ugc_id: a.topUgc,
       top_ugc_views: a.topViews,
+      top_ugc_channel: enrichedByUgc.get(a.topUgc)?.channel_name ?? null,
     }))
     .sort((a, b) => b.ugc_views_sum - a.ugc_views_sum)
     .slice(0, 5);
@@ -2115,6 +2150,7 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     ugc_shorts_count: totalCountLatest,
     attributed_views: totalViewsLatest,
     weekOverWeek,
+    attributionCounts,
     topAnchors,
   };
 }
@@ -2128,6 +2164,7 @@ function emptySnapshot(company: Company): UGCReachSnapshot {
     ugc_shorts_count: 0,
     attributed_views: 0,
     weekOverWeek: null,
+    attributionCounts: {},
     topAnchors: [],
   };
 }

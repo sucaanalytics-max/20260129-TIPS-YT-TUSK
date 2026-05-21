@@ -101,10 +101,48 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
               >
                 {fmtBig(a.top_ugc_views)} views
               </a>
+              {a.top_ugc_channel ? (
+                <span className="text-muted-foreground/60 ml-1">
+                  · @{a.top_ugc_channel.slice(0, 22)}
+                  {a.top_ugc_channel.length > 22 ? '…' : ''}
+                </span>
+              ) : null}
             </div>
           </li>
         ))}
       </ul>
+      <AttributionBadge counts={snap.attributionCounts} />
+    </div>
+  );
+}
+
+function AttributionBadge({ counts }: { counts: Record<string, number> }) {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total === 0) {
+    return (
+      <p className="text-muted-foreground/60 mt-3 text-[10px]">
+        attribution: not yet sampled
+      </p>
+    );
+  }
+  const cid = counts['content_id'] ?? 0;
+  const sound = counts['sound_ref'] ?? 0;
+  const none = counts['none'] ?? 0;
+  const pctCid = total > 0 ? Math.round((cid / total) * 100) : 0;
+  return (
+    <div className="mt-3 flex items-center gap-2 text-[10px]">
+      <span className="text-muted-foreground/70">attribution (n={total}):</span>
+      <span className="text-emerald-400/90 tabular-nums" title="Content ID claim — label earning ad share">
+        {pctCid}% Content ID
+      </span>
+      <span className="text-muted-foreground/50 tabular-nums" title="Shorts sound system reference — different revenue mechanism">
+        {sound} sound-ref
+      </span>
+      {none > 0 ? (
+        <span className="text-muted-foreground/50 tabular-nums" title="No detected attribution panel">
+          {none} unattributed
+        </span>
+      ) : null}
     </div>
   );
 }

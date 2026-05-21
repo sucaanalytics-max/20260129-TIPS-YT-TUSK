@@ -42,7 +42,6 @@ export interface SignalsSnapshot {
 // --- constants ---------------------------------------------------------------
 
 export const WARMUP_DAYS = 30;
-const TRAILING_WINDOW = 90;
 const Z_DIR = 0.5;
 const Z_SIG = 1.5;
 const SPARKLINE_LEN = 60;
@@ -67,11 +66,21 @@ function directionFromZ(z: number | null): Direction {
 // --- viewMomentum ------------------------------------------------------------
 
 /**
- * Z-score of the trailing 7d average of daily_views against the distribution
- * of trailing-7d averages over the prior TRAILING_WINDOW days. Sparkline is
- * the last 60 days of raw daily_views (chronological).
+ * Z-score of the latest week's mean daily_views against the distribution of
+ * NON-OVERLAPPING prior weekly means. Sparkline is the last 60 days of raw
+ * daily_views (chronological).
  *
- * Input must be sorted ascending by date.
+ * Why non-overlapping: YouTube views have strong weekly seasonality. The
+ * previous implementation used overlapping 7-day means as the baseline —
+ * adjacent samples shared 6/7 days, so the baseline samples were heavily
+ * autocorrelated. Variance was artificially compressed and z-scores were
+ * inflated. Non-overlapping weekly buckets give independent samples and
+ * honest variance, and side-step day-of-week seasonality by construction
+ * (each bucket contains exactly one of each weekday).
+ *
+ * Input must be sorted ascending by date. Buckets are anchored to the end
+ * of the series — the most recent 7 days form the latest bucket, then
+ * walking backwards in 7-day chunks.
  */
 export function viewMomentum(
   rows: Array<{ date: string; daily_views: number | null }>,
@@ -81,22 +90,35 @@ export function viewMomentum(
   if (numericCount < WARMUP_DAYS) {
     return { value: null, sigma: null, direction: 'flat', significant: false, warming: true };
   }
-  const dist: number[] = [];
-  for (let i = 6; i < series.length; i++) {
-    const window = series.slice(i - 6, i + 1).filter((v): v is number => v != null);
-    if (window.length === 7) dist.push(mean(window));
+
+  // Non-overlapping weekly means, anchored to the end of the series.
+  const weeklyMeans: number[] = [];
+  for (let end = series.length; end >= 7; end -= 7) {
+    const w = series.slice(end - 7, end).filter((v): v is number => v != null);
+    if (w.length === 7) weeklyMeans.push(mean(w));
   }
-  // Exclude the latest trailing window from the baseline so we measure
-  // *deviation*, not "z of the value against itself".
-  const baseline = dist.slice(-TRAILING_WINDOW - 1, -1);
-  const latest7slice = series.slice(-7).filter((v): v is number => v != null);
-  const latest7 = latest7slice.length === 7 ? mean(latest7slice) : null;
+  weeklyMeans.reverse(); // chronological
+
+  // Need ≥ 5 complete weeks (1 latest + 4 baseline) before we can z-score.
+  if (weeklyMeans.length < 5) {
+    return {
+      value: null,
+      sigma: null,
+      direction: 'flat',
+      significant: false,
+      warming: true,
+      sparkline: series.slice(-SPARKLINE_LEN),
+    };
+  }
+
+  const latest = weeklyMeans[weeklyMeans.length - 1];
+  const baseline = weeklyMeans.slice(0, -1);
   const mu = mean(baseline);
   const sd = std(baseline);
-  const z = latest7 != null && sd > 0 ? (latest7 - mu) / sd : null;
+  const z = sd > 0 ? (latest - mu) / sd : null;
 
   return {
-    value: latest7,
+    value: latest,
     sigma: z,
     direction: directionFromZ(z),
     significant: z != null && Math.abs(z) > Z_SIG,

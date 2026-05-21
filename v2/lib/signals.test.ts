@@ -48,6 +48,50 @@ test('viewMomentum: stable series → near-zero z, flat direction', () => {
   assert.equal(r.direction, 'flat');
 });
 
+test('viewMomentum: pure weekly seasonality (no trend) → flat, not false-positive', () => {
+  // 14 weeks of a strong day-of-week pattern but zero week-over-week trend.
+  // Pre-refactor overlapping baseline would amplify this into spurious z.
+  // Post-refactor weekly buckets each capture one full DOW cycle → all
+  // weekly means equal → std = 0 → z = null → flat.
+  const rows: Array<{ date: string; daily_views: number }> = [];
+  const dowMultiplier = [0.7, 0.8, 0.85, 0.9, 0.95, 1.3, 1.5]; // Mon..Sun
+  for (let i = 0; i < 14 * 7; i++) {
+    const dow = i % 7;
+    rows.push({
+      date: new Date(2026, 0, 1 + i).toISOString().slice(0, 10),
+      daily_views: Math.round(1_000_000 * dowMultiplier[dow]),
+    });
+  }
+  const r = viewMomentum(rows);
+  assert.equal(r.warming, false);
+  // Weekly means are identical → sd = 0 → sigma null → direction flat
+  assert.ok(r.sigma == null || Math.abs(r.sigma) < 0.5, `expected flat, got sigma=${r.sigma}`);
+  assert.equal(r.direction, 'flat');
+});
+
+test('viewMomentum: real surge on top of seasonality → still detects up', () => {
+  // 13 weeks of seasonality + ±3% noise around 1M base, then 1 week at 1.5M.
+  // Latest week mean ~ 50% above baseline; even with std ≈ 30k from the noise
+  // the z should easily clear Z_SIG = 1.5.
+  const rows: Array<{ date: string; daily_views: number }> = [];
+  const dowMultiplier = [0.7, 0.8, 0.85, 0.9, 0.95, 1.3, 1.5];
+  let seed = 42;
+  const prng = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 14 * 7; i++) {
+    const dow = i % 7;
+    const baselineViews = i < 13 * 7 ? 1_000_000 : 1_500_000;
+    const noise = 1 + (prng() - 0.5) * 0.06; // ±3%
+    rows.push({
+      date: new Date(2026, 0, 1 + i).toISOString().slice(0, 10),
+      daily_views: Math.round(baselineViews * dowMultiplier[dow] * noise),
+    });
+  }
+  const r = viewMomentum(rows);
+  assert.equal(r.warming, false);
+  assert.ok(r.sigma != null && r.sigma > 2, `expected z > 2, got ${r.sigma}`);
+  assert.equal(r.direction, 'up');
+});
+
 test('viewMomentum: monotone-rising series → positive z, up direction', () => {
   const rows = Array.from({ length: 120 }, (_, i) => ({
     date: new Date(2026, 0, 1 + i).toISOString().slice(0, 10),

@@ -142,13 +142,17 @@ def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
     from datetime import date as _date, timedelta as _td
     # Calendar days × 1.6 ~ trading days × 1 with weekends + holiday buffer.
     floor = (_date.today() - _td(days=int(days * 1.6))).isoformat()
-    # Price series (adjusted close, trading days only)
+    # Price series (adjusted close, trading days only).
+    # Explicit .limit(5000) overrides PostgREST's default 1000-row cap —
+    # views series has ~365 rows/year so the cap would silently truncate
+    # the tail of the window and skew asof.
     res_price = (
         sb.table("fct_adjusted_price_daily")
         .select("date, adjusted_close")
         .eq("symbol", symbol)
         .gte("date", floor)
         .order("date", desc=False)
+        .limit(5000)
         .execute()
     )
     price_df = pd.DataFrame(res_price.data or [])
@@ -159,13 +163,15 @@ def _fetch_returns_for_symbol(sb: Any, symbol: str, days: int) -> pd.DataFrame:
     price_df = price_df.dropna().sort_values("date").reset_index(drop=True)
     price_df["log_return"] = np.log(price_df["adjusted_close"]) - np.log(price_df["adjusted_close"].shift(1))
 
-    # Views series (v_company_daily — already SUM'd across owned channels)
+    # Views series (v_company_daily — already SUM'd across owned channels).
+    # .limit(5000) defeats PostgREST's 1000-row cap (v_company_daily ~365/year).
     res_views = (
         sb.table("v_company_daily")
         .select("date, daily_views")
         .eq("company", symbol)
         .gte("date", floor)
         .order("date", desc=False)
+        .limit(5000)
         .execute()
     )
     views_df = pd.DataFrame(res_views.data or [])

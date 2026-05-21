@@ -1,8 +1,13 @@
 import { Suspense } from 'react';
 import { cacheLife, cacheTag } from 'next/cache';
-import { getOpsRunHistory, getRecentErrors } from '@/lib/queries';
+import {
+  getOpsRunHistory,
+  getRecentErrors,
+  getCandidateSourceChannels,
+} from '@/lib/queries';
 import { RunHistory } from '@/components/ops/run-history';
 import { ErrorLog } from '@/components/ops/error-log';
+import { CandidateTopicChannels } from '@/components/ops/candidate-topic-channels';
 import { CACHE_TAGS } from '@/lib/revalidate';
 
 export default function OpsPage() {
@@ -24,9 +29,23 @@ export default function OpsPage() {
           <h2 className="text-foreground mb-3 text-sm font-medium uppercase tracking-wider">Errors</h2>
           <Suspense fallback={<Skeleton />}><Errors /></Suspense>
         </div>
+        <div>
+          <h2 className="text-foreground mb-3 text-sm font-medium uppercase tracking-wider">
+            Candidate Topic channels (surfaced by UGC discovery)
+          </h2>
+          <Suspense fallback={<Skeleton />}><Candidates /></Suspense>
+        </div>
       </section>
     </main>
   );
+}
+
+async function Candidates() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.ops);
+  const candidates = await getCandidateSourceChannels({ minUgcCount: 2 });
+  return <CandidateTopicChannels candidates={candidates} />;
 }
 
 async function Runs() {

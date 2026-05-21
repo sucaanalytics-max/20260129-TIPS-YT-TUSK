@@ -36,6 +36,11 @@ export const maxDuration = 300;
 
 const TOP_N_PER_COMPANY = 25;
 const SCRAPE_DELAY_MS = 1500;
+// Path A: defeat pivot-page truncation via youtubei/v1/browse continuation.
+// 3 pages ≈ 47 items per sound (vs 15 single-page). Adds ~1.5s per anchor
+// (the extra POSTs), keeping the per-anchor envelope <2s when paired with
+// the inter-anchor delay.
+const PIVOT_PAGES_PER_ANCHOR = 3;
 // I3: number of high-view UGC Shorts we sample for music-panel attribution
 // each run. 60 × ~1.8s ≈ 108s on top of pivot (~90s with 25 anchors) +
 // enrich (~12s) + source resolution (~5s) → total envelope ~215s vs
@@ -167,7 +172,7 @@ async function processAnchors(
 
   for (const a of anchors) {
     try {
-      const matches = await fetchShortsForSound(a.video_id);
+      const matches = await fetchShortsForSound(a.video_id, PIVOT_PAGES_PER_ANCHOR);
       if (matches.length === 0) {
         perAnchor.push({ source_video_id: a.video_id, company: a.company, matches: 0 });
         continue;

@@ -27,15 +27,26 @@ export interface ShortMatch {
 }
 
 /**
- * Fetch + parse the Shorts pivot page for a given anchor video.
- * Returns the list of UGC Shorts using that anchor's audio.
+ * Fetch + parse the Shorts pivot page for a given anchor video, including
+ * `maxPages - 1` continuation pages via youtubei/v1/browse. Returns the
+ * deduplicated list of UGC Shorts using that anchor's audio.
  *
- * Throws on network error or non-200. Returns [] if the page parses but
- * has no Shorts lockups (e.g., the source has no UGC uses, or YT changed
- * the response shape).
+ * Why pagination: the initial HTML response from /source/{id}/shorts only
+ * embeds the first ~15 shortsLockupViewModel entries. The rest live behind
+ * "load more" continuation tokens that the web client follows via internal
+ * RPC calls. Following them ourselves multiplies the discoverable UGC per
+ * sound by `maxPages`.
+ *
+ * Defaults: 2 pages max (≈ 30 items vs 15 single-page). Stops early when
+ * no further continuation token is present. Each extra page costs one
+ * extra POST (~1-2s including parse).
+ *
+ * Throws on network error or non-200 on initial GET. Returns [] if parse
+ * fails (e.g., YT changed the response shape).
  */
 export async function fetchShortsForSound(
   sourceVideoId: string,
+  maxPages = 2,
 ): Promise<ShortMatch[]> {
   const url = SHORTS_PIVOT_URL(sourceVideoId);
   const res = await fetch(url, {
@@ -43,23 +54,113 @@ export async function fetchShortsForSound(
       'User-Agent': UA,
       'Accept-Language': 'en-US,en;q=0.9',
     },
-    // Avoid Next.js fetch-caching this — we want fresh data each cron run.
     cache: 'no-store',
   });
   if (!res.ok) {
     throw new Error(`shorts pivot ${res.status} for ${sourceVideoId}`);
   }
   const html = await res.text();
-  const m = html.match(/var ytInitialData\s*=\s*({[\s\S]+?});\s*<\/script>/);
-  if (!m) return [];
+
+  // Parse the initial page's ytInitialData
+  const dataMatch = html.match(/var ytInitialData\s*=\s*({[\s\S]+?});\s*<\/script>/);
+  if (!dataMatch) return [];
   let data: unknown;
   try {
-    data = JSON.parse(m[1]);
+    data = JSON.parse(dataMatch[1]);
   } catch {
     return [];
   }
-  const lockups = collectShortsLockups(data);
-  return lockups.map(parseLockup).filter((m): m is ShortMatch => m != null);
+
+  const seen = new Set<string>();
+  const allMatches: ShortMatch[] = [];
+  for (const m of collectShortsLockups(data).map(parseLockup)) {
+    if (m && !seen.has(m.ugc_video_id)) {
+      seen.add(m.ugc_video_id);
+      allMatches.push(m);
+    }
+  }
+
+  if (maxPages <= 1) return allMatches;
+
+  // Extract INNERTUBE_API_KEY + INNERTUBE_CONTEXT for the continuation POST.
+  // These are well-known public values (YT's own web client uses them);
+  // we extract dynamically so we ride along with whatever client version
+  // YT is currently serving.
+  const keyMatch = html.match(/"INNERTUBE_API_KEY":"([^"]+)"/);
+  const ctxMatch = html.match(
+    /"INNERTUBE_CONTEXT":\s*(\{.+?\}),\s*"INNERTUBE_CONTEXT_CLIENT_NAME"/,
+  );
+  const innertubeKey = keyMatch?.[1];
+  let innertubeContext: unknown = null;
+  if (ctxMatch) {
+    try {
+      innertubeContext = JSON.parse(ctxMatch[1]);
+    } catch {
+      // fall through — without ctx, abandon pagination
+    }
+  }
+
+  if (!innertubeKey || !innertubeContext) return allMatches;
+
+  let token = findContinuationToken(data);
+  for (let page = 1; page < maxPages && token; page++) {
+    try {
+      const contRes = await fetch(
+        `https://www.youtube.com/youtubei/v1/browse?key=${innertubeKey}&prettyPrint=false`,
+        {
+          method: 'POST',
+          headers: {
+            'User-Agent': UA,
+            'Content-Type': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+          },
+          body: JSON.stringify({ context: innertubeContext, continuation: token }),
+          cache: 'no-store',
+        },
+      );
+      if (!contRes.ok) break;
+      const contData: unknown = await contRes.json();
+      const newLockups = collectShortsLockups(contData);
+      if (newLockups.length === 0) break;
+      for (const m of newLockups.map(parseLockup)) {
+        if (m && !seen.has(m.ugc_video_id)) {
+          seen.add(m.ugc_video_id);
+          allMatches.push(m);
+        }
+      }
+      token = findContinuationToken(contData);
+    } catch {
+      // Continuation failures don't fail the whole anchor — return what we have
+      break;
+    }
+  }
+
+  return allMatches;
+}
+
+/**
+ * Walk the tree looking for a continuationCommand.token. The first one we
+ * find is the "load more" token for the next page of Shorts.
+ */
+function findContinuationToken(node: unknown): string | null {
+  let found: string | null = null;
+  const walk = (n: unknown): void => {
+    if (found || n == null) return;
+    if (Array.isArray(n)) {
+      for (const v of n) walk(v);
+      return;
+    }
+    if (typeof n !== 'object') return;
+    const o = n as Record<string, unknown>;
+    const cc = o.continuationCommand as { token?: string } | undefined;
+    if (cc && typeof cc.token === 'string') {
+      found = cc.token;
+      return;
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  walk(node);
+  return found;
 }
 
 interface ShortsLockup {

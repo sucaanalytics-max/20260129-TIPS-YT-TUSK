@@ -9,6 +9,7 @@ import {
   getFreshness,
   getRankTrajectory,
   getUGCReach,
+  getTopUGCCreators,
 } from '@/lib/queries';
 import { composeRead } from '@/lib/signals';
 import { CACHE_TAGS } from '@/lib/revalidate';
@@ -20,6 +21,7 @@ import { DivergenceCard } from '@/components/signals/divergence-card';
 import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
 import { RankTrajectoryStrip } from '@/components/signals/rank-trajectory-strip';
 import { UGCReachStrip } from '@/components/signals/ugc-reach-strip';
+import { UGCCreatorsStrip } from '@/components/signals/ugc-creators-strip';
 
 export default function SignalsPage() {
   return (
@@ -62,6 +64,12 @@ export default function SignalsPage() {
       <section className="mt-8">
         <Suspense fallback={<PanoramaSkeleton />}>
           <UGCReach />
+        </Suspense>
+      </section>
+
+      <section className="mt-8">
+        <Suspense fallback={<PanoramaSkeleton />}>
+          <UGCCreators />
         </Suspense>
       </section>
 
@@ -175,6 +183,24 @@ async function UGCReach() {
     getUGCReach({ company: 'SAREGAMA' }),
   ]);
   return <UGCReachStrip snapshots={[tips, sare]} />;
+}
+
+async function UGCCreators() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.signals);
+  const [tips, sare] = await Promise.all([
+    getTopUGCCreators({ company: 'TIPSMUSIC', limit: 5 }),
+    getTopUGCCreators({ company: 'SAREGAMA', limit: 5 }),
+  ]);
+  return (
+    <UGCCreatorsStrip
+      byCompany={[
+        { company: 'TIPSMUSIC', creators: tips },
+        { company: 'SAREGAMA', creators: sare },
+      ]}
+    />
+  );
 }
 
 function ReadSkeleton() {

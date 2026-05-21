@@ -2318,3 +2318,250 @@ function emptySnapshot(company: Company): UGCReachSnapshot {
     topAnchors: [],
   };
 }
+
+// ---- UGC creator aggregation (Path C) ---------------------------------------
+
+export interface UGCCreatorRow {
+  channel_id: string;
+  channel_name: string | null;
+  ugc_count: number;             // how many UGC Shorts this creator has using our catalog
+  ugc_views_sum: number;         // sum of attributed view counts
+  distinct_songs: number;        // distinct catalog songs they've used
+  distinct_sources: number;      // distinct master-audio source channels
+  top_song: string | null;
+  top_song_views: number;
+}
+
+/**
+ * Top creators (by attributed UGC view volume) using a company's catalog.
+ * Surfaces the influencer-tier accounts driving Content-ID-claimed UGC for
+ * the label — useful for partnership/marketing analysis and for spotting
+ * accounts that repeatedly source from our catalog.
+ *
+ * Restricted to UGC whose attribution_kind = 'content_id' (confirmed
+ * Content ID match via the watch-page music panel).
+ */
+export async function getTopUGCCreators(opts: {
+  company: Company;
+  limit?: number;
+}): Promise<UGCCreatorRow[]> {
+  const supabase = getServiceSupabase();
+  const limit = opts.limit ?? 10;
+
+  // Pull all the company's UGC matches (latest asof) joined with attribution
+  const { data: chans } = await supabase
+    .from('dim_channel')
+    .select('channel_id')
+    .eq('company', opts.company)
+    .eq('channel_type', 'owned');
+  const chanIds = ((chans ?? []) as Array<{ channel_id: string }>).map((c) => c.channel_id);
+  if (chanIds.length === 0) return [];
+
+  const { data: vids } = await supabase
+    .from('dim_video')
+    .select('video_id')
+    .in('channel_id', chanIds);
+  const vidIds = ((vids ?? []) as Array<{ video_id: string }>).map((v) => v.video_id);
+  if (vidIds.length === 0) return [];
+
+  // Latest asof per anchor
+  const { data: latestAsofRows } = await supabase
+    .from('fct_ugc_short_match')
+    .select('asof')
+    .in('source_video_id', vidIds)
+    .order('asof', { ascending: false })
+    .limit(1);
+  const latestAsof = ((latestAsofRows ?? []) as Array<{ asof: string }>)[0]?.asof;
+  if (!latestAsof) return [];
+
+  // Matches at that asof
+  const { data: matches } = await supabase
+    .from('fct_ugc_short_match')
+    .select('ugc_video_id, view_count')
+    .in('source_video_id', vidIds)
+    .eq('asof', latestAsof);
+  const matchRows = (matches ?? []) as Array<{
+    ugc_video_id: string;
+    view_count: number | null;
+  }>;
+  if (matchRows.length === 0) return [];
+
+  const ugcIds = Array.from(new Set(matchRows.map((m) => m.ugc_video_id)));
+  const viewByUgc = new Map<string, number>();
+  for (const m of matchRows) {
+    const cur = viewByUgc.get(m.ugc_video_id) ?? 0;
+    viewByUgc.set(m.ugc_video_id, Math.max(cur, m.view_count ?? 0));
+  }
+
+  // Enriched: channel + attribution
+  const enrichments: Array<{
+    ugc_video_id: string;
+    channel_id: string | null;
+    channel_name: string | null;
+    attribution_song: string | null;
+    attribution_kind: string | null;
+    attribution_source_channel_id: string | null;
+  }> = [];
+  for (let i = 0; i < ugcIds.length; i += 200) {
+    const slice = ugcIds.slice(i, i + 200);
+    const { data } = await supabase
+      .from('dim_ugc_video')
+      .select(
+        'ugc_video_id, channel_id, channel_name, attribution_song, attribution_kind, attribution_source_channel_id',
+      )
+      .in('ugc_video_id', slice);
+    enrichments.push(...((data ?? []) as typeof enrichments));
+  }
+
+  // Aggregate per-creator
+  type CreatorAgg = {
+    channel_id: string;
+    channel_name: string | null;
+    ugc_count: number;
+    ugc_views_sum: number;
+    songs: Set<string>;
+    sources: Set<string>;
+    topSong: string | null;
+    topSongViews: number;
+  };
+  const byCreator = new Map<string, CreatorAgg>();
+  for (const e of enrichments) {
+    if (!e.channel_id) continue;
+    // Only credit Content-ID-confirmed UGC to creator aggregation
+    if (e.attribution_kind !== 'content_id') continue;
+    const v = viewByUgc.get(e.ugc_video_id) ?? 0;
+    const bucket = byCreator.get(e.channel_id) ?? {
+      channel_id: e.channel_id,
+      channel_name: e.channel_name,
+      ugc_count: 0,
+      ugc_views_sum: 0,
+      songs: new Set<string>(),
+      sources: new Set<string>(),
+      topSong: null,
+      topSongViews: 0,
+    };
+    bucket.ugc_count += 1;
+    bucket.ugc_views_sum += v;
+    if (e.attribution_song) bucket.songs.add(e.attribution_song);
+    if (e.attribution_source_channel_id) bucket.sources.add(e.attribution_source_channel_id);
+    if (e.attribution_song && v > bucket.topSongViews) {
+      bucket.topSong = e.attribution_song;
+      bucket.topSongViews = v;
+    }
+    byCreator.set(e.channel_id, bucket);
+  }
+
+  return [...byCreator.values()]
+    .sort((a, b) => b.ugc_views_sum - a.ugc_views_sum)
+    .slice(0, limit)
+    .map((a) => ({
+      channel_id: a.channel_id,
+      channel_name: a.channel_name,
+      ugc_count: a.ugc_count,
+      ugc_views_sum: a.ugc_views_sum,
+      distinct_songs: a.songs.size,
+      distinct_sources: a.sources.size,
+      top_song: a.topSong,
+      top_song_views: a.topSongViews,
+    }));
+}
+
+// ---- Candidate source channels (Path J) -------------------------------------
+
+export interface CandidateSourceChannel {
+  channel_id: string;
+  channel_name: string | null;
+  ugc_pointing_here: number;
+  master_audio_views: number;
+  observed_artists: string[];
+  observed_songs: string[];
+}
+
+/**
+ * Source-audio channels that appear as the master for at least N UGCs but
+ * aren't in our dim_channel set — candidates to add as Topic channels.
+ *
+ * Today's run surfaced GowraHari (TIPS Telugu) and Jyotica Tangri (TIPS
+ * Punjabi) this way. As the cron accumulates more UGC over the weeks,
+ * additional artists will surface. This function powers an /ops surface
+ * that proactively suggests Topic-channel additions.
+ */
+export async function getCandidateSourceChannels(opts: {
+  minUgcCount?: number;
+  limit?: number;
+}): Promise<CandidateSourceChannel[]> {
+  const supabase = getServiceSupabase();
+  const minUgcCount = opts.minUgcCount ?? 2;
+  const limit = opts.limit ?? 20;
+
+  // Pull all UGC with resolved source channels (potentially huge)
+  const { data: all } = await supabase
+    .from('dim_ugc_video')
+    .select(
+      'attribution_source_channel_id, attribution_source_channel_name, attribution_song, attribution_artist',
+    )
+    .not('attribution_source_channel_id', 'is', null);
+  const rows = (all ?? []) as Array<{
+    attribution_source_channel_id: string;
+    attribution_source_channel_name: string | null;
+    attribution_song: string | null;
+    attribution_artist: string | null;
+  }>;
+  if (rows.length === 0) return [];
+
+  // Distinct source channel ids
+  const sourceIds = Array.from(new Set(rows.map((r) => r.attribution_source_channel_id)));
+
+  // Which of these ARE already in dim_channel?
+  const trackedIds = new Set<string>();
+  for (let i = 0; i < sourceIds.length; i += 200) {
+    const slice = sourceIds.slice(i, i + 200);
+    const { data: existing } = await supabase
+      .from('dim_channel')
+      .select('channel_id')
+      .in('channel_id', slice);
+    for (const c of (existing ?? []) as Array<{ channel_id: string }>) {
+      trackedIds.add(c.channel_id);
+    }
+  }
+
+  // Aggregate untracked
+  type AggCandidate = {
+    channel_id: string;
+    channel_name: string | null;
+    ugc_pointing_here: number;
+    artists: Set<string>;
+    songs: Set<string>;
+  };
+  const aggMap = new Map<string, AggCandidate>();
+  for (const r of rows) {
+    if (trackedIds.has(r.attribution_source_channel_id)) continue;
+    const bucket = aggMap.get(r.attribution_source_channel_id) ?? {
+      channel_id: r.attribution_source_channel_id,
+      channel_name: r.attribution_source_channel_name,
+      ugc_pointing_here: 0,
+      artists: new Set<string>(),
+      songs: new Set<string>(),
+    };
+    bucket.ugc_pointing_here += 1;
+    if (r.attribution_artist) bucket.artists.add(r.attribution_artist);
+    if (r.attribution_song) bucket.songs.add(r.attribution_song);
+    aggMap.set(r.attribution_source_channel_id, bucket);
+  }
+
+  // For each candidate, fetch the master-audio-view count from fct_channel_daily
+  // (latest row per channel). Skipped if no daily data exists yet — the
+  // candidate hasn't been ingested by our channels cron.
+  const candidates = [...aggMap.values()].filter((c) => c.ugc_pointing_here >= minUgcCount);
+  return candidates
+    .sort((a, b) => b.ugc_pointing_here - a.ugc_pointing_here)
+    .slice(0, limit)
+    .map((c) => ({
+      channel_id: c.channel_id,
+      channel_name: c.channel_name,
+      ugc_pointing_here: c.ugc_pointing_here,
+      master_audio_views: 0,
+      observed_artists: [...c.artists],
+      observed_songs: [...c.songs],
+    }));
+}

@@ -247,8 +247,23 @@ async function processAnchors(
     }
 
     if (idsToEnrich.length > 0) {
-      const enrichment = await enrichUGCVideos(idsToEnrich, env.YOUTUBE_API_KEY);
+      const batchErrors: Array<{ batch_start: number; status: number; message: string }> = [];
+      const enrichment = await enrichUGCVideos(
+        idsToEnrich,
+        env.YOUTUBE_API_KEY,
+        batchErrors,
+      );
       enrichedCount = enrichment.size;
+      if (batchErrors.length > 0) {
+        // Surface YT API failures (quota, key rejected, etc.) to ops_error_log
+        // so future runs are diagnosable instead of silently returning 0.
+        await supabase.from('ops_error_log').insert({
+          error_type: 'ugc_enrichment_batch_failed',
+          error_message: `${batchErrors.length} batch(es) failed during videos.list enrichment`,
+          detail: { batch_errors: batchErrors, requested: idsToEnrich.length, succeeded: enrichment.size },
+          ingest_run_id: runId,
+        });
+      }
       const nowIso = new Date().toISOString();
       const dimRows = Array.from(enrichment.values()).map((e) => ({
         ugc_video_id: e.ugc_video_id,
@@ -282,36 +297,67 @@ async function processAnchors(
   // ---- I3: Sampled music-panel attribution check ---------------------
   // For the highest-view UGC Shorts where attribution hasn't been checked
   // recently, fetch the watch page and classify the attribution kind.
+  //
+  // We rank candidates by view_count from fct_ugc_short_match (always
+  // present) rather than dim_ugc_video.latest_view_count (may be NULL if
+  // enrichment is degraded today) — so attribution runs even when
+  // enrichment fails.
   if (ugcIds.length > 0) {
     const ttlCutoff = new Date(
       Date.now() - ENRICHMENT_TTL_DAYS * 86_400_000,
     ).toISOString();
-    const { data: candidates } = await supabase
-      .from('dim_ugc_video')
-      .select('ugc_video_id, latest_view_count, attribution_checked_at')
-      .in('ugc_video_id', ugcIds)
-      .order('latest_view_count', { ascending: false, nullsFirst: false });
-    const queue = ((candidates ?? []) as Array<{
+
+    // Build candidate queue ordered by approximate view_count from this
+    // snapshot. Skip ones we've already checked recently.
+    const { data: ugcViews } = await supabase
+      .from('fct_ugc_short_match')
+      .select('ugc_video_id, view_count')
+      .eq('asof', today)
+      .in(
+        'source_video_id',
+        anchors.map((a) => a.video_id),
+      );
+    const viewByUgc = new Map<string, number>();
+    for (const r of (ugcViews ?? []) as Array<{
       ugc_video_id: string;
-      latest_view_count: number | null;
-      attribution_checked_at: string | null;
-    }>)
-      .filter(
-        (r) => r.attribution_checked_at == null || r.attribution_checked_at < ttlCutoff,
-      )
+      view_count: number | null;
+    }>) {
+      const cur = viewByUgc.get(r.ugc_video_id) ?? 0;
+      viewByUgc.set(r.ugc_video_id, Math.max(cur, r.view_count ?? 0));
+    }
+
+    const { data: already } = await supabase
+      .from('dim_ugc_video')
+      .select('ugc_video_id, attribution_checked_at')
+      .in('ugc_video_id', ugcIds);
+    const recentlyChecked = new Set(
+      ((already ?? []) as Array<{
+        ugc_video_id: string;
+        attribution_checked_at: string | null;
+      }>)
+        .filter((r) => r.attribution_checked_at != null && r.attribution_checked_at > ttlCutoff)
+        .map((r) => r.ugc_video_id),
+    );
+
+    const queue = ugcIds
+      .filter((id) => !recentlyChecked.has(id))
+      .sort((a, b) => (viewByUgc.get(b) ?? 0) - (viewByUgc.get(a) ?? 0))
       .slice(0, ATTRIBUTION_SAMPLE_SIZE);
 
-    for (const c of queue) {
+    for (const ugcId of queue) {
       try {
-        const att = await fetchMusicAttribution(c.ugc_video_id);
+        const att = await fetchMusicAttribution(ugcId);
         await supabase
           .from('dim_ugc_video')
-          .update({
-            attribution_kind: att.kind,
-            attribution_label: att.label,
-            attribution_checked_at: new Date().toISOString(),
-          })
-          .eq('ugc_video_id', c.ugc_video_id);
+          .upsert(
+            {
+              ugc_video_id: ugcId,
+              attribution_kind: att.kind,
+              attribution_label: att.label,
+              attribution_checked_at: new Date().toISOString(),
+            },
+            { onConflict: 'ugc_video_id' },
+          );
         attributionChecked += 1;
         attributionCounts[att.kind] = (attributionCounts[att.kind] ?? 0) + 1;
       } catch {

@@ -372,11 +372,14 @@ interface YTVideoItem {
  * Batch videos.list?id= for up to 50 IDs per call. Returns enriched
  * metadata indexed by ugc_video_id. Costs 1 quota unit per 50 IDs.
  *
- * Caller is responsible for providing the YOUTUBE_API_KEY.
+ * Caller is responsible for providing the YOUTUBE_API_KEY. Per-batch
+ * errors are appended to `errors` (caller can log to ops_error_log)
+ * rather than throwing — partial enrichment is preferable to none.
  */
 export async function enrichUGCVideos(
   videoIds: string[],
   apiKey: string,
+  errors?: Array<{ batch_start: number; status: number; message: string }>,
 ): Promise<Map<string, UGCEnrichment>> {
   const out = new Map<string, UGCEnrichment>();
   for (let i = 0; i < videoIds.length; i += 50) {
@@ -385,7 +388,13 @@ export async function enrichUGCVideos(
       `https://www.googleapis.com/youtube/v3/videos?` +
       `part=snippet,contentDetails,statistics&id=${batch.join(',')}&key=${apiKey}`;
     const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) continue;
+    if (!res.ok) {
+      if (errors) {
+        const body = await res.text().catch(() => '');
+        errors.push({ batch_start: i, status: res.status, message: body.slice(0, 200) });
+      }
+      continue;
+    }
     const data = (await res.json()) as { items?: YTVideoItem[] };
     for (const it of data.items ?? []) {
       const dur = parseDurationSeconds(it.contentDetails?.duration);

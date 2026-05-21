@@ -1966,3 +1966,168 @@ export async function getCatalogDecayInputs(opts: {
   }
   return out;
 }
+
+// ---- UGC reach (Phase 1: Shorts pivot snapshots) ---------------------------
+
+export interface UGCAnchorRow {
+  source_video_id: string;
+  source_title: string;
+  ugc_count: number;
+  ugc_views_sum: number;
+  top_ugc_id: string;
+  top_ugc_views: number;
+}
+
+export interface UGCReachSnapshot {
+  company: Company;
+  latestAsof: string | null;
+  priorAsof: string | null;
+  snapshotsAvailable: number;
+  ugc_shorts_count: number;
+  attributed_views: number;
+  // WoW delta (latest minus prior snapshot); null when only one snapshot exists.
+  weekOverWeek: { delta_views: number; pct: number } | null;
+  topAnchors: UGCAnchorRow[];
+}
+
+/**
+ * Aggregate the most recent fct_ugc_short_match snapshot into a per-company
+ * reach summary, plus week-over-week deltas when ≥ 2 snapshots exist.
+ *
+ * Filters to anchors whose source channel belongs to the requested company
+ * (via dim_channel.company). Topic/OAC channels with NULL company are
+ * naturally excluded.
+ */
+export async function getUGCReach(opts: { company: Company }): Promise<UGCReachSnapshot> {
+  const supabase = getServiceSupabase();
+
+  // 1) Channels of this company
+  const { data: chans } = await supabase
+    .from('dim_channel')
+    .select('channel_id')
+    .eq('company', opts.company)
+    .eq('channel_type', 'owned');
+  const chanIds = ((chans ?? []) as Array<{ channel_id: string }>).map((c) => c.channel_id);
+  if (chanIds.length === 0) return emptySnapshot(opts.company);
+
+  // 2) Videos in those channels
+  const { data: vids } = await supabase
+    .from('dim_video')
+    .select('video_id, title')
+    .in('channel_id', chanIds);
+  const vidsTyped = (vids ?? []) as Array<{ video_id: string; title: string }>;
+  if (vidsTyped.length === 0) return emptySnapshot(opts.company);
+  const titleByVid = new Map(vidsTyped.map((v) => [v.video_id, v.title]));
+  const vidIds = vidsTyped.map((v) => v.video_id);
+
+  // 3) Two most recent asof dates that have rows for any of our anchors
+  const { data: asofRows } = await supabase
+    .from('fct_ugc_short_match')
+    .select('asof')
+    .in('source_video_id', vidIds)
+    .order('asof', { ascending: false })
+    .limit(1000);
+  const asofs = Array.from(
+    new Set(((asofRows ?? []) as Array<{ asof: string }>).map((r) => r.asof)),
+  );
+  if (asofs.length === 0) return emptySnapshot(opts.company);
+  const latestAsof = asofs[0];
+  const priorAsof = asofs[1] ?? null;
+
+  // 4) All matches for latest + (optional) prior asof
+  const fetchAsof = async (asof: string) => {
+    const out: Array<{
+      source_video_id: string;
+      ugc_video_id: string;
+      view_count: number | null;
+    }> = [];
+    for (let i = 0; i < vidIds.length; i += 200) {
+      const slice = vidIds.slice(i, i + 200);
+      const { data } = await supabase
+        .from('fct_ugc_short_match')
+        .select('source_video_id, ugc_video_id, view_count')
+        .in('source_video_id', slice)
+        .eq('asof', asof);
+      out.push(
+        ...((data ?? []) as Array<{
+          source_video_id: string;
+          ugc_video_id: string;
+          view_count: number | null;
+        }>),
+      );
+    }
+    return out;
+  };
+
+  const latestRows = await fetchAsof(latestAsof);
+  const priorRows = priorAsof ? await fetchAsof(priorAsof) : [];
+
+  // 5) Aggregate latest snapshot
+  const totalViewsLatest = latestRows.reduce((acc, r) => acc + (r.view_count ?? 0), 0);
+  const totalCountLatest = latestRows.length;
+
+  // 6) Per-anchor breakdown for the latest snapshot
+  type Agg = { count: number; views: number; topUgc: string; topViews: number };
+  const byAnchor = new Map<string, Agg>();
+  for (const r of latestRows) {
+    const v = r.view_count ?? 0;
+    const bucket = byAnchor.get(r.source_video_id) ?? {
+      count: 0,
+      views: 0,
+      topUgc: r.ugc_video_id,
+      topViews: 0,
+    };
+    bucket.count += 1;
+    bucket.views += v;
+    if (v > bucket.topViews) {
+      bucket.topViews = v;
+      bucket.topUgc = r.ugc_video_id;
+    }
+    byAnchor.set(r.source_video_id, bucket);
+  }
+
+  const topAnchors: UGCAnchorRow[] = [...byAnchor.entries()]
+    .map(([source_video_id, a]) => ({
+      source_video_id,
+      source_title: titleByVid.get(source_video_id) ?? source_video_id,
+      ugc_count: a.count,
+      ugc_views_sum: a.views,
+      top_ugc_id: a.topUgc,
+      top_ugc_views: a.topViews,
+    }))
+    .sort((a, b) => b.ugc_views_sum - a.ugc_views_sum)
+    .slice(0, 5);
+
+  // 7) WoW delta on attributed views
+  let weekOverWeek: UGCReachSnapshot['weekOverWeek'] = null;
+  if (priorAsof && priorRows.length > 0) {
+    const totalViewsPrior = priorRows.reduce((acc, r) => acc + (r.view_count ?? 0), 0);
+    const delta = totalViewsLatest - totalViewsPrior;
+    const pct = totalViewsPrior > 0 ? delta / totalViewsPrior : 0;
+    weekOverWeek = { delta_views: delta, pct };
+  }
+
+  return {
+    company: opts.company,
+    latestAsof,
+    priorAsof,
+    snapshotsAvailable: asofs.length,
+    ugc_shorts_count: totalCountLatest,
+    attributed_views: totalViewsLatest,
+    weekOverWeek,
+    topAnchors,
+  };
+}
+
+function emptySnapshot(company: Company): UGCReachSnapshot {
+  return {
+    company,
+    latestAsof: null,
+    priorAsof: null,
+    snapshotsAvailable: 0,
+    ugc_shorts_count: 0,
+    attributed_views: 0,
+    weekOverWeek: null,
+    topAnchors: [],
+  };
+}

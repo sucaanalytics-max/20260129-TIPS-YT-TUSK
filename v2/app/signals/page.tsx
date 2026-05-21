@@ -8,6 +8,7 @@ import {
   getEventHorizon,
   getFreshness,
   getRankTrajectory,
+  getUGCReach,
 } from '@/lib/queries';
 import { composeRead } from '@/lib/signals';
 import { CACHE_TAGS } from '@/lib/revalidate';
@@ -18,6 +19,7 @@ import { LeadLagPanorama } from '@/components/signals/lead-lag-panorama';
 import { DivergenceCard } from '@/components/signals/divergence-card';
 import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
 import { RankTrajectoryStrip } from '@/components/signals/rank-trajectory-strip';
+import { UGCReachStrip } from '@/components/signals/ugc-reach-strip';
 
 export default function SignalsPage() {
   return (
@@ -54,6 +56,12 @@ export default function SignalsPage() {
       <section className="mt-8">
         <Suspense fallback={<PanoramaSkeleton />}>
           <RankTrajectory />
+        </Suspense>
+      </section>
+
+      <section className="mt-8">
+        <Suspense fallback={<PanoramaSkeleton />}>
+          <UGCReach />
         </Suspense>
       </section>
 
@@ -156,6 +164,17 @@ async function RankTrajectory() {
       ]}
     />
   );
+}
+
+async function UGCReach() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.signals);
+  const [tips, sare] = await Promise.all([
+    getUGCReach({ company: 'TIPSMUSIC' }),
+    getUGCReach({ company: 'SAREGAMA' }),
+  ]);
+  return <UGCReachStrip snapshots={[tips, sare]} />;
 }
 
 function ReadSkeleton() {

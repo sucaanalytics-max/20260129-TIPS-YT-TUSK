@@ -2565,3 +2565,208 @@ export async function getCandidateSourceChannels(opts: {
       observed_songs: [...c.songs],
     }));
 }
+
+// ---- Topic-channel catalog reach --------------------------------------------
+
+export interface TopicContributorRow {
+  channel_id: string;
+  channel_name: string;
+  artist_name: string;
+  kind: 'topic_auto' | 'oac';
+  catalog_share: number;
+  last_7d_raw_views: number;      // sum of daily_views over 7d
+  last_7d_attributed_views: number; // raw × catalog_share
+  latest_subscribers: number | null;
+}
+
+export interface TopicReachSnapshot {
+  company: Company;
+  channelsTracked: number;
+  daysAvailable: number;
+  // Daily series of attributed views (raw × catalog_share, summed across all
+  // Topic+OAC channels of artists in this company). Sorted ascending by date.
+  series: Array<{ date: string; attributed_daily_views: number }>;
+  // Rolling sums for headline figures
+  totals: {
+    last_1d: number;
+    last_7d: number;
+    last_30d: number;
+  };
+  // Last-7d vs prior-7d delta on attributed views
+  weekOverWeek: {
+    delta_views: number;
+    pct: number;
+  } | null;
+  topContributors: TopicContributorRow[];
+}
+
+/**
+ * Catalog reach via Topic + OAC channels.
+ *
+ * The IR interpretation: the label's catalog drives a second revenue leg on
+ * YouTube — auto-generated audio Topic channels and Official Artist
+ * Channels (OACs). Each artist's catalog is split across multiple labels;
+ * dim_artist_label.catalog_share weights that split. This function returns
+ * the daily attributed-view series (per-channel raw views × catalog_share,
+ * summed) plus rolling windows and top contributors.
+ *
+ * Returns empty snapshot if no Topic/OAC channels are tracked for the
+ * company OR if no fct_channel_daily data exists yet for them.
+ */
+export async function getTopicReach(opts: {
+  company: Company;
+  days?: number;
+}): Promise<TopicReachSnapshot> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 60;
+  const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+
+  // 1) All artists with a non-zero catalog_share for this company
+  const { data: labels } = await supabase
+    .from('dim_artist_label')
+    .select('artist_name, catalog_share')
+    .eq('company', opts.company)
+    .gt('catalog_share', 0);
+  const shareByArtist = new Map<string, number>();
+  for (const r of (labels ?? []) as Array<{ artist_name: string; catalog_share: number }>) {
+    shareByArtist.set(r.artist_name, Number(r.catalog_share));
+  }
+  if (shareByArtist.size === 0) return emptyTopicSnapshot(opts.company);
+
+  // 2) Topic + OAC channels for those artists
+  const { data: chans } = await supabase
+    .from('dim_channel')
+    .select('channel_id, channel_name, artist_name, meta')
+    .eq('channel_type', 'topic')
+    .eq('is_active', true)
+    .in('artist_name', [...shareByArtist.keys()]);
+  const channels = ((chans ?? []) as Array<{
+    channel_id: string;
+    channel_name: string;
+    artist_name: string;
+    meta: { kind?: string } | null;
+  }>).map((c) => ({
+    ...c,
+    catalog_share: shareByArtist.get(c.artist_name) ?? 0,
+    kind: (c.meta?.kind === 'oac' ? 'oac' : 'topic_auto') as 'topic_auto' | 'oac',
+  }));
+  if (channels.length === 0) return emptyTopicSnapshot(opts.company);
+
+  const shareByChannel = new Map<string, number>(
+    channels.map((c) => [c.channel_id, c.catalog_share]),
+  );
+
+  // 3) Daily facts over the window
+  const channelIds = channels.map((c) => c.channel_id);
+  const { data: facts } = await supabase
+    .from('fct_channel_daily')
+    .select('channel_id, date, daily_views, subscribers')
+    .in('channel_id', channelIds)
+    .gte('date', since)
+    .order('date', { ascending: true });
+  const factRows = (facts ?? []) as Array<{
+    channel_id: string;
+    date: string;
+    daily_views: number | null;
+    subscribers: number | null;
+  }>;
+
+  // 4) Aggregate attributed views per date
+  const dayAggregate = new Map<string, number>();
+  for (const r of factRows) {
+    if (r.daily_views == null) continue;
+    const share = shareByChannel.get(r.channel_id) ?? 0;
+    if (share <= 0) continue;
+    const attributed = Number(r.daily_views) * share;
+    dayAggregate.set(r.date, (dayAggregate.get(r.date) ?? 0) + attributed);
+  }
+  const series = [...dayAggregate.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, attributed_daily_views]) => ({
+      date,
+      attributed_daily_views: Math.round(attributed_daily_views),
+    }));
+
+  // 5) Rolling totals
+  const sumLastN = (n: number): number =>
+    series.slice(-n).reduce((acc, p) => acc + p.attributed_daily_views, 0);
+  const totals = {
+    last_1d: series[series.length - 1]?.attributed_daily_views ?? 0,
+    last_7d: sumLastN(7),
+    last_30d: sumLastN(30),
+  };
+
+  // 6) WoW = last-7d vs prior-7d
+  let weekOverWeek: TopicReachSnapshot['weekOverWeek'] = null;
+  if (series.length >= 14) {
+    const lastWeek = series.slice(-7).reduce((acc, p) => acc + p.attributed_daily_views, 0);
+    const priorWeek = series.slice(-14, -7).reduce((acc, p) => acc + p.attributed_daily_views, 0);
+    const delta = lastWeek - priorWeek;
+    weekOverWeek = {
+      delta_views: delta,
+      pct: priorWeek > 0 ? delta / priorWeek : 0,
+    };
+  }
+
+  // 7) Top contributors: per-channel 7d sum × catalog_share, plus latest subs
+  const channelAgg = new Map<
+    string,
+    { raw_7d: number; latest_subs: number | null; latest_date: string }
+  >();
+  const sevenDaysAgoMs = Date.now() - 7 * 86_400_000;
+  for (const r of factRows) {
+    const dMs = new Date(r.date + 'T00:00:00Z').getTime();
+    const bucket = channelAgg.get(r.channel_id) ?? {
+      raw_7d: 0,
+      latest_subs: null,
+      latest_date: '',
+    };
+    if (dMs >= sevenDaysAgoMs && r.daily_views != null) {
+      bucket.raw_7d += Number(r.daily_views);
+    }
+    if (r.date > bucket.latest_date) {
+      bucket.latest_date = r.date;
+      bucket.latest_subs = r.subscribers ?? null;
+    }
+    channelAgg.set(r.channel_id, bucket);
+  }
+  const topContributors: TopicContributorRow[] = channels
+    .map((c) => {
+      const a = channelAgg.get(c.channel_id);
+      const raw_7d = a?.raw_7d ?? 0;
+      return {
+        channel_id: c.channel_id,
+        channel_name: c.channel_name,
+        artist_name: c.artist_name,
+        kind: c.kind,
+        catalog_share: c.catalog_share,
+        last_7d_raw_views: raw_7d,
+        last_7d_attributed_views: Math.round(raw_7d * c.catalog_share),
+        latest_subscribers: a?.latest_subs ?? null,
+      };
+    })
+    .sort((a, b) => b.last_7d_attributed_views - a.last_7d_attributed_views)
+    .slice(0, 6);
+
+  return {
+    company: opts.company,
+    channelsTracked: channels.length,
+    daysAvailable: series.length,
+    series,
+    totals,
+    weekOverWeek,
+    topContributors,
+  };
+}
+
+function emptyTopicSnapshot(company: Company): TopicReachSnapshot {
+  return {
+    company,
+    channelsTracked: 0,
+    daysAvailable: 0,
+    series: [],
+    totals: { last_1d: 0, last_7d: 0, last_30d: 0 },
+    weekOverWeek: null,
+    topContributors: [],
+  };
+}

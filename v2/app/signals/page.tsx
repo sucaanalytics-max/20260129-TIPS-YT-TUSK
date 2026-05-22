@@ -10,6 +10,7 @@ import {
   getRankTrajectory,
   getUGCReach,
   getTopUGCCreators,
+  getTopicReach,
 } from '@/lib/queries';
 import { composeRead } from '@/lib/signals';
 import { CACHE_TAGS } from '@/lib/revalidate';
@@ -22,6 +23,7 @@ import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
 import { RankTrajectoryStrip } from '@/components/signals/rank-trajectory-strip';
 import { UGCReachStrip } from '@/components/signals/ugc-reach-strip';
 import { UGCCreatorsStrip } from '@/components/signals/ugc-creators-strip';
+import { TopicReachStrip } from '@/components/signals/topic-reach-strip';
 
 export default function SignalsPage() {
   return (
@@ -58,6 +60,12 @@ export default function SignalsPage() {
       <section className="mt-8">
         <Suspense fallback={<PanoramaSkeleton />}>
           <RankTrajectory />
+        </Suspense>
+      </section>
+
+      <section className="mt-8">
+        <Suspense fallback={<PanoramaSkeleton />}>
+          <TopicReach />
         </Suspense>
       </section>
 
@@ -183,6 +191,17 @@ async function UGCReach() {
     getUGCReach({ company: 'SAREGAMA' }),
   ]);
   return <UGCReachStrip snapshots={[tips, sare]} />;
+}
+
+async function TopicReach() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.signals, CACHE_TAGS.channels);
+  const [tips, sare] = await Promise.all([
+    getTopicReach({ company: 'TIPSMUSIC', days: 60 }),
+    getTopicReach({ company: 'SAREGAMA', days: 60 }),
+  ]);
+  return <TopicReachStrip snapshots={[tips, sare]} />;
 }
 
 async function UGCCreators() {

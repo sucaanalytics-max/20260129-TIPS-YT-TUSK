@@ -1,4 +1,5 @@
 import type { UGCReachSnapshot } from '@/lib/queries';
+import { fmtInr } from '@/lib/revenue-cpm';
 
 /**
  * Side-by-side UGC reach panel per company. Surfaces:
@@ -80,6 +81,15 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
               ? `▼ ${fmtBig(wow.delta_views)} (${fmtPct(wow.pct)}) WoW`
               : 'flat WoW'}
       </p>
+      <div
+        className="text-muted-foreground/80 mt-1.5 text-[11px] tabular-nums"
+        title={snap.revenueEstimate.methodology}
+      >
+        <span className="text-amber-400/80">≈ {fmtInr(snap.revenueEstimate.weekly.low_inr)} – {fmtInr(snap.revenueEstimate.weekly.high_inr)}/wk</span>
+        <span className="ml-2 text-muted-foreground/50">
+          (Q-rate {fmtInr(snap.revenueEstimate.quarterly.low_inr)} – {fmtInr(snap.revenueEstimate.quarterly.high_inr)} · catalog-matched only)
+        </span>
+      </div>
       {snap.topSongs.length > 0 ? (
         <div className="mt-3">
           <p className="text-muted-foreground/70 mb-1 text-[10px] uppercase tracking-wider">

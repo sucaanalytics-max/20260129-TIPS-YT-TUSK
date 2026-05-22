@@ -1,5 +1,6 @@
 import { Sparkline } from '@/components/charts/sparkline';
 import type { TopicReachSnapshot } from '@/lib/queries';
+import { fmtInr } from '@/lib/revenue-cpm';
 
 /**
  * Side-by-side catalog-reach panel per company. Surfaces:
@@ -83,6 +84,15 @@ function Card({ snap }: { snap: TopicReachSnapshot }) {
       <div className="text-muted-foreground/70 mt-1 flex gap-3 text-[10px] tabular-nums">
         <span>today: {fmtBig(snap.totals.last_1d)}</span>
         <span>30d: {fmtBig(snap.totals.last_30d)}</span>
+      </div>
+      <div
+        className="text-muted-foreground/80 mt-1.5 text-[11px] tabular-nums"
+        title={snap.revenueEstimate.methodology}
+      >
+        <span className="text-amber-400/80">≈ {fmtInr(snap.revenueEstimate.weekly.low_inr)} – {fmtInr(snap.revenueEstimate.weekly.high_inr)}/wk</span>
+        <span className="ml-2 text-muted-foreground/50">
+          (Q-rate {fmtInr(snap.revenueEstimate.quarterly.low_inr)} – {fmtInr(snap.revenueEstimate.quarterly.high_inr)})
+        </span>
       </div>
       {sparkValues.length > 1 ? (
         <div className="mt-2">

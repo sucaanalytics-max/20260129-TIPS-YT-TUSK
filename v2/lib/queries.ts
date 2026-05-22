@@ -24,6 +24,11 @@ import {
   returnSinceDate,
 } from '@/lib/risk';
 import { resolveStockRange, type StockRange } from '@/lib/stock-range';
+import {
+  estimateTopicRevenue,
+  estimateUgcRevenue,
+  type RevenueEstimate,
+} from '@/lib/revenue-cpm';
 
 export type { SignalsSnapshot } from '@/lib/signals';
 export type { StockRange } from '@/lib/stock-range';
@@ -2017,6 +2022,10 @@ export interface UGCReachSnapshot {
   // audio video for one song spawns many UGC clips across different pivots).
   topSongs: UGCSongAggRow[];
   topAnchors: UGCAnchorRow[];
+  // Modelled UGC revenue band. Built from catalog-matched (strict-confirm)
+  // attributed view volume × Shorts Creator Fund pool CPM × label pool
+  // share. See lib/revenue-cpm.ts. Always low–high band.
+  revenueEstimate: RevenueEstimate;
 }
 
 /**
@@ -2284,6 +2293,16 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     weekOverWeek = { delta_views: delta, pct };
   }
 
+  // Catalog-matched attributed UGC views drives the revenue estimate —
+  // strict-confirm only (master audio in our owned/topic channels).
+  // catalog_match attributedViews approximated as catalog_match
+  // fraction × snapshot's total attributed views.
+  const catalogMatchRatio = totalEnriched > 0 ? catalogMatchCount / totalEnriched : 0;
+  const catalogAttributedViews = Math.round(totalViewsLatest * catalogMatchRatio);
+  const revenueEstimate = estimateUgcRevenue({
+    attributed_views_7d: catalogAttributedViews,
+  });
+
   return {
     company: opts.company,
     latestAsof,
@@ -2298,6 +2317,7 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     totalEnriched,
     topSongs,
     topAnchors,
+    revenueEstimate,
   };
 }
 
@@ -2316,6 +2336,7 @@ function emptySnapshot(company: Company): UGCReachSnapshot {
     totalEnriched: 0,
     topSongs: [],
     topAnchors: [],
+    revenueEstimate: estimateUgcRevenue({ attributed_views_7d: 0 }),
   };
 }
 
@@ -2598,6 +2619,10 @@ export interface TopicReachSnapshot {
     pct: number;
   } | null;
   topContributors: TopicContributorRow[];
+  // Modelled revenue band — IR-relevant rupee ranges derived from the
+  // attributed view totals via lib/revenue-cpm.ts. Always low-high band,
+  // never a point estimate.
+  revenueEstimate: RevenueEstimate;
 }
 
 /**
@@ -2748,6 +2773,11 @@ export async function getTopicReach(opts: {
     .sort((a, b) => b.last_7d_attributed_views - a.last_7d_attributed_views)
     .slice(0, 6);
 
+  const revenueEstimate = estimateTopicRevenue({
+    attributed_1d_views: totals.last_1d,
+    attributed_7d_views: totals.last_7d,
+  });
+
   return {
     company: opts.company,
     channelsTracked: channels.length,
@@ -2756,6 +2786,7 @@ export async function getTopicReach(opts: {
     totals,
     weekOverWeek,
     topContributors,
+    revenueEstimate,
   };
 }
 
@@ -2768,5 +2799,6 @@ function emptyTopicSnapshot(company: Company): TopicReachSnapshot {
     totals: { last_1d: 0, last_7d: 0, last_30d: 0 },
     weekOverWeek: null,
     topContributors: [],
+    revenueEstimate: estimateTopicRevenue({ attributed_1d_views: 0, attributed_7d_views: 0 }),
   };
 }

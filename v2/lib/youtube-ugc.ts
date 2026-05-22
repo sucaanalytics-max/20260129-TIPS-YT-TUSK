@@ -569,6 +569,36 @@ function parseDurationSeconds(iso?: string): number | null {
 }
 
 /**
+ * Resolve channels.list snippet.country for a batch of channel IDs.
+ * Used to attribute UGC creators to a country (diaspora-vs-domestic
+ * cohort split). 1 quota unit per 50 IDs.
+ *
+ * Returns Map of channelId → country (ISO-2 code) when set by the
+ * creator. Not all channels expose country.
+ */
+export async function resolveChannelCountries(
+  channelIds: string[],
+  apiKey: string,
+): Promise<Map<string, string | null>> {
+  const out = new Map<string, string | null>();
+  for (let i = 0; i < channelIds.length; i += 50) {
+    const batch = channelIds.slice(i, i + 50);
+    const url =
+      `https://www.googleapis.com/youtube/v3/channels?` +
+      `part=snippet&id=${batch.join(',')}&key=${apiKey}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) continue;
+    const data = (await res.json()) as {
+      items?: Array<{ id: string; snippet?: { country?: string } }>;
+    };
+    for (const it of data.items ?? []) {
+      out.set(it.id, it.snippet?.country ?? null);
+    }
+  }
+  return out;
+}
+
+/**
  * Lightweight videos.list batch that only resolves channel info — used
  * for the attribution_source_video_id resolution path where we don't
  * care about statistics or contentDetails, just `whose channel is this

@@ -5,6 +5,7 @@ import {
   enrichUGCVideos,
   fetchMusicAttribution,
   fetchShortsForSound,
+  resolveChannelCountries,
   resolveVideoChannels,
   type ShortMatch,
 } from '@/lib/youtube-ugc';
@@ -376,6 +377,60 @@ async function processAnchors(
     }
   }
 
+  // ---- Resolve UGC creator geo (Path #2) ---------------------------------
+  // For every newly-enriched UGC, look up the creator channel's country
+  // via channels.list?part=snippet. Same TTL guard as enrichment so we
+  // don't re-fetch already-resolved creators every week.
+  let creatorCountriesResolved = 0;
+  if (env.YOUTUBE_API_KEY) {
+    const { data: pendingCreators } = await supabase
+      .from('dim_ugc_video')
+      .select('channel_id, creator_country_checked_at')
+      .not('channel_id', 'is', null)
+      .limit(2000);
+    const ttlCutoff = new Date(
+      Date.now() - ENRICHMENT_TTL_DAYS * 86_400_000,
+    ).toISOString();
+    const distinctChans = new Set<string>();
+    for (const r of (pendingCreators ?? []) as Array<{
+      channel_id: string;
+      creator_country_checked_at: string | null;
+    }>) {
+      if (
+        r.channel_id &&
+        (r.creator_country_checked_at == null || r.creator_country_checked_at < ttlCutoff)
+      ) {
+        distinctChans.add(r.channel_id);
+      }
+    }
+    const chanIds = [...distinctChans];
+    if (chanIds.length > 0) {
+      const countries = await resolveChannelCountries(chanIds, env.YOUTUBE_API_KEY);
+      const nowIso = new Date().toISOString();
+      // Group by country to batch UPDATEs (saves N round-trips)
+      const byCountry = new Map<string | 'NULL', string[]>();
+      for (const cid of chanIds) {
+        const country = countries.get(cid) ?? null;
+        const key = country ?? 'NULL';
+        if (!byCountry.has(key)) byCountry.set(key, []);
+        byCountry.get(key)!.push(cid);
+      }
+      for (const [country, ids] of byCountry) {
+        const realCountry = country === 'NULL' ? null : country;
+        for (let i = 0; i < ids.length; i += 100) {
+          await supabase
+            .from('dim_ugc_video')
+            .update({
+              creator_country: realCountry,
+              creator_country_checked_at: nowIso,
+            })
+            .in('channel_id', ids.slice(i, i + 100));
+        }
+      }
+      creatorCountriesResolved = chanIds.length;
+    }
+  }
+
   // ---- Resolve source-audio channel ownership ----------------------------
   // attribution_source_video_id is the master audio that YT's Content ID
   // matched against. It's almost never in dim_video (masters live on
@@ -430,6 +485,7 @@ async function processAnchors(
     attribution_checked: attributionChecked,
     attribution_breakdown: attributionCounts,
     source_channels_resolved: sourceChannelsResolved,
+    creator_countries_resolved: creatorCountriesResolved,
     per_anchor: perAnchor,
   });
 

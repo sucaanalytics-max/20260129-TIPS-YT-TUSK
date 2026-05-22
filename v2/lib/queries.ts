@@ -2661,7 +2661,7 @@ export async function getTopicReach(opts: {
   // 2) Topic + OAC channels for those artists
   const { data: chans } = await supabase
     .from('dim_channel')
-    .select('channel_id, channel_name, artist_name, meta')
+    .select('channel_id, channel_name, artist_name, language, meta')
     .eq('channel_type', 'topic')
     .eq('is_active', true)
     .in('artist_name', [...shareByArtist.keys()]);
@@ -2669,11 +2669,14 @@ export async function getTopicReach(opts: {
     channel_id: string;
     channel_name: string;
     artist_name: string;
-    meta: { kind?: string } | null;
+    language: string | null;
+    meta: { kind?: string; language?: string } | null;
   }>).map((c) => ({
     ...c,
     catalog_share: shareByArtist.get(c.artist_name) ?? 0,
     kind: (c.meta?.kind === 'oac' ? 'oac' : 'topic_auto') as 'topic_auto' | 'oac',
+    // Resolve language: prefer dim_channel.language; fall back to meta.language
+    resolved_language: (c.language ?? c.meta?.language ?? null) as string | null,
   }));
   if (channels.length === 0) return emptyTopicSnapshot(opts.company);
 
@@ -2773,9 +2776,18 @@ export async function getTopicReach(opts: {
     .sort((a, b) => b.last_7d_attributed_views - a.last_7d_attributed_views)
     .slice(0, 6);
 
+  // Per-channel language weights for CPM blending. Weight by 7d
+  // attributed views so a high-traffic Hindi channel dominates a small
+  // Punjabi channel's CPM influence.
+  const languageMix = channels.map((c) => ({
+    language: c.resolved_language,
+    weight:
+      (channelAgg.get(c.channel_id)?.raw_7d ?? 0) * c.catalog_share,
+  }));
   const revenueEstimate = estimateTopicRevenue({
     attributed_1d_views: totals.last_1d,
     attributed_7d_views: totals.last_7d,
+    languageMix,
   });
 
   return {

@@ -11,6 +11,7 @@ import {
   getUGCReach,
   getTopUGCCreators,
   getTopicReach,
+  getBrokerConsensus,
 } from '@/lib/queries';
 import { composeRead } from '@/lib/signals';
 import { CACHE_TAGS } from '@/lib/revalidate';
@@ -24,6 +25,7 @@ import { RankTrajectoryStrip } from '@/components/signals/rank-trajectory-strip'
 import { UGCReachStrip } from '@/components/signals/ugc-reach-strip';
 import { UGCCreatorsStrip } from '@/components/signals/ugc-creators-strip';
 import { TopicReachStrip } from '@/components/signals/topic-reach-strip';
+import { BrokerConsensusStrip } from '@/components/signals/broker-consensus-strip';
 
 export default function SignalsPage() {
   return (
@@ -78,6 +80,12 @@ export default function SignalsPage() {
       <section className="mt-8">
         <Suspense fallback={<PanoramaSkeleton />}>
           <UGCCreators />
+        </Suspense>
+      </section>
+
+      <section className="mt-8">
+        <Suspense fallback={<PanoramaSkeleton />}>
+          <BrokerConsensus />
         </Suspense>
       </section>
 
@@ -202,6 +210,17 @@ async function TopicReach() {
     getTopicReach({ company: 'SAREGAMA', days: 60 }),
   ]);
   return <TopicReachStrip snapshots={[tips, sare]} />;
+}
+
+async function BrokerConsensus() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.signals);
+  const [tips, sare] = await Promise.all([
+    getBrokerConsensus({ company: 'TIPSMUSIC' }),
+    getBrokerConsensus({ company: 'SAREGAMA' }),
+  ]);
+  return <BrokerConsensusStrip snapshots={[tips, sare]} />;
 }
 
 async function UGCCreators() {

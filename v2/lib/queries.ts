@@ -2812,6 +2812,130 @@ export async function getTopicReach(opts: {
   };
 }
 
+// ---- Broker consensus -------------------------------------------------------
+
+export interface BrokerEstimateRow {
+  broker_name: string;
+  broker_type: 'institutional' | 'retail';
+  asof: string;
+  rating: string;
+  target_price_inr: number | null;
+  methodology: string | null;
+  revenue_cagr_pct: number | null;
+  notes: string | null;
+  source_url: string | null;
+}
+
+export interface BrokerConsensusSnapshot {
+  company: Company;
+  latest_estimates: BrokerEstimateRow[]; // one per broker, most recent
+  history: BrokerEstimateRow[];          // chronological, all estimates
+  // Aggregate stats over the latest-per-broker set
+  consensus: {
+    n_brokers: number;
+    n_buy: number;       // BUY / ADD / ACCUMULATE
+    n_hold: number;      // HOLD / NEUTRAL
+    n_sell: number;      // REDUCE / SELL
+    target_low: number | null;
+    target_median: number | null;
+    target_high: number | null;
+  };
+}
+
+/**
+ * Sell-side broker consensus per company. Latest_estimates = the most
+ * recent rating from each broker (one row per broker). History = all
+ * estimates ever, chronological.
+ *
+ * Used to compare our YT-modelled revenue thesis against the published
+ * sell-side view. Notably: as of the May 2026 research sweep, NO Indian
+ * broker explicitly models YouTube as a discrete revenue line — so our
+ * cockpit is net-additive to anything Tusk clients see elsewhere.
+ */
+export async function getBrokerConsensus(opts: {
+  company: Company;
+}): Promise<BrokerConsensusSnapshot> {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from('fct_broker_estimate')
+    .select(
+      'broker_name, asof, rating, target_price_inr, methodology, revenue_cagr_pct, notes, source_url, dim_broker!inner(broker_type)',
+    )
+    .eq('company', opts.company)
+    .order('asof', { ascending: false });
+
+  // PostgREST returns embedded relations as arrays even for many-to-one.
+  // Pluck the first element; broker_name is unique so there's always one.
+  type RawRow = {
+    broker_name: string;
+    asof: string;
+    rating: string;
+    target_price_inr: number | null;
+    methodology: string | null;
+    revenue_cagr_pct: number | null;
+    notes: string | null;
+    source_url: string | null;
+    dim_broker:
+      | { broker_type: 'institutional' | 'retail' }
+      | Array<{ broker_type: 'institutional' | 'retail' }>;
+  };
+  const history: BrokerEstimateRow[] = ((data ?? []) as unknown as RawRow[]).map((r) => {
+    const brokerMeta = Array.isArray(r.dim_broker) ? r.dim_broker[0] : r.dim_broker;
+    return {
+      broker_name: r.broker_name,
+      broker_type: brokerMeta?.broker_type ?? 'institutional',
+      asof: r.asof,
+      rating: r.rating,
+      target_price_inr: r.target_price_inr,
+      methodology: r.methodology,
+      revenue_cagr_pct: r.revenue_cagr_pct,
+      notes: r.notes,
+      source_url: r.source_url,
+    };
+  });
+
+  // Latest per broker
+  const latestByBroker = new Map<string, BrokerEstimateRow>();
+  for (const r of history) {
+    if (!latestByBroker.has(r.broker_name)) latestByBroker.set(r.broker_name, r);
+  }
+  const latest_estimates = [...latestByBroker.values()].sort((a, b) =>
+    a.broker_name.localeCompare(b.broker_name),
+  );
+
+  // Aggregate stats
+  const tps = latest_estimates
+    .map((e) => e.target_price_inr)
+    .filter((p): p is number => p != null && p > 0)
+    .sort((a, b) => a - b);
+  const target_median = tps.length ? tps[Math.floor(tps.length / 2)] : null;
+  const buyRatings = new Set(['BUY', 'ADD', 'ACCUMULATE']);
+  const holdRatings = new Set(['HOLD', 'NEUTRAL']);
+  const sellRatings = new Set(['REDUCE', 'SELL']);
+  const counts = latest_estimates.reduce(
+    (acc, e) => {
+      if (buyRatings.has(e.rating)) acc.n_buy += 1;
+      else if (holdRatings.has(e.rating)) acc.n_hold += 1;
+      else if (sellRatings.has(e.rating)) acc.n_sell += 1;
+      return acc;
+    },
+    { n_buy: 0, n_hold: 0, n_sell: 0 },
+  );
+
+  return {
+    company: opts.company,
+    latest_estimates,
+    history,
+    consensus: {
+      n_brokers: latest_estimates.length,
+      ...counts,
+      target_low: tps[0] ?? null,
+      target_median,
+      target_high: tps[tps.length - 1] ?? null,
+    },
+  };
+}
+
 function emptyTopicSnapshot(company: Company): TopicReachSnapshot {
   return {
     company,

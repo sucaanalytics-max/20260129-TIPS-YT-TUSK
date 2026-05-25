@@ -2301,6 +2301,10 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
   const catalogAttributedViews = Math.round(totalViewsLatest * catalogMatchRatio);
   const revenueEstimate = estimateUgcRevenue({
     attributed_views_7d: catalogAttributedViews,
+    data_days: asofs.length,
+    sample_size: totalEnriched,
+    catalog_match_pct: catalogMatchRatio,
+    backtest_calibration: null,
   });
 
   return {
@@ -2788,6 +2792,12 @@ export async function getTopicReach(opts: {
     attributed_1d_views: totals.last_1d,
     attributed_7d_views: totals.last_7d,
     languageMix,
+    data_days: series.length,
+    sample_size: channels.length,
+    // Topic reach is by construction catalog-matched (every Topic channel
+    // is tied to an artist in dim_artist_label), so 100% catalog-match.
+    catalog_match_pct: 1.0,
+    backtest_calibration: null, // populated when backtesting.ts engages
   });
 
   return {

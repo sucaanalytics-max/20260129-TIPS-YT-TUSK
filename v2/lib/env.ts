@@ -39,6 +39,17 @@ const Schema = z.object({
   // For cron-triggered cacheTag revalidation (deployment's own URL).
   // In prod, set to https://<v2-domain>. In dev, http://localhost:3000.
   NEXT_PUBLIC_APP_URL: z.string().url().optional().or(z.literal('')),
+
+  // YouTube CMS / Content Owner Reporting API service account (dormant).
+  // When a label provisions a service account with
+  // youtubepartner-content-owner-readonly scope and shares the JSON key,
+  // paste the full single-line JSON into this env var. The
+  // /api/cron/cms-reporting route auto-engages when this is set;
+  // until then it no-ops cleanly.
+  // YT_CMS_CONTENT_OWNER_IDS pairs companies to their Content Owner IDs,
+  // CSV format: "TIPSMUSIC:abc123def,SAREGAMA:xyz789ghi"
+  YT_CMS_SERVICE_ACCOUNT_JSON: z.string().optional().or(z.literal('')),
+  YT_CMS_CONTENT_OWNER_IDS: z.string().optional().or(z.literal('')),
 });
 
 export const env = Schema.parse({
@@ -53,7 +64,21 @@ export const env = Schema.parse({
   BSE_SCRIP_CODES: process.env.BSE_SCRIP_CODES,
   SLACK_ALERT_WEBHOOK_URL: process.env.SLACK_ALERT_WEBHOOK_URL,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  YT_CMS_SERVICE_ACCOUNT_JSON: process.env.YT_CMS_SERVICE_ACCOUNT_JSON,
+  YT_CMS_CONTENT_OWNER_IDS: process.env.YT_CMS_CONTENT_OWNER_IDS,
 });
+
+/**
+ * Per-company Content Owner ID lookup. Populated only when at least one
+ * label has provisioned CMS access. Empty otherwise.
+ */
+export const cmsContentOwnerIds = (env.YT_CMS_CONTENT_OWNER_IDS ?? '')
+  .split(',')
+  .map((pair) => {
+    const [company, owner] = pair.split(':').map((s) => s.trim());
+    return { company, content_owner_id: owner };
+  })
+  .filter((p) => p.company && p.content_owner_id);
 
 export const stockSymbols = env.STOCK_SYMBOLS
   .split(',')

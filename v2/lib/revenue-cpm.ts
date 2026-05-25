@@ -40,6 +40,41 @@ export interface RevenueEstimate {
   weekly: RevenueCpmBand;
   quarterly: RevenueCpmBand; // run-rate: weekly × 13
   methodology: string;
+  // Model confidence grade. Derived from data maturity + sample coverage.
+  // 'A' = ≥6 months data + ≥50% catalog match + active backtest calibration
+  // 'B' = ≥1 month data, methodology stable, catalog match ≥30%
+  // 'C' = ≥7d data, methodology unblocked
+  // 'D' = ≤7d data, preliminary
+  // 'F' = no real data, baseline-only / cold-start
+  confidence_grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  confidence_factors: ConfidenceFactors;
+}
+
+export interface ConfidenceFactors {
+  data_days: number;            // days of underlying data
+  catalog_match_pct: number;    // 0-1 — what fraction of UGC is catalog-resolved
+  sample_size: number;          // n of attribution checks (UGC) or channels (Topic)
+  backtest_calibration: number | null; // ratio of modelled-mid to actual; null until eval
+  notes: string[];              // free-form caveats
+}
+
+/**
+ * Compute a confidence grade from the underlying factors. Conservative —
+ * we'd rather show C than overpromise A. As data accumulates the grade
+ * naturally improves without intervention.
+ */
+export function gradeConfidence(f: ConfidenceFactors): 'A' | 'B' | 'C' | 'D' | 'F' {
+  if (f.sample_size === 0 && f.data_days === 0) return 'F';
+  if (f.data_days < 7) return 'D';
+  if (f.data_days < 30) return 'C';
+  if (f.data_days < 180) {
+    // B requires methodology stable + catalog match ≥ 30%
+    if (f.catalog_match_pct >= 0.3 && f.sample_size >= 30) return 'B';
+    return 'C';
+  }
+  // ≥180 days
+  if (f.backtest_calibration != null && f.catalog_match_pct >= 0.5) return 'A';
+  return 'B';
 }
 
 const CPM_INR = {
@@ -134,9 +169,27 @@ export function estimateTopicRevenue(opts: {
   attributed_1d_views: number;
   attributed_7d_views: number;
   languageMix?: Array<{ language: string | null; weight: number }>;
+  // Confidence inputs (all optional — fallback to baseline grade)
+  data_days?: number;
+  sample_size?: number;
+  catalog_match_pct?: number;
+  backtest_calibration?: number | null;
 }): RevenueEstimate {
   const blendedMultiplier = blendLanguageMultiplier(opts.languageMix);
   const cpm = scaleCpm(CPM_INR.topic_longform, blendedMultiplier);
+  const factors: ConfidenceFactors = {
+    data_days: opts.data_days ?? 0,
+    sample_size: opts.sample_size ?? 0,
+    catalog_match_pct: opts.catalog_match_pct ?? 0,
+    backtest_calibration: opts.backtest_calibration ?? null,
+    notes: [
+      'Modelled from public CPM benchmarks',
+      'CMS API access not granted (fallback to proxy)',
+      ...(opts.languageMix?.length
+        ? [`Language-weighted CPM (${blendedMultiplier.toFixed(2)}×)`]
+        : ['No language mix supplied → Hindi baseline']),
+    ],
+  };
   return {
     daily: band(opts.attributed_1d_views, cpm, REVENUE_SHARE.owned),
     weekly: band(opts.attributed_7d_views, cpm, REVENUE_SHARE.owned),
@@ -147,6 +200,8 @@ export function estimateTopicRevenue(opts: {
         ? ` Blended CPM multiplier ${blendedMultiplier.toFixed(2)}× from language mix.`
         : ' Hindi baseline (no language mix supplied).') +
       ' Quarterly = 7d × 13.',
+    confidence_grade: gradeConfidence(factors),
+    confidence_factors: factors,
   };
 }
 
@@ -181,11 +236,26 @@ function blendLanguageMultiplier(
  * label's pool share (~45%).
  */
 export function estimateUgcRevenue(opts: {
-  attributed_views_7d: number; // sum of UGC views attributed to this label over a 7d snapshot
+  attributed_views_7d: number;
+  data_days?: number;
+  sample_size?: number;
+  catalog_match_pct?: number;
+  backtest_calibration?: number | null;
 }): RevenueEstimate {
   // For Shorts UGC we don't have stable daily; treat the 7d window as the
   // anchor and back-derive daily as / 7.
   const daily_proxy = opts.attributed_views_7d / 7;
+  const factors: ConfidenceFactors = {
+    data_days: opts.data_days ?? 0,
+    sample_size: opts.sample_size ?? 0,
+    catalog_match_pct: opts.catalog_match_pct ?? 0,
+    backtest_calibration: opts.backtest_calibration ?? null,
+    notes: [
+      'Shorts pool revenue is pool-shared (not per-view direct)',
+      'View counts approximate (parsed from accessibility text)',
+      'CMS API access not granted (fallback to proxy)',
+    ],
+  };
   return {
     daily: band(daily_proxy, CPM_INR.shorts_ugc, REVENUE_SHARE.shorts_sound_pool),
     weekly: band(opts.attributed_views_7d, CPM_INR.shorts_ugc, REVENUE_SHARE.shorts_sound_pool),
@@ -196,6 +266,8 @@ export function estimateUgcRevenue(opts: {
     ),
     methodology:
       'Shorts Creator Fund pool ₹8–25/1k × label pool share 45%. Quarterly = 7d × 13.',
+    confidence_grade: gradeConfidence(factors),
+    confidence_factors: factors,
   };
 }
 

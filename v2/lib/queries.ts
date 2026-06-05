@@ -25,8 +25,11 @@ import {
 } from '@/lib/risk';
 import { resolveStockRange, type StockRange } from '@/lib/stock-range';
 import {
+  estimateConsolidatedYT,
+  estimateOwnedRevenue,
   estimateTopicRevenue,
   estimateUgcRevenue,
+  type RevenueCpmBand,
   type RevenueEstimate,
 } from '@/lib/revenue-cpm';
 
@@ -2946,5 +2949,112 @@ function emptyTopicSnapshot(company: Company): TopicReachSnapshot {
     weekOverWeek: null,
     topContributors: [],
     revenueEstimate: estimateTopicRevenue({ attributed_1d_views: 0, attributed_7d_views: 0 }),
+  };
+}
+
+// ---- Consolidated YT revenue (Owned + Topic + UGC) --------------------------
+
+export interface ConsolidatedYTRevenue {
+  company: Company;
+  // Per-layer revenue estimates with their own confidence
+  owned: RevenueEstimate;
+  topic: RevenueEstimate;
+  ugc: RevenueEstimate;
+  // Summed across all three layers
+  total: { daily: RevenueCpmBand; weekly: RevenueCpmBand; quarterly: RevenueCpmBand };
+  // Worst grade across the three constituents (the total is only as reliable
+  // as its weakest input)
+  worst_grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  // Share of total weekly mid-band attributable to each layer
+  composition: { owned_pct_mid: number; topic_pct_mid: number; ugc_pct_mid: number };
+  // Underlying view aggregates for transparency
+  owned_views_7d: number;
+  owned_channels_count: number;
+}
+
+/**
+ * Headline YT revenue band per company — sums Owned + Topic/OAC + UGC.
+ * Each layer carries its own confidence grade; the consolidated grade
+ * takes the worst.
+ *
+ * This is the IR-level summary view: a single rupee band the analyst can
+ * compare directly against the broker's projected music-licensing
+ * segment (× industry YT-share assumption).
+ */
+export async function getConsolidatedYTRevenue(opts: {
+  company: Company;
+}): Promise<ConsolidatedYTRevenue> {
+  const supabase = getServiceSupabase();
+  const today = new Date();
+  const since60 = new Date(today.getTime() - 60 * 86_400_000).toISOString().slice(0, 10);
+
+  // --- Layer 1: Owned channels ---------------------------------------------
+  // Sum daily_views from v_company_daily — view already filters to owned +
+  // non-NULL company per migration 0011.
+  const { data: companyDailyRows } = await supabase
+    .from('v_company_daily')
+    .select('date, daily_views')
+    .eq('company', opts.company)
+    .gte('date', since60)
+    .order('date', { ascending: true });
+  const ownedSeries = (companyDailyRows ?? []) as Array<{
+    date: string;
+    daily_views: number | null;
+  }>;
+  const ownedViews1d = ownedSeries[ownedSeries.length - 1]?.daily_views ?? 0;
+  const ownedViews7d = ownedSeries
+    .slice(-7)
+    .reduce((acc, r) => acc + (r.daily_views ?? 0), 0);
+
+  // Per-channel language mix for the company's owned channels
+  const { data: ownedChans } = await supabase
+    .from('dim_channel')
+    .select('channel_id, language, meta')
+    .eq('company', opts.company)
+    .eq('channel_type', 'owned')
+    .eq('is_active', true);
+  const ownedChannelsCount = (ownedChans ?? []).length;
+  // Approximate language mix by treating each channel as equally weighted.
+  // (A more accurate weight would use trailing-7d views per channel —
+  // future enhancement.)
+  const ownedLanguageMix = ((ownedChans ?? []) as Array<{
+    language: string | null;
+    meta: { language?: string } | null;
+  }>).map((c) => ({
+    language: c.language ?? c.meta?.language ?? null,
+    weight: 1,
+  }));
+
+  const ownedEstimate = estimateOwnedRevenue({
+    views_1d: Number(ownedViews1d),
+    views_7d: Number(ownedViews7d),
+    languageMix: ownedLanguageMix,
+    data_days: ownedSeries.length,
+    sample_size: ownedChannelsCount,
+    backtest_calibration: null,
+  });
+
+  // --- Layer 2 + Layer 3 — reuse existing snapshot fns --------------------
+  const [topicSnap, ugcSnap] = await Promise.all([
+    getTopicReach({ company: opts.company, days: 60 }),
+    getUGCReach({ company: opts.company }),
+  ]);
+
+  const consolidated = estimateConsolidatedYT({
+    owned: ownedEstimate,
+    topic: topicSnap.revenueEstimate,
+    ugc: ugcSnap.revenueEstimate,
+  });
+
+  return {
+    company: opts.company,
+    owned: ownedEstimate,
+    topic: topicSnap.revenueEstimate,
+    ugc: ugcSnap.revenueEstimate,
+    total: consolidated.total,
+    worst_grade: consolidated.worst_grade,
+    composition: consolidated.composition,
+    owned_views_7d: Number(ownedViews7d),
+    owned_channels_count: ownedChannelsCount,
   };
 }

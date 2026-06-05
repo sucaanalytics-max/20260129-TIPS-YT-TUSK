@@ -205,6 +205,105 @@ export function estimateTopicRevenue(opts: {
   };
 }
 
+/**
+ * Estimate label revenue from owned-channel YouTube views. Same CPM band
+ * and revenue share as Topic+OAC (label is the direct YT partner →
+ * ~55% of ad revenue) but conceptually distinct: this is the
+ * first-party content revenue, NOT a catalog royalty leg.
+ *
+ * Caller passes raw owned-channel daily_views (no catalog_share scaling
+ * needed — these views ARE the label's directly).
+ */
+export function estimateOwnedRevenue(opts: {
+  views_1d: number;
+  views_7d: number;
+  languageMix?: Array<{ language: string | null; weight: number }>;
+  data_days?: number;
+  sample_size?: number;
+  backtest_calibration?: number | null;
+}): RevenueEstimate {
+  const blendedMultiplier = blendLanguageMultiplier(opts.languageMix);
+  const cpm = scaleCpm(CPM_INR.owned_longform, blendedMultiplier);
+  const factors: ConfidenceFactors = {
+    data_days: opts.data_days ?? 0,
+    sample_size: opts.sample_size ?? 0,
+    // Owned channels are 100% catalog by construction
+    catalog_match_pct: 1.0,
+    backtest_calibration: opts.backtest_calibration ?? null,
+    notes: [
+      'Owned-channel YT ad revenue (Layer 1)',
+      'Modelled from public CPM benchmarks',
+      ...(opts.languageMix?.length
+        ? [`Language-weighted CPM (${blendedMultiplier.toFixed(2)}×)`]
+        : ['Hindi baseline (no language mix supplied)']),
+    ],
+  };
+  return {
+    daily: band(opts.views_1d, cpm, REVENUE_SHARE.owned),
+    weekly: band(opts.views_7d, cpm, REVENUE_SHARE.owned),
+    quarterly: band(opts.views_7d * 13, cpm, REVENUE_SHARE.owned),
+    methodology:
+      `India music CPM ₹${cpm.low.toFixed(0)}–${cpm.high.toFixed(0)}/1k × label share 55% (direct YT partner).` +
+      (opts.languageMix?.length
+        ? ` Blended CPM multiplier ${blendedMultiplier.toFixed(2)}× from language mix.`
+        : ' Hindi baseline.') +
+      ' Quarterly = 7d × 13.',
+    confidence_grade: gradeConfidence(factors),
+    confidence_factors: factors,
+  };
+}
+
+/**
+ * Sum three YT revenue layers into a consolidated headline band.
+ * Layer breakdown is preserved so the UI can show the stack composition.
+ *
+ * Confidence grade for the consolidated band takes the WORST grade
+ * across constituents — the total is only as reliable as its weakest
+ * input layer.
+ */
+export function estimateConsolidatedYT(opts: {
+  owned: RevenueEstimate;
+  topic: RevenueEstimate;
+  ugc: RevenueEstimate;
+}): {
+  total: { daily: RevenueCpmBand; weekly: RevenueCpmBand; quarterly: RevenueCpmBand };
+  worst_grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  composition: { owned_pct_mid: number; topic_pct_mid: number; ugc_pct_mid: number };
+} {
+  const total = {
+    daily: sumBands(opts.owned.daily, opts.topic.daily, opts.ugc.daily),
+    weekly: sumBands(opts.owned.weekly, opts.topic.weekly, opts.ugc.weekly),
+    quarterly: sumBands(opts.owned.quarterly, opts.topic.quarterly, opts.ugc.quarterly),
+  };
+  const grades: Array<'A' | 'B' | 'C' | 'D' | 'F'> = [
+    opts.owned.confidence_grade,
+    opts.topic.confidence_grade,
+    opts.ugc.confidence_grade,
+  ];
+  const order: Record<'A' | 'B' | 'C' | 'D' | 'F', number> = {
+    F: 0, D: 1, C: 2, B: 3, A: 4,
+  };
+  const worst_grade = grades.reduce((acc, g) => (order[g] < order[acc] ? g : acc), 'A');
+  const denom = total.weekly.mid_inr || 1;
+  return {
+    total,
+    worst_grade,
+    composition: {
+      owned_pct_mid: opts.owned.weekly.mid_inr / denom,
+      topic_pct_mid: opts.topic.weekly.mid_inr / denom,
+      ugc_pct_mid: opts.ugc.weekly.mid_inr / denom,
+    },
+  };
+}
+
+function sumBands(...bands: RevenueCpmBand[]): RevenueCpmBand {
+  return {
+    low_inr: bands.reduce((a, b) => a + b.low_inr, 0),
+    mid_inr: bands.reduce((a, b) => a + b.mid_inr, 0),
+    high_inr: bands.reduce((a, b) => a + b.high_inr, 0),
+  };
+}
+
 function scaleCpm(
   cpm: { low: number; mid: number; high: number },
   mult: number,

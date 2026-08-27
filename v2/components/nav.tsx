@@ -7,6 +7,7 @@ import { UserButton } from '@clerk/nextjs';
 const ITEMS = [
   { href: '/', label: 'Overview' },
   { href: '/signals', label: 'Signals' },
+  { href: '/market', label: 'Market' },
   { href: '/growth', label: 'Growth' },
   { href: '/channels', label: 'Channels' },
   { href: '/correlation', label: 'Correlation' },

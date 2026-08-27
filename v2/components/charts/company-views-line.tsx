@@ -199,7 +199,32 @@ export function CompanyViewsLine({
           <UgcStrip ugc={ugc} totalReach={totalReach} />
         </>
       )}
+      <RepairNote data={data} />
     </div>
+  );
+}
+
+/**
+ * Flags when the plotted window contains days whose per-day value was inferred.
+ *
+ * YouTube sometimes serves a stale cumulative viewCount for several days; the
+ * backlog is then spread back across the days it covered, so the period total
+ * is right but those points are interpolated. A smoothed line must not read as
+ * measured — see /ops -> Data quality for the affected dates.
+ */
+function RepairNote({ data }: { data: CompanyViewsRow[] }) {
+  const affected = data.filter((d) => (d.imputed ?? 0) > 0);
+  if (affected.length === 0) return null;
+  const first = affected[0].date;
+  const last = affected[affected.length - 1].date;
+  const range = first === last ? first : `${first} – ${last}`;
+  return (
+    <p className="text-muted-foreground/70 mt-2 text-[11px]">
+      ⓘ {affected.length} day{affected.length === 1 ? '' : 's'} in this window ({range})
+      {' '}had their per-day split inferred after YouTube served a stale cumulative count.
+      Totals are exact; the daily shape across those days is interpolated. See Ops → Data
+      quality.
+    </p>
   );
 }
 

@@ -582,6 +582,83 @@ export async function getDataTable(opts: {
 
 // ---- Ops audit --------------------------------------------------------------
 
+export interface DataQualityDay {
+  date: string;
+  company: string | null;
+  channels_affected: number;
+  max_span_days: number;
+}
+
+export interface DataQualitySnapshot {
+  since: string;
+  days: DataQualityDay[];
+  imputed_channel_days: number;
+  unresolved_channels: number; // frozen right now, awaiting the next good reading
+}
+
+/**
+ * Where the view series has been repaired rather than measured.
+ *
+ * YouTube intermittently serves a stale cumulative viewCount; when it unfreezes
+ * the backlog is spread back over the days it covered (lib/view-delta.ts). Those
+ * days are real in total but interpolated per-day, and this is the panel that
+ * says so out loud rather than letting a smoothed line pass as measured.
+ */
+export async function getDataQuality(opts: { days?: number } = {}): Promise<DataQualitySnapshot> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 90;
+  const since = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [{ data: imputedRows }, { data: channelRows }, { data: frozenRows }] = await Promise.all([
+    supabase
+      .from('fct_channel_daily')
+      .select('channel_id, date, delta_span_days')
+      .eq('daily_views_imputed', true)
+      .gte('date', since)
+      .order('date', { ascending: false })
+      .limit(4000),
+    supabase.from('dim_channel').select('channel_id, company, channel_type'),
+    supabase
+      .from('fct_channel_daily')
+      .select('channel_id')
+      .is('daily_views', null)
+      .eq('date', today),
+  ]);
+
+  const companyBy = new Map(
+    ((channelRows ?? []) as Array<{ channel_id: string; company: string | null; channel_type: string }>)
+      .map((c) => [c.channel_id, c.company]),
+  );
+
+  type Row = { channel_id: string; date: string; delta_span_days: number | null };
+  const byKey = new Map<string, DataQualityDay>();
+  for (const r of (imputedRows ?? []) as Row[]) {
+    const company = companyBy.get(r.channel_id) ?? null;
+    const key = `${r.date}|${company ?? '-'}`;
+    const cur = byKey.get(key) ?? {
+      date: r.date,
+      company,
+      channels_affected: 0,
+      max_span_days: 0,
+    };
+    cur.channels_affected += 1;
+    cur.max_span_days = Math.max(cur.max_span_days, Number(r.delta_span_days ?? 0));
+    byKey.set(key, cur);
+  }
+
+  const daysOut = [...byKey.values()].sort(
+    (a, b) => b.date.localeCompare(a.date) || (a.company ?? '').localeCompare(b.company ?? ''),
+  );
+
+  return {
+    since,
+    days: daysOut,
+    imputed_channel_days: (imputedRows ?? []).length,
+    unresolved_channels: (frozenRows ?? []).length,
+  };
+}
+
 export async function getOpsRunHistory(opts: { since?: string; limit?: number }): Promise<OpsRunRow[]> {
   const supabase = getServiceSupabase();
   const since = opts.since ?? defaultFromDate(7);
@@ -754,6 +831,8 @@ export interface CompanyViewsRow {
   date: string;
   tipsmusic: number | null;
   saregama: number | null;
+  /** Owned channels whose value that day was spread from a multi-day catch-up. */
+  imputed: number;
 }
 
 export async function getCompanyViewsSeries(opts: { from?: string; to?: string }): Promise<CompanyViewsRow[]> {
@@ -763,15 +842,18 @@ export async function getCompanyViewsSeries(opts: { from?: string; to?: string }
 
   const { data } = await supabase
     .from('v_company_daily')
-    .select('date, company, daily_views')
+    .select('date, company, daily_views, imputed_channels')
     .gte('date', from)
     .lte('date', to)
     .order('date', { ascending: true });
 
-  const rows = (data ?? []) as Array<{ date: string; company: string; daily_views: number | null }>;
+  const rows = (data ?? []) as Array<{
+    date: string; company: string; daily_views: number | null; imputed_channels: number | null;
+  }>;
   const byDate = new Map<string, CompanyViewsRow>();
   for (const r of rows) {
-    const slot = byDate.get(r.date) ?? { date: r.date, tipsmusic: null, saregama: null };
+    const slot = byDate.get(r.date) ?? { date: r.date, tipsmusic: null, saregama: null, imputed: 0 };
+    slot.imputed += Number(r.imputed_channels ?? 0);
     if (r.company === 'TIPSMUSIC') slot.tipsmusic = r.daily_views != null ? Number(r.daily_views) : null;
     if (r.company === 'SAREGAMA') slot.saregama = r.daily_views != null ? Number(r.daily_views) : null;
     byDate.set(r.date, slot);

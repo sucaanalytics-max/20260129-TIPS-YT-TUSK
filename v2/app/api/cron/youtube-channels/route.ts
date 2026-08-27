@@ -3,6 +3,7 @@ import { requireCronAuth } from '@/lib/cron-auth';
 import { getServiceSupabase } from '@/lib/supabase/server';
 import { fetchChannels, type YTChannel } from '@/lib/youtube';
 import { bumpTags, CACHE_TAGS } from '@/lib/revalidate';
+import { computeDailyViews, type DeltaPoint } from '@/lib/view-delta';
 
 export const maxDuration = 120;
 
@@ -46,30 +47,49 @@ export async function GET(req: Request) {
     }
 
     const today = new Date().toISOString().slice(0, 10);
-    const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+    // Wide enough to resolve a multi-day freeze in one pass. Observed stalls
+    // have run to 32 days, so 45 leaves headroom without a costly scan.
+    const windowStart = new Date(Date.now() - 45 * 86_400_000).toISOString().slice(0, 10);
 
-    // 2) Prior rows for delta math
+    // 2) Prior rows for delta math. A window rather than just yesterday: when
+    // YouTube serves a stale cumulative viewCount for several days and then
+    // unfreezes, the catch-up has to be spread back over the days it actually
+    // covers (see lib/view-delta.ts), which means re-deriving the recent series
+    // rather than differencing a single pair of readings.
     const { data: priorRows } = await supabase
       .from('fct_channel_daily')
-      .select('channel_id, date, total_views, subscribers, video_count')
-      .gte('date', sevenDaysAgo)
+      .select('channel_id, date, total_views, subscribers, video_count, daily_views')
+      .gte('date', windowStart)
       .lt('date', today)
-      .order('date', { ascending: false });
+      .order('date', { ascending: true });
 
     const priorBy = new Map<
       string,
       { date: string; total_views: number; subscribers: number; video_count: number }
     >();
+    const seriesBy = new Map<
+      string,
+      Array<{ date: string; total_views: number | null; daily_views: number | null }>
+    >();
     for (const r of priorRows ?? []) {
-      if (!priorBy.has(r.channel_id)) {
-        priorBy.set(r.channel_id, {
-          date: r.date,
-          total_views: Number(r.total_views ?? 0),
-          subscribers: Number(r.subscribers ?? 0),
-          video_count: Number(r.video_count ?? 0),
-        });
-      }
+      // ascending, so the last write per channel is the most recent day
+      priorBy.set(r.channel_id, {
+        date: r.date,
+        total_views: Number(r.total_views ?? 0),
+        subscribers: Number(r.subscribers ?? 0),
+        video_count: Number(r.video_count ?? 0),
+      });
+      const arr = seriesBy.get(r.channel_id) ?? [];
+      arr.push({
+        date: r.date,
+        total_views: r.total_views == null ? null : Number(r.total_views),
+        daily_views: r.daily_views == null ? null : Number(r.daily_views),
+      });
+      seriesBy.set(r.channel_id, arr);
     }
+
+    // Rows whose daily_views changed once today's reading resolved a stall.
+    const backfills: Record<string, unknown>[] = [];
 
     // 3) YT Data API v3 batch call (up to 50 ids per request)
     const ytItems = await fetchChannels(channels.map((c) => c.channel_id));
@@ -105,14 +125,37 @@ export async function GET(req: Request) {
       const video_count = s.videoCount != null ? Number(s.videoCount) : null;
 
       const prior = priorBy.get(ch.channel_id);
-      let daily_views: number | null = null;
       let daily_subscribers: number | null = null;
       let daily_videos: number | null = null;
+
+      // Views: re-derive the whole recent series so a resolved freeze is spread
+      // back across the days it covers instead of spiking on the catch-up day.
+      const priorSeries = seriesBy.get(ch.channel_id) ?? [];
+      const series: DeltaPoint[] = [
+        ...priorSeries.map((p) => ({ date: p.date, total_views: p.total_views })),
+        { date: today, total_views },
+      ];
+      const computed = computeDailyViews(series);
+      const todayRow = computed[computed.length - 1];
+      const daily_views = todayRow.daily_views;
+      const daily_views_imputed = todayRow.imputed;
+      const delta_span_days = todayRow.delta_span_days;
+
+      // Where today's reading changed a prior day's value, correct it in place.
+      for (let i = 0; i < computed.length - 1; i++) {
+        const c = computed[i];
+        const stored = priorSeries[i];
+        if (!stored || c.daily_views === stored.daily_views) continue;
+        backfills.push({
+          channel_id: ch.channel_id,
+          date: c.date,
+          daily_views: c.daily_views,
+          daily_views_imputed: c.imputed,
+          delta_span_days: c.delta_span_days,
+        });
+      }
+
       if (prior && diffDays(today, prior.date) === 1) {
-        if (total_views != null) {
-          const dv = total_views - prior.total_views;
-          if (dv >= 0 && dv <= 200_000_000) daily_views = dv;
-        }
         if (subscribers != null) {
           const ds = subscribers - prior.subscribers;
           if (ds >= -100_000 && ds <= 1_000_000) daily_subscribers = ds;
@@ -130,6 +173,8 @@ export async function GET(req: Request) {
         subscribers,
         video_count,
         daily_views,
+        daily_views_imputed,
+        delta_span_days,
         daily_subscribers,
         daily_videos,
         ingest_run_id: runId,
@@ -169,6 +214,28 @@ export async function GET(req: Request) {
       }
     }
 
+    // 5b) Apply corrections to prior days that today's reading resolved. These
+    // are deliberately separate from the main upsert: a failure here must not
+    // lose today's data, and it is self-healing anyway — the next run re-derives
+    // the same window and will retry.
+    let corrected = 0;
+    for (let i = 0; i < backfills.length; i += 25) {
+      const chunk = backfills.slice(i, i + 25);
+      const { error } = await supabase
+        .from('fct_channel_daily')
+        .upsert(chunk, { onConflict: 'channel_id,date' });
+      if (error) {
+        await supabase.from('ops_error_log').insert({
+          error_type: 'channels_delta_backfill_failed',
+          error_message: error.message,
+          detail: { sample: chunk.slice(0, 3) },
+          ingest_run_id: runId,
+        });
+      } else {
+        corrected += chunk.length;
+      }
+    }
+
     // 6) Refresh dim_channel.uploads_playlist_id
     if (channelDimUpdates.length) {
       const { error: dimUpErr } = await supabase
@@ -192,6 +259,10 @@ export async function GET(req: Request) {
       failed,
       quota_units: Math.ceil(channels.length / 50),
       duration_ms: Date.now() - runStart.getTime(),
+      // Non-zero means YouTube served a stale cumulative viewCount and today's
+      // reading resolved it; the backlog was spread over the days it covered.
+      delta_corrections: corrected,
+      frozen_today: facts.filter((f) => f.daily_views == null).length,
     });
 
     if (upserted > 0) bumpTags(CACHE_TAGS.overview, CACHE_TAGS.channels, CACHE_TAGS.ops);

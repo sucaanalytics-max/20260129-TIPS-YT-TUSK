@@ -19,6 +19,7 @@ import {
   composeRead,
   peerRankMomentum,
   liveEventDensity,
+  demandMomentum,
   fitCatalogDecay,
   type SignalsSnapshot,
   type VideoFreshnessInput,
@@ -131,9 +132,13 @@ test('catalogFreshness: with baseline → company-relative z-score, not static t
     { published_at: '2020-01-01', views_last_30d: 9_000_000 },
     { published_at: '2026-04-01', views_last_30d: 1_000_000 }, // 10% fresh
   ];
-  const baselineRatios = Array.from({ length: 30 }, () => 0.08 + Math.random() * 0.04); // ~0.08–0.12
+  // Deterministic 0.08–0.12 baseline whose mean is EXACTLY 0.10 (each of the
+  // five values appears 6×). An unseeded Math.random() baseline made this
+  // assertion fail ~1.3% of runs: the sampled mean drifted far enough from the
+  // 0.10 current ratio to push |z| past the 0.5 direction threshold.
+  const baselineRatios = Array.from({ length: 30 }, (_, i) => 0.08 + (i % 5) * 0.01);
   const r = catalogFreshness(videos, new Date('2026-05-15'), baselineRatios);
-  // Current ratio = 0.10. Baseline mean ≈ 0.10. z ≈ 0 → flat.
+  // Current ratio = 0.10. Baseline mean = 0.10 exactly. z = 0 → flat.
   assert.equal(r.warming, false);
   assert.ok(r.value != null && r.value > 0.05 && r.value < 0.15);
   assert.equal(r.direction, 'flat');
@@ -147,7 +152,7 @@ test('catalogFreshness: with baseline → surge above own history flags up', () 
     { published_at: '2020-01-01', views_last_30d: 6_000_000 },
     { published_at: '2026-04-01', views_last_30d: 4_000_000 }, // 40% fresh
   ];
-  const baselineRatios = Array.from({ length: 30 }, () => 0.08 + Math.random() * 0.04);
+  const baselineRatios = Array.from({ length: 30 }, (_, i) => 0.08 + (i % 5) * 0.01);
   const r = catalogFreshness(videos, new Date('2026-05-15'), baselineRatios);
   assert.equal(r.direction, 'up');
   assert.equal(r.significant, true);
@@ -519,4 +524,49 @@ test('composeRead: active divergence with view-up flips score positive', () => {
   const r = composeRead(s);
   // viewMomentum(+2) + divergence(+2) = +4 → POSITIVE
   assert.equal(r.bias, 'POSITIVE');
+});
+
+// --- demandMomentum (B5) ----------------------------------------------------
+
+test('demandMomentum: warming when fewer than WARMUP_DAYS snapshots', () => {
+  const snaps = Array.from({ length: 10 }, (_, i) => ({
+    asof: new Date(2026, 0, 1 + i).toISOString().slice(0, 10),
+    metric: 1_000_000 + i * 1000,
+  }));
+  const r = demandMomentum(snaps);
+  assert.equal(r.warming, true);
+  assert.equal(r.value, null);
+});
+
+test('demandMomentum: steady linear cumulative growth → flat (equal weekly increments)', () => {
+  // +1000 ratings/day every day → every weekly increment = 7000 → sd 0 → flat
+  const snaps = Array.from({ length: 70 }, (_, i) => ({
+    asof: new Date(2026, 0, 1 + i).toISOString().slice(0, 10),
+    metric: 1_000_000 + i * 1000,
+  }));
+  const r = demandMomentum(snaps);
+  assert.equal(r.warming, false);
+  assert.equal(r.value, 7000); // latest weekly increment
+  assert.equal(r.direction, 'flat');
+});
+
+test('demandMomentum: accelerating final week → up, and never bias-weighted (carries caveat)', () => {
+  const vals: number[] = [];
+  let cum = 1_000_000;
+  for (let i = 0; i < 63; i++) {
+    cum += 1000 + (i % 5) * 80; // baseline growth with mild variance (sd > 0)
+    vals.push(cum);
+  }
+  for (let i = 0; i < 7; i++) {
+    cum += 12_000; // genuine spike in the final week
+    vals.push(cum);
+  }
+  const snaps = vals.map((v, i) => ({
+    asof: new Date(2026, 0, 1 + i).toISOString().slice(0, 10),
+    metric: v,
+  }));
+  const r = demandMomentum(snaps);
+  assert.equal(r.direction, 'up');
+  assert.ok((r.sigma ?? 0) > 1.5, `expected strong positive z, got ${r.sigma}`);
+  assert.ok(r.caveat?.includes('not paid subscribers'));
 });

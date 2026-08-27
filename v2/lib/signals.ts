@@ -465,6 +465,57 @@ export function peerRankMomentum(snapshots: SBSnapshot[]): SignalCell {
   };
 }
 
+// --- demandMomentum (B5) ----------------------------------------------------
+
+export interface DemandSnapshot {
+  asof: string;            // YYYY-MM-DD
+  metric: number | null;   // a CUMULATIVE gross metric (rating count / installs / downloads)
+}
+
+/**
+ * Momentum of a cumulative gross-demand metric (app rating count or download
+ * estimate). Because the metric is cumulative and monotone, we work on its
+ * weekly INCREMENTS: z-score the most recent non-overlapping 7-day increment
+ * against the distribution of prior weekly increments (same anti-autocorrelation
+ * approach as viewMomentum).
+ *
+ * ⚠️ GROSS funnel-top demand proxy — NEVER paid subscribers. Cumulative ratings/
+ * installs never decrement for churn. Graded LOW and deliberately NOT wired into
+ * composeRead's bias scoring — it surfaces only as sector-demand context on
+ * /market, exactly like the additive peerRankMomentum/liveEventDensity tiles.
+ */
+export function demandMomentum(snapshots: DemandSnapshot[]): SignalCell {
+  const sorted = [...snapshots]
+    .filter((s) => s.metric != null && Number.isFinite(s.metric))
+    .sort((a, b) => a.asof.localeCompare(b.asof));
+  const caveat =
+    'GROSS demand proxy (cumulative ratings/installs) — not paid subscribers; not bias-weighted into the READ.';
+  if (sorted.length < WARMUP_DAYS) {
+    return { value: null, sigma: null, direction: 'flat', significant: false, warming: true, caveat };
+  }
+  const vals = sorted.map((s) => s.metric as number);
+  // Non-overlapping weekly increments, anchored at the most recent day.
+  const weeklyIncrements: number[] = [];
+  for (let end = vals.length - 1; end - 7 >= 0; end -= 7) {
+    weeklyIncrements.push(vals[end] - vals[end - 7]);
+  }
+  if (weeklyIncrements.length < 2) {
+    return { value: null, sigma: null, direction: 'flat', significant: false, warming: true, caveat };
+  }
+  const latest = weeklyIncrements[0]; // most recent week
+  const baseline = weeklyIncrements.slice(1);
+  const sd = std(baseline);
+  const sigma = sd > 0 ? (latest - mean(baseline)) / sd : null;
+  return {
+    value: latest,
+    sigma,
+    direction: directionFromZ(sigma),
+    significant: sigma != null && Math.abs(sigma) >= Z_SIG,
+    warming: false,
+    caveat,
+  };
+}
+
 // --- liveEventDensity -------------------------------------------------------
 
 export interface LiveEventInput {

@@ -77,6 +77,23 @@ export function gradeConfidence(f: ConfidenceFactors): 'A' | 'B' | 'C' | 'D' | '
   return 'B';
 }
 
+/** Ordinal rank of a confidence grade (F worst … A best). */
+export const GRADE_ORDER: Record<'A' | 'B' | 'C' | 'D' | 'F', number> = {
+  F: 0, D: 1, C: 2, B: 3, A: 4,
+};
+
+/**
+ * Cap a grade so it can never be reported better than `max`. Used by models
+ * that carry a structural, unverifiable assumption (e.g. the streaming-royalty
+ * leg's catalog-share) — no amount of elapsed data can make them high-confidence.
+ */
+export function capGrade(
+  grade: 'A' | 'B' | 'C' | 'D' | 'F',
+  max: 'A' | 'B' | 'C' | 'D' | 'F',
+): 'A' | 'B' | 'C' | 'D' | 'F' {
+  return GRADE_ORDER[grade] > GRADE_ORDER[max] ? max : grade;
+}
+
 const CPM_INR = {
   // ₹ per 1,000 views, Indian music vertical
   owned_longform: { low: 25, mid: 40, high: 60 },
@@ -333,9 +350,20 @@ function blendLanguageMultiplier(
  * Estimate label revenue from UGC Shorts using catalog audio. Uses the
  * Shorts Creator Fund pool CPM (much lower per view than longform) and the
  * label's pool share (~45%).
+ *
+ * `languageMix` (A2) — same per-language CPM weighting the Owned/Topic layers
+ * already apply. Diaspora-heavy Shorts (Punjabi/English) earn a higher pool
+ * CPM than the Hindi baseline; previously this layer ignored language and so
+ * under-counted those. Derive the mix from creator_country / attribution_artist.
+ *
+ * `views_are_exact` (A1) — set true when attributed_views_7d is sourced from
+ * fct_ugc_short_match.views_exact (videos.list) rather than the approximate
+ * accessibility-text parse; only flips the confidence note, not the maths.
  */
 export function estimateUgcRevenue(opts: {
   attributed_views_7d: number;
+  languageMix?: Array<{ language: string | null; weight: number }>;
+  views_are_exact?: boolean;
   data_days?: number;
   sample_size?: number;
   catalog_match_pct?: number;
@@ -344,6 +372,8 @@ export function estimateUgcRevenue(opts: {
   // For Shorts UGC we don't have stable daily; treat the 7d window as the
   // anchor and back-derive daily as / 7.
   const daily_proxy = opts.attributed_views_7d / 7;
+  const blendedMultiplier = blendLanguageMultiplier(opts.languageMix);
+  const cpm = scaleCpm(CPM_INR.shorts_ugc, blendedMultiplier);
   const factors: ConfidenceFactors = {
     data_days: opts.data_days ?? 0,
     sample_size: opts.sample_size ?? 0,
@@ -351,21 +381,107 @@ export function estimateUgcRevenue(opts: {
     backtest_calibration: opts.backtest_calibration ?? null,
     notes: [
       'Shorts pool revenue is pool-shared (not per-view direct)',
-      'View counts approximate (parsed from accessibility text)',
+      opts.views_are_exact
+        ? 'View counts exact (videos.list)'
+        : 'View counts approximate (parsed from accessibility text)',
+      ...(opts.languageMix?.length
+        ? [`Language-weighted CPM (${blendedMultiplier.toFixed(2)}×)`]
+        : ['No language mix supplied → Hindi baseline']),
       'CMS API access not granted (fallback to proxy)',
     ],
   };
   return {
-    daily: band(daily_proxy, CPM_INR.shorts_ugc, REVENUE_SHARE.shorts_sound_pool),
-    weekly: band(opts.attributed_views_7d, CPM_INR.shorts_ugc, REVENUE_SHARE.shorts_sound_pool),
-    quarterly: band(
-      opts.attributed_views_7d * 13,
-      CPM_INR.shorts_ugc,
-      REVENUE_SHARE.shorts_sound_pool,
-    ),
+    daily: band(daily_proxy, cpm, REVENUE_SHARE.shorts_sound_pool),
+    weekly: band(opts.attributed_views_7d, cpm, REVENUE_SHARE.shorts_sound_pool),
+    quarterly: band(opts.attributed_views_7d * 13, cpm, REVENUE_SHARE.shorts_sound_pool),
     methodology:
-      'Shorts Creator Fund pool ₹8–25/1k × label pool share 45%. Quarterly = 7d × 13.',
+      `Shorts Creator Fund pool ₹${cpm.low.toFixed(0)}–${cpm.high.toFixed(0)}/1k × label pool share 45%.` +
+      (opts.languageMix?.length
+        ? ` Blended CPM multiplier ${blendedMultiplier.toFixed(2)}× from language mix.`
+        : ' Hindi baseline.') +
+      ' Quarterly = 7d × 13.',
     confidence_grade: gradeConfidence(factors),
+    confidence_factors: factors,
+  };
+}
+
+/**
+ * Estimate the label's AUDIO-DSP streaming royalty — the "music licensing"
+ * revenue leg (Spotify, JioSaavn, Apple Music, Amazon Music, etc.) that
+ * DOMINATES the labels' P&L and that the three YouTube layers do NOT capture.
+ *
+ * ⚠️ TOP-DOWN DIRECTIONAL SIZING, NOT A MEASUREMENT. There is no public
+ * per-catalog stream data for the audio DSPs, so the label's share of the
+ * national royalty pool is an ASSUMPTION (`label_catalog_share`), surfaced as
+ * a wide band and graded NO BETTER THAN 'D' regardless of elapsed data. Its
+ * purpose: make the EY-FICCI paid-mix data connect to label revenue, and give
+ * the backtest a quantity to calibrate against the disclosed music-licensing
+ * line.
+ *
+ * Pool mechanics (Sharekhan / HDFC Securities broker notes, 2024):
+ *   - Free / ad-funded tier pays ~₹0.10 per stream (fixed, ad-thin).
+ *   - Paid tier pools ~50% of subscription revenue, divided pro-rata by
+ *     streams. We model the paid leg directly off subscription revenue ×
+ *     `label_share_of_sub_pool` (a band around the ~50%) — more robust than
+ *     deriving a paid per-stream rate (which is unpublished; sensitise 3–10×
+ *     of the free rate for intuition only).
+ *
+ * All rupee inputs are ANNUAL India totals; the returned bands are the label's
+ * share, with quarterly = annual ÷ 4 and weekly = annual ÷ 52.
+ */
+export function estimateStreamingRoyalty(opts: {
+  india_subscription_revenue_inr_annual: number; // EY-FICCI: ~₹10.3bn (2025)
+  india_ad_streams_annual: number;                // free/ad-funded stream count
+  label_catalog_share: number;                    // 0..1 — the heroic assumption
+  free_per_stream_inr?: number;                   // default ₹0.10
+  label_share_of_sub_pool?: { low: number; mid: number; high: number }; // default 0.40/0.50/0.60
+  data_days?: number;
+  sample_size?: number;
+  backtest_calibration?: number | null;
+  notes?: string[];
+}): RevenueEstimate {
+  const freePerStream = opts.free_per_stream_inr ?? 0.1;
+  const subPool = opts.label_share_of_sub_pool ?? { low: 0.4, mid: 0.5, high: 0.6 };
+  const share = Math.max(0, Math.min(1, opts.label_catalog_share));
+
+  const adRoyalty = opts.india_ad_streams_annual * freePerStream * share;
+  const subRev = opts.india_subscription_revenue_inr_annual;
+  const annual: RevenueCpmBand = {
+    low_inr: Math.round(subRev * subPool.low * share + adRoyalty),
+    mid_inr: Math.round(subRev * subPool.mid * share + adRoyalty),
+    high_inr: Math.round(subRev * subPool.high * share + adRoyalty),
+  };
+  const scaleBand = (b: RevenueCpmBand, div: number): RevenueCpmBand => ({
+    low_inr: Math.round(b.low_inr / div),
+    mid_inr: Math.round(b.mid_inr / div),
+    high_inr: Math.round(b.high_inr / div),
+  });
+
+  const factors: ConfidenceFactors = {
+    data_days: opts.data_days ?? 0,
+    sample_size: opts.sample_size ?? 0,
+    // No per-catalog DSP data → catalog match is fundamentally unmeasured.
+    catalog_match_pct: 0,
+    backtest_calibration: opts.backtest_calibration ?? null,
+    notes: [
+      'DIRECTIONAL SIZING ONLY — no public per-catalog DSP stream data',
+      `Label catalog share assumed ${(share * 100).toFixed(1)}% (proxy; sensitise)`,
+      `Paid leg = India subscription rev × ${(subPool.low * 100).toFixed(0)}–${(subPool.high * 100).toFixed(0)}% label pool`,
+      `Free leg = ad streams × ₹${freePerStream.toFixed(2)}/stream`,
+      ...(opts.notes ?? []),
+    ],
+  };
+  return {
+    daily: scaleBand(annual, 365),
+    weekly: scaleBand(annual, 52),
+    quarterly: scaleBand(annual, 4),
+    methodology:
+      `India audio-DSP royalty pool → label share. Paid: subscription rev × ~50% label pool ` +
+      `(band ${(subPool.low * 100).toFixed(0)}–${(subPool.high * 100).toFixed(0)}%). ` +
+      `Free: ad streams × ₹${freePerStream.toFixed(2)}. × assumed catalog share ${(share * 100).toFixed(1)}%. ` +
+      `Quarterly = annual ÷ 4.`,
+    // Structurally cannot exceed 'D' — the catalog-share assumption is unverified.
+    confidence_grade: capGrade(gradeConfidence(factors), 'D'),
     confidence_factors: factors,
   };
 }

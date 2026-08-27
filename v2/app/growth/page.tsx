@@ -4,6 +4,8 @@ import {
   getCompanyGrowth,
   getChannelGrowth,
   getCompanyViewsSeries,
+  getCompanyTotalReachWeekly,
+  getUGCReach,
 } from '@/lib/queries';
 import { CompanyGrowth } from '@/components/breakdowns/company-growth';
 import { ChannelGrowth } from '@/components/breakdowns/channel-growth';
@@ -31,7 +33,7 @@ export default function GrowthPage({ searchParams }: { searchParams: Promise<Sea
         </Suspense>
         <div>
           <h2 className="text-foreground mb-3 text-sm font-medium uppercase tracking-wider">
-            Daily views — time series (toggle Abs / 7DMA / 30DMA / 45DMA)
+            Views — Owned (daily, smoothable) or Total reach (weekly: owned + topic band; UGC shown separately)
           </h2>
           <Suspense fallback={<ChartSkeleton />}>
             <CompanyViewsBlock />
@@ -82,9 +84,29 @@ async function CompanyBlock() {
 async function CompanyViewsBlock() {
   'use cache';
   cacheLife('hours');
-  cacheTag(CACHE_TAGS.channels);
-  const data = await getCompanyViewsSeries({});
-  return <CompanyViewsLine data={data} />;
+  // Topic + UGC are signals-tagged, so this block depends on both tags.
+  cacheTag(CACHE_TAGS.channels, CACHE_TAGS.signals);
+  const [data, totalReach, tipsUgc, sareUgc] = await Promise.all([
+    getCompanyViewsSeries({}),
+    getCompanyTotalReachWeekly({ weeks: 12 }),
+    getUGCReach({ company: 'TIPSMUSIC' }),
+    getUGCReach({ company: 'SAREGAMA' }),
+  ]);
+  const ugc = {
+    tips: {
+      attributed_views: tipsUgc.attributed_views,
+      ugc_shorts_count: tipsUgc.ugc_shorts_count,
+      latestAsof: tipsUgc.latestAsof,
+      grade: tipsUgc.revenueEstimate.confidence_grade,
+    },
+    sare: {
+      attributed_views: sareUgc.attributed_views,
+      ugc_shorts_count: sareUgc.ugc_shorts_count,
+      latestAsof: sareUgc.latestAsof,
+      grade: sareUgc.revenueEstimate.confidence_grade,
+    },
+  };
+  return <CompanyViewsLine data={data} totalReach={totalReach} ugc={ugc} />;
 }
 
 async function ChannelsWrapper({ searchParams }: { searchParams: Promise<Search> }) {

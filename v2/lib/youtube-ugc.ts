@@ -48,6 +48,28 @@ export async function fetchShortsForSound(
   sourceVideoId: string,
   maxPages = 2,
 ): Promise<ShortMatch[]> {
+  return (await fetchShortsForSoundDetailed(sourceVideoId, maxPages)).matches;
+}
+
+export interface ShortsPivotResult {
+  matches: ShortMatch[];
+  /** True when we stopped at `maxPages` while a continuation token was still
+   * present — i.e. the pivot has MORE Shorts than we captured. Lets the caller
+   * label the anchor's UGC count as a sampled lower bound. */
+  truncated: boolean;
+  /** Number of pages actually fetched (1 = initial only). */
+  pages: number;
+}
+
+/**
+ * Like {@link fetchShortsForSound} but reports truncation + pages fetched.
+ * The cursor-batched worker uses a high `maxPages` to exhaust the pivot and
+ * records `truncated` per anchor for honest coverage labelling.
+ */
+export async function fetchShortsForSoundDetailed(
+  sourceVideoId: string,
+  maxPages = 2,
+): Promise<ShortsPivotResult> {
   const url = SHORTS_PIVOT_URL(sourceVideoId);
   const res = await fetch(url, {
     headers: {
@@ -63,12 +85,12 @@ export async function fetchShortsForSound(
 
   // Parse the initial page's ytInitialData
   const dataMatch = html.match(/var ytInitialData\s*=\s*({[\s\S]+?});\s*<\/script>/);
-  if (!dataMatch) return [];
+  if (!dataMatch) return { matches: [], truncated: false, pages: 1 };
   let data: unknown;
   try {
     data = JSON.parse(dataMatch[1]);
   } catch {
-    return [];
+    return { matches: [], truncated: false, pages: 1 };
   }
 
   const seen = new Set<string>();
@@ -80,7 +102,10 @@ export async function fetchShortsForSound(
     }
   }
 
-  if (maxPages <= 1) return allMatches;
+  let token = findContinuationToken(data);
+  if (maxPages <= 1) {
+    return { matches: allMatches, truncated: token != null, pages: 1 };
+  }
 
   // Extract INNERTUBE_API_KEY + INNERTUBE_CONTEXT for the continuation POST.
   // These are well-known public values (YT's own web client uses them);
@@ -100,9 +125,12 @@ export async function fetchShortsForSound(
     }
   }
 
-  if (!innertubeKey || !innertubeContext) return allMatches;
+  if (!innertubeKey || !innertubeContext) {
+    // Couldn't paginate; if a token existed there's more we can't reach.
+    return { matches: allMatches, truncated: token != null, pages: 1 };
+  }
 
-  let token = findContinuationToken(data);
+  let pages = 1;
   for (let page = 1; page < maxPages && token; page++) {
     try {
       const contRes = await fetch(
@@ -120,8 +148,12 @@ export async function fetchShortsForSound(
       );
       if (!contRes.ok) break;
       const contData: unknown = await contRes.json();
+      pages += 1;
       const newLockups = collectShortsLockups(contData);
-      if (newLockups.length === 0) break;
+      if (newLockups.length === 0) {
+        token = null; // feed exhausted
+        break;
+      }
       for (const m of newLockups.map(parseLockup)) {
         if (m && !seen.has(m.ugc_video_id)) {
           seen.add(m.ugc_video_id);
@@ -135,7 +167,9 @@ export async function fetchShortsForSound(
     }
   }
 
-  return allMatches;
+  // truncated = we still have a next-page token we didn't follow (hit maxPages
+  // or a transient continuation failure). token=null means the feed exhausted.
+  return { matches: allMatches, truncated: token != null, pages };
 }
 
 /**

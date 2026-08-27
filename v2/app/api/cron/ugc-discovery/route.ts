@@ -60,6 +60,20 @@ export async function GET(req: Request) {
   const supabase = getServiceSupabase();
   const today = new Date().toISOString().slice(0, 10);
 
+  // Self-heal: a prior run still in 'running' means a previous invocation was
+  // killed before closeRun() — almost always the Vercel maxDuration=300 cap
+  // (this pipeline runs right at the limit). Left alone it lingers forever and
+  // poisons freshness/health checks. Mark any such stale run failed first.
+  await supabase
+    .from('ops_ingest_run')
+    .update({
+      status: 'failed',
+      ended_at: new Date().toISOString(),
+      detail: { note: 'auto-closed: stale running run (likely function timeout)' },
+    })
+    .eq('source', 'ugc_discovery')
+    .eq('status', 'running');
+
   const { data: runRow, error: runErr } = await supabase
     .from('ops_ingest_run')
     .insert({ source: 'ugc_discovery', status: 'running' })
@@ -231,6 +245,7 @@ async function processAnchors(
 
   let enrichedCount = 0;
   let attributionChecked = 0;
+  let viewsExactUpdated = 0;
   const attributionCounts: Record<string, number> = {};
 
   if (ugcIds.length > 0 && env.YOUTUBE_API_KEY) {
@@ -292,12 +307,47 @@ async function processAnchors(
           .from('dim_ugc_video')
           .upsert(dimRows.slice(i, i + 200), { onConflict: 'ugc_video_id' });
       }
-      // NOTE: per-snapshot views_exact backfill on fct_ugc_short_match is
-      // deliberately skipped — would need 425 individual UPDATEs per run
-      // (~21s), bumping us close to maxDuration. The precise view count
-      // already lives in dim_ugc_video.latest_view_count. If we need a
-      // per-snapshot precise series later, add a SECURITY DEFINER
-      // postgres function that bulk-updates via jsonb_to_recordset.
+    }
+  }
+
+  // ---- A1: backfill precise views onto today's snapshot rows -------------
+  // The pivot view_count is approximate (accessibility text). The exact
+  // cumulative count lives in dim_ugc_video.latest_view_count. Push it onto
+  // each fct_ugc_short_match row for today in a SINGLE round-trip via the
+  // update_ugc_views_exact() SET-based function (migration 0021) — replaces
+  // the per-row UPDATE loop that was too slow under the 300s cap.
+  if (ugcIds.length > 0) {
+    const exactRows: Array<{ ugc_video_id: string; views: number }> = [];
+    for (let i = 0; i < ugcIds.length; i += 500) {
+      const slice = ugcIds.slice(i, i + 500);
+      const { data: dimViews } = await supabase
+        .from('dim_ugc_video')
+        .select('ugc_video_id, latest_view_count')
+        .in('ugc_video_id', slice);
+      for (const r of (dimViews ?? []) as Array<{
+        ugc_video_id: string;
+        latest_view_count: number | null;
+      }>) {
+        if (r.latest_view_count != null) {
+          exactRows.push({ ugc_video_id: r.ugc_video_id, views: Number(r.latest_view_count) });
+        }
+      }
+    }
+    if (exactRows.length > 0) {
+      const { data: updated, error: rpcErr } = await supabase.rpc('update_ugc_views_exact', {
+        p_asof: today,
+        p_rows: exactRows,
+      });
+      if (rpcErr) {
+        await supabase.from('ops_error_log').insert({
+          error_type: 'ugc_views_exact_failed',
+          error_message: rpcErr.message,
+          detail: { rows: exactRows.length },
+          ingest_run_id: runId,
+        });
+      } else {
+        viewsExactUpdated = typeof updated === 'number' ? updated : 0;
+      }
     }
   }
 
@@ -484,6 +534,7 @@ async function processAnchors(
     enriched_videos: enrichedCount,
     attribution_checked: attributionChecked,
     attribution_breakdown: attributionCounts,
+    views_exact_updated: viewsExactUpdated,
     source_channels_resolved: sourceChannelsResolved,
     creator_countries_resolved: creatorCountriesResolved,
     per_anchor: perAnchor,
@@ -503,6 +554,7 @@ async function processAnchors(
     enriched_videos: enrichedCount,
     attribution_checked: attributionChecked,
     attribution_breakdown: attributionCounts,
+    views_exact_updated: viewsExactUpdated,
   });
 }
 

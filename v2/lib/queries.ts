@@ -10,6 +10,8 @@ import {
   subscriberDrift,
   peerRankMomentum,
   liveEventDensity,
+  demandMomentum,
+  type SignalCell,
   type SignalsSnapshot,
   type VideoFreshnessInput,
 } from '@/lib/signals';
@@ -27,11 +29,25 @@ import { resolveStockRange, type StockRange } from '@/lib/stock-range';
 import {
   estimateConsolidatedYT,
   estimateOwnedRevenue,
+  estimateStreamingRoyalty,
   estimateTopicRevenue,
   estimateUgcRevenue,
   type RevenueCpmBand,
   type RevenueEstimate,
 } from '@/lib/revenue-cpm';
+import { aggregateUgcReach, type UgcVideoMeta } from '@/lib/ugc-aggregate';
+import {
+  computeRoyaltyCrossCheck,
+  rollupAppProxySeries,
+  type AppProxyPoint,
+  type RoyaltyCrossCheck,
+} from '@/lib/demand';
+import {
+  bucketWeekly,
+  trimPartialEdges,
+  buildReachBand,
+  type DailyPoint,
+} from '@/lib/total-reach';
 
 export type { SignalsSnapshot } from '@/lib/signals';
 export type { StockRange } from '@/lib/stock-range';
@@ -761,6 +777,114 @@ export async function getCompanyViewsSeries(opts: { from?: string; to?: string }
     byDate.set(r.date, slot);
   }
   return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export interface TotalReachWeek {
+  week: string; // Monday ISO date
+  tips_low: number | null;
+  tips_mid: number | null;
+  tips_high: number | null;
+  tips_owned: number | null;
+  tips_topic: number | null;
+  sare_low: number | null;
+  sare_mid: number | null;
+  sare_high: number | null;
+  sare_owned: number | null;
+  sare_topic: number | null;
+}
+
+export interface TotalReachResult {
+  weeks: TotalReachWeek[];
+  tips: { grade: RevenueEstimate['confidence_grade']; topic_coverage_start: string | null };
+  saregama: { grade: RevenueEstimate['confidence_grade']; topic_coverage_start: string | null };
+}
+
+/**
+ * Weekly "total reach" = owned + attributed-topic views, resampled to ISO weeks
+ * and surfaced as a low/mid/high band. Owned views are exact, so the band width
+ * comes entirely from the attributed topic layer (see buildReachBand). Owned has
+ * years of history; topic only since tracking began (topic_coverage_start) — the
+ * UI shades the pre-topic region so the topic step-up isn't read as a real jump.
+ * UGC is shown SEPARATELY (getUGCReach) as a cumulative sampled figure, never
+ * summed into this flow (different time base + completeness).
+ */
+export async function getCompanyTotalReachWeekly(opts: { weeks?: number }): Promise<TotalReachResult> {
+  const weeks = opts.weeks ?? 12;
+  const days = weeks * 7 + 7;
+  const supabase = getServiceSupabase();
+  const from = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+
+  // Owned weekly per company (daily flow from v_company_daily → ISO weeks).
+  const { data: ownedRows } = await supabase
+    .from('v_company_daily')
+    .select('date, company, daily_views')
+    .gte('date', from)
+    .order('date', { ascending: true });
+  const ownedByCompany: Record<'TIPSMUSIC' | 'SAREGAMA', DailyPoint[]> = {
+    TIPSMUSIC: [],
+    SAREGAMA: [],
+  };
+  for (const r of (ownedRows ?? []) as Array<{
+    date: string;
+    company: string;
+    daily_views: number | null;
+  }>) {
+    if (r.company === 'TIPSMUSIC' || r.company === 'SAREGAMA') {
+      ownedByCompany[r.company].push({
+        date: r.date,
+        value: r.daily_views != null ? Number(r.daily_views) : null,
+      });
+    }
+  }
+
+  // Topic weekly per company (attributed daily flow → ISO weeks).
+  const [tipsTopic, sareTopic] = await Promise.all([
+    getTopicReach({ company: 'TIPSMUSIC', days }),
+    getTopicReach({ company: 'SAREGAMA', days }),
+  ]);
+
+  const ownedWeekly = (pts: DailyPoint[]) =>
+    new Map(trimPartialEdges(bucketWeekly(pts)).map((w) => [w.weekStart, w.sum]));
+  const topicWeekly = (snap: Awaited<ReturnType<typeof getTopicReach>>) => {
+    const wk = bucketWeekly(
+      snap.series.map((p) => ({ date: p.date, value: p.attributed_daily_views })),
+    );
+    return { map: new Map(wk.map((w) => [w.weekStart, w.sum])), start: wk.length ? wk[0].weekStart : null };
+  };
+
+  const tOwned = ownedWeekly(ownedByCompany.TIPSMUSIC);
+  const sOwned = ownedWeekly(ownedByCompany.SAREGAMA);
+  const tTopic = topicWeekly(tipsTopic);
+  const sTopic = topicWeekly(sareTopic);
+
+  const allWeeks = [...new Set([...tOwned.keys(), ...sOwned.keys()])].sort();
+  const weeksOut: TotalReachWeek[] = allWeeks.map((week) => {
+    const to = tOwned.get(week) ?? null;
+    const so = sOwned.get(week) ?? null;
+    const tt = tTopic.map.get(week) ?? 0;
+    const st = sTopic.map.get(week) ?? 0;
+    const tb = to != null ? buildReachBand({ owned: to, topic: tt }) : null;
+    const sb = so != null ? buildReachBand({ owned: so, topic: st }) : null;
+    return {
+      week,
+      tips_low: tb?.low ?? null,
+      tips_mid: tb?.mid ?? null,
+      tips_high: tb?.high ?? null,
+      tips_owned: to,
+      tips_topic: to != null ? tt : null,
+      sare_low: sb?.low ?? null,
+      sare_mid: sb?.mid ?? null,
+      sare_high: sb?.high ?? null,
+      sare_owned: so,
+      sare_topic: so != null ? st : null,
+    };
+  });
+
+  return {
+    weeks: weeksOut,
+    tips: { grade: tipsTopic.revenueEstimate.confidence_grade, topic_coverage_start: tTopic.start },
+    saregama: { grade: sareTopic.revenueEstimate.confidence_grade, topic_coverage_start: sTopic.start },
+  };
 }
 
 export async function getChannelGrowth(opts: { company?: string }): Promise<ChannelGrowthRow[]> {
@@ -2133,6 +2257,8 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
   const enrichedByUgc = new Map<
     string,
     {
+      channel_id: string | null;
+      latest_view_count: number | null;
       channel_name: string | null;
       attribution_kind: string | null;
       attribution_song: string | null;
@@ -2150,11 +2276,13 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     const { data: enriched } = await supabase
       .from('dim_ugc_video')
       .select(
-        'ugc_video_id, channel_name, attribution_kind, attribution_song, attribution_artist, attribution_source_channel_id, attribution_source_channel_name, licensed_content',
+        'ugc_video_id, channel_id, latest_view_count, channel_name, attribution_kind, attribution_song, attribution_artist, attribution_source_channel_id, attribution_source_channel_name, licensed_content',
       )
       .in('ugc_video_id', slice);
     for (const e of (enriched ?? []) as Array<{
       ugc_video_id: string;
+      channel_id: string | null;
+      latest_view_count: number | null;
       channel_name: string | null;
       attribution_kind: string | null;
       attribution_song: string | null;
@@ -2164,6 +2292,8 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
       licensed_content: boolean | null;
     }>) {
       enrichedByUgc.set(e.ugc_video_id, {
+        channel_id: e.channel_id,
+        latest_view_count: e.latest_view_count,
         channel_name: e.channel_name,
         attribution_kind: e.attribution_kind,
         attribution_song: e.attribution_song,
@@ -2180,6 +2310,21 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
       if (e.licensed_content === true) ytLicensedContentCount += 1;
     }
   }
+
+  // Headline reach: dedup by ugc_video_id, prefer exact videos.list counts over
+  // the approximate accessibility-text parse, and exclude first-party Shorts
+  // (posted by our own owned channels — those views are already in
+  // v_company_daily, so summing them would double-count). chanIds = this
+  // company's owned channels, resolved at step 1.
+  const ugcMeta = new Map<string, UgcVideoMeta>();
+  for (const [id, e] of enrichedByUgc) {
+    ugcMeta.set(id, { channel_id: e.channel_id, latest_view_count: e.latest_view_count });
+  }
+  const reach = aggregateUgcReach(
+    latestRows.map((r) => ({ ugc_video_id: r.ugc_video_id, view_count: r.view_count })),
+    ugcMeta,
+    new Set(chanIds),
+  );
 
   // 6c) Catalog-match: how many UGCs have their attribution source resolved
   // to one of OUR (owned + topic) channels for this company. Topic channels
@@ -2301,7 +2446,7 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
   // catalog_match attributedViews approximated as catalog_match
   // fraction × snapshot's total attributed views.
   const catalogMatchRatio = totalEnriched > 0 ? catalogMatchCount / totalEnriched : 0;
-  const catalogAttributedViews = Math.round(totalViewsLatest * catalogMatchRatio);
+  const catalogAttributedViews = Math.round(reach.cumulative_views * catalogMatchRatio);
   const revenueEstimate = estimateUgcRevenue({
     attributed_views_7d: catalogAttributedViews,
     data_days: asofs.length,
@@ -2315,8 +2460,8 @@ export async function getUGCReach(opts: { company: Company }): Promise<UGCReachS
     latestAsof,
     priorAsof,
     snapshotsAvailable: asofs.length,
-    ugc_shorts_count: totalCountLatest,
-    attributed_views: totalViewsLatest,
+    ugc_shorts_count: reach.shorts_count,
+    attributed_views: reach.cumulative_views,
     weekOverWeek,
     attributionCounts,
     catalogMatchCount,
@@ -3056,5 +3201,359 @@ export async function getConsolidatedYTRevenue(opts: {
     composition: consolidated.composition,
     owned_views_7d: Number(ownedViews7d),
     owned_channels_count: ownedChannelsCount,
+  };
+}
+
+// ---- C1/C2: India audio-DSP streaming-royalty leg ---------------------------
+
+/**
+ * Assumed label share of the national audio-DSP royalty pool. THIS IS A
+ * PLACEHOLDER — there is no public per-catalog DSP stream data. Replace with a
+ * disclosed/derived figure once available (e.g. label music-licensing revenue
+ * ÷ IFPI India recorded-music revenue). The streaming-royalty estimate is
+ * graded no better than 'D' precisely because of this assumption.
+ */
+const ASSUMED_CATALOG_SHARE: Record<Company, number> = {
+  TIPSMUSIC: 0.03,
+  SAREGAMA: 0.05,
+};
+
+export type { RoyaltyCrossCheck };
+
+export interface StreamingRoyaltyEstimate {
+  company: Company;
+  assumed_catalog_share: number;
+  inputs: {
+    subscription_revenue_inr: number | null;
+    ad_streams: number | null;
+    recorded_music_revenue_inr: number | null;
+    asof: string | null;
+    source: string | null;
+  };
+  estimate: RevenueEstimate;
+  /**
+   * Reconciliation of the estimate against the recorded-music pool in the SAME
+   * source table. See computeRoyaltyCrossCheck for why this exists.
+   */
+  cross_check: RoyaltyCrossCheck;
+}
+
+export async function getStreamingRoyalty(opts: {
+  company: Company;
+}): Promise<StreamingRoyaltyEstimate> {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from('fct_dsp_market')
+    .select('asof, metric, value, source, confidence')
+    .eq('scope', 'india')
+    .in('metric', [
+      'subscription_revenue_inr',
+      'total_streams',
+      'paid_streams',
+      'recorded_music_revenue_inr',
+    ])
+    .order('asof', { ascending: false });
+
+  const latest = new Map<string, { value: number; asof: string; source: string }>();
+  for (const r of (data ?? []) as Array<{
+    asof: string;
+    metric: string;
+    value: number;
+    source: string;
+    confidence: string;
+  }>) {
+    if (r.confidence === 'forecast') continue; // actuals only for the run-rate
+    if (!latest.has(r.metric)) {
+      latest.set(r.metric, { value: Number(r.value), asof: r.asof, source: r.source });
+    }
+  }
+
+  const subRev = latest.get('subscription_revenue_inr')?.value ?? null;
+  const totalStreams = latest.get('total_streams')?.value ?? null;
+  const paidStreams = latest.get('paid_streams')?.value ?? null;
+  const adStreams =
+    totalStreams != null && paidStreams != null ? Math.max(0, totalStreams - paidStreams) : null;
+  const share = ASSUMED_CATALOG_SHARE[opts.company];
+  const asof = latest.get('subscription_revenue_inr')?.asof ?? null;
+  const source = latest.get('subscription_revenue_inr')?.source ?? null;
+
+  const estimate = estimateStreamingRoyalty({
+    india_subscription_revenue_inr_annual: subRev ?? 0,
+    india_ad_streams_annual: adStreams ?? 0,
+    label_catalog_share: share,
+    data_days: subRev != null ? 30 : 0,
+    sample_size: subRev != null ? 1 : 0,
+    notes: [
+      asof ? `India market data as of ${asof} (${source})` : 'No India market data seeded',
+    ],
+  });
+
+  // Reconcile against the recorded-music pool from the same table before this
+  // number reaches a screen. Prefer the widest (EY-FICCI) definition when
+  // several sources report it — a narrower pool would fail the check for the
+  // wrong reason.
+  const market = (data ?? [])
+    .filter(
+      (r: { metric: string; confidence: string }) =>
+        r.metric === 'recorded_music_revenue_inr' && r.confidence !== 'forecast',
+    )
+    .reduce<number | null>(
+      (acc, r: { value: number }) => (acc == null || Number(r.value) > acc ? Number(r.value) : acc),
+      null,
+    );
+
+  const cross_check = computeRoyaltyCrossCheck({
+    annual_mid_inr: estimate.quarterly.mid_inr * 4,
+    assumed_catalog_share: share,
+    recorded_music_revenue_inr: market,
+    ad_streams: adStreams,
+  });
+
+  return {
+    company: opts.company,
+    assumed_catalog_share: share,
+    inputs: {
+      subscription_revenue_inr: subRev,
+      ad_streams: adStreams,
+      recorded_music_revenue_inr: market,
+      asof,
+      source,
+    },
+    estimate,
+    cross_check,
+  };
+}
+
+// ---- C2: India demand / paid-migration layer (sector-wide context) ----------
+
+/**
+ * How much app-proxy history getDemandLayer pulls. Must comfortably exceed
+ * signals.WARMUP_DAYS (30) so demandMomentum can build several non-overlapping
+ * weekly increments before it reports a direction.
+ */
+const APP_PROXY_WINDOW_DAYS = 180;
+
+export interface DspMarketMetric {
+  metric: string;
+  value: number;
+  unit: string;
+  asof: string;
+  source: string;
+  source_url: string | null;
+  confidence: string;
+  notes: string | null;
+}
+
+export interface DspStatusRow {
+  dsp: string;
+  display_name: string;
+  owner: string | null;
+  status: string;
+  status_asof: string | null;
+  notes: string | null;
+}
+
+export interface AppProxyRow {
+  dsp: string;
+  store: string;
+  source: string;
+  date: string;
+  rating_count: number | null;
+  rating_avg: number | null;
+  install_bucket: string | null;
+  rating_count_30d_delta: number | null; // gross velocity proxy (cumulative, never decrements)
+  /** Real span of the delta above — >30 when a missed cron pushed the anchor back. */
+  delta_span_days: number | null;
+  /** Days of history behind this app (drives the "accumulating" empty state). */
+  days_observed: number;
+  /**
+   * Weekly-increment momentum of the cumulative metric. SECTOR demand only, and
+   * graded LOW — never bias-weighted into the per-company IR READ.
+   */
+  momentum: SignalCell;
+}
+
+export interface DemandLayerSnapshot {
+  asof: string | null;
+  dsps: DspStatusRow[];
+  india_market: DspMarketMetric[]; // latest actual per metric
+  forecasts: DspMarketMetric[];
+  /** Every actual, per metric, oldest-first — drives the paid-migration trajectory. */
+  market_history: Record<string, DspMarketMetric[]>;
+  apps: AppProxyRow[];
+  spotify_regional: {
+    asof: string;
+    mau_total: number | null;
+    premium_total: number | null;
+    premium_row_pct: number | null;
+  } | null;
+  catalog_chart: {
+    date: string | null;
+    total: number;
+    matches: number;
+    matched: Array<{
+      rank: number;
+      track_title: string | null;
+      artist: string | null;
+      matched_company: string | null;
+    }>;
+  };
+}
+
+/**
+ * The graded sector-tailwind / paid-migration context layer. Sector-wide
+ * (not per-company) — answers "is the pie growing and shifting to paid?" NOT
+ * "what is TIPS's share?" (no public per-catalog DSP data exists). Every figure
+ * is source-cited; app/chart signals are GROSS demand proxies, graded LOW, and
+ * are NOT bias-weighted into the IR READ.
+ */
+export async function getDemandLayer(): Promise<DemandLayerSnapshot> {
+  const supabase = getServiceSupabase();
+
+  const [{ data: dspData }, { data: marketData }, { data: appData }, { data: spotifyData }, { data: chartData }] =
+    await Promise.all([
+      supabase
+        .from('dim_dsp')
+        .select('dsp, display_name, owner, status, status_asof, notes, display_order')
+        .order('display_order', { ascending: true }),
+      supabase
+        .from('fct_dsp_market')
+        .select('asof, scope, metric, value, unit, source, source_url, confidence, notes')
+        .eq('scope', 'india')
+        .order('asof', { ascending: false }),
+      // 180d: demandMomentum needs >= WARMUP_DAYS (30) plus several weekly
+      // increments before it stops warming. Ordered DESC with an explicit cap so
+      // that if the row limit ever bites, it drops the OLDEST history (momentum
+      // simply warms up again) rather than today's headline snapshot.
+      // Worst case ~6 DSPs x 3 sources x 180d = 3,240 rows.
+      supabase
+        .from('fct_app_proxy_daily')
+        .select('dsp, store, source, date, rating_count, rating_avg, install_bucket')
+        .gte('date', new Date(Date.now() - APP_PROXY_WINDOW_DAYS * 86_400_000).toISOString().slice(0, 10))
+        .order('date', { ascending: false })
+        .limit(4000),
+      supabase
+        .from('fct_spotify_regional')
+        .select('asof, mau_total, premium_total, premium_row_pct')
+        .order('asof', { ascending: false })
+        .limit(1),
+      supabase
+        .from('fct_catalog_chart_presence')
+        .select('date, rank, track_title, artist, is_catalog_match, matched_company')
+        .eq('chart', 'apple_music_songs')
+        .order('date', { ascending: false })
+        .order('rank', { ascending: true })
+        .limit(100),
+    ]);
+
+  const dsps = ((dspData ?? []) as DspStatusRow[]).map((d) => ({
+    dsp: d.dsp,
+    display_name: d.display_name,
+    owner: d.owner,
+    status: d.status,
+    status_asof: d.status_asof,
+    notes: d.notes,
+  }));
+
+  // Latest actual per metric, plus forecast rows kept separate.
+  const marketRows = (marketData ?? []) as DspMarketMetric[];
+  const latestActual = new Map<string, DspMarketMetric>();
+  const forecasts: DspMarketMetric[] = [];
+  const market_history: Record<string, DspMarketMetric[]> = {};
+  // marketRows arrive newest-first.
+  for (const r of marketRows) {
+    if (r.confidence === 'forecast') {
+      forecasts.push(r);
+    } else {
+      if (!latestActual.has(r.metric)) latestActual.set(r.metric, r);
+      (market_history[r.metric] ??= []).unshift(r); // unshift → oldest-first
+    }
+  }
+  const india_market = [...latestActual.values()];
+  const asof = india_market.reduce<string | null>(
+    (acc, m) => (acc == null || m.asof > acc ? m.asof : acc),
+    null,
+  );
+
+  // App proxies: one row per (dsp, store, source) — latest snapshot, a true
+  // 30-day rating velocity, and weekly-increment momentum over the full window.
+  type RawApp = AppProxyPoint & { dsp: string; store: string; source: string };
+  const byKey = new Map<string, RawApp[]>();
+  for (const r of (appData ?? []) as RawApp[]) {
+    const key = `${r.dsp}|${r.store}|${r.source}`;
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key)!.push(r);
+  }
+  const apps: AppProxyRow[] = [];
+  for (const series of byKey.values()) {
+    const rollup = rollupAppProxySeries(series, 30);
+    if (!rollup) continue;
+    const head = series[0]; // identity fields are constant across the group
+    apps.push({
+      dsp: head.dsp,
+      store: head.store,
+      source: head.source,
+      date: rollup.latest.date,
+      rating_count: rollup.latest.rating_count,
+      rating_avg: rollup.latest.rating_avg,
+      install_bucket: rollup.latest.install_bucket,
+      rating_count_30d_delta: rollup.rating_count_delta,
+      delta_span_days: rollup.delta_span_days,
+      days_observed: rollup.days_observed,
+      momentum: demandMomentum(rollup.history),
+    });
+  }
+  apps.sort((a, b) => a.dsp.localeCompare(b.dsp) || a.store.localeCompare(b.store));
+
+  const sRow = ((spotifyData ?? []) as Array<{
+    asof: string;
+    mau_total: number | null;
+    premium_total: number | null;
+    premium_row_pct: number | null;
+  }>)[0];
+  const spotify_regional = sRow
+    ? {
+        asof: sRow.asof,
+        mau_total: sRow.mau_total,
+        premium_total: sRow.premium_total,
+        premium_row_pct: sRow.premium_row_pct,
+      }
+    : null;
+
+  // Catalog chart presence — most recent date only.
+  type RawChart = {
+    date: string;
+    rank: number;
+    track_title: string | null;
+    artist: string | null;
+    is_catalog_match: boolean;
+    matched_company: string | null;
+  };
+  const chartRows = (chartData ?? []) as RawChart[];
+  const chartDate = chartRows[0]?.date ?? null;
+  const todayRows = chartDate ? chartRows.filter((r) => r.date === chartDate) : [];
+  const matched = todayRows
+    .filter((r) => r.is_catalog_match)
+    .map((r) => ({
+      rank: r.rank,
+      track_title: r.track_title,
+      artist: r.artist,
+      matched_company: r.matched_company,
+    }));
+
+  return {
+    asof,
+    dsps,
+    india_market,
+    forecasts,
+    market_history,
+    apps,
+    spotify_regional,
+    catalog_chart: {
+      date: chartDate,
+      total: todayRows.length,
+      matches: matched.length,
+      matched,
+    },
   };
 }

@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #0C0E13; color: #F3F5F7; }
+    a { color: #3D7AF5; text-decoration: none; } a:hover { color: #7BA5F8; }
+    .tnum { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 980px; background: #0C0E13; display: flex; font-family: Inter, system-ui, sans-serif;">
+
+  <!-- left rail -->
+  <div style="width: 236px; border-right: 1px solid #282C34; background: #12151C; display: flex; flex-direction: column; padding: 16px 0;">
+    <div style="padding: 0 16px 16px; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;">TUSK</div>
+
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 8px;">
+      <div style="padding: 7px 10px; font-size: 12px; color: #99A4B2; border-radius: 6px;">Overview</div>
+      <div style="padding: 7px 10px; font-size: 12px; border-radius: 6px; background: rgba(59,130,246,0.15); color: #BFDBFE; font-weight: 500;">Signals</div>
+    </div>
+
+    <div style="padding: 18px 16px 8px; font-size: 10px; letter-spacing: 0.08em; color: #6B7684;">SIGNAL GROUPS</div>
+    <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 8px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 12px; border-radius: 6px; background: #1F2229;">
+        <span>Momentum</span>
+        <span style="font-size: 10px; color: #34D399;" class="tnum">2 sig</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 12px; color: #99A4B2; border-radius: 6px;">
+        <span>Catalog</span>
+        <span style="font-size: 10px;" class="tnum">—</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 12px; color: #99A4B2; border-radius: 6px;">
+        <span>Price relation</span>
+        <span style="font-size: 10px; color: #FCD34D;" class="tnum">1 sig</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 12px; color: #99A4B2; border-radius: 6px;">
+        <span>Revenue model</span>
+        <span style="font-size: 10px;" class="tnum">C</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 12px; color: #99A4B2; border-radius: 6px;">
+        <span>UGC reach</span>
+        <span style="font-size: 10px;" class="tnum">D</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; font-size: 12px; color: #99A4B2; border-radius: 6px;">
+        <span>Sector demand</span>
+        <span style="font-size: 10px;" class="tnum">low</span>
+      </div>
+    </div>
+
+    <div style="margin-top: auto; padding: 12px 16px; border-top: 1px solid #282C34;">
+      <div style="display: flex; align-items: center; gap: 7px; font-size: 11px; color: #99A4B2;">
+        <span style="width: 6px; height: 6px; border-radius: 999px; background: #34D399;"></span>
+        <span>All feeds current</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- work area -->
+  <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid #282C34;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="font-size: 17px; font-weight: 600; letter-spacing: -0.01em;">Momentum</div>
+        <div style="font-size: 11px; color: #99A4B2;">view &amp; subscriber trend vs own baseline</div>
+      </div>
+      <div style="display: flex; gap: 4px; background: #12151C; border: 1px solid #282C34; border-radius: 6px; padding: 3px;">
+        <div style="padding: 4px 12px; font-size: 11px; border-radius: 4px; background: rgba(59,130,246,0.18); color: #BFDBFE; font-weight: 500;">Both</div>
+        <div style="padding: 4px 12px; font-size: 11px; border-radius: 4px; color: #99A4B2;">Tips</div>
+        <div style="padding: 4px 12px; font-size: 11px; border-radius: 4px; color: #99A4B2;">Saregama</div>
+      </div>
+    </div>
+
+    <div style="flex: 1; display: flex; min-height: 0;">
+
+      <!-- focused panel -->
+      <div style="flex: 1; padding: 24px; min-width: 0;">
+        <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 20px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px;">
+            <div style="font-size: 13px; font-weight: 500;">Daily views vs 60-day baseline</div>
+            <div style="font-size: 11px; color: #99A4B2;" class="tnum">non-overlapping weekly buckets</div>
+          </div>
+          <svg width="820" height="220" viewBox="0 0 820 220" style="display: block; max-width: 100%;">
+            <line x1="0" y1="55" x2="820" y2="55" stroke="#1F2229" stroke-width="1"></line>
+            <line x1="0" y1="110" x2="820" y2="110" stroke="#1F2229" stroke-width="1"></line>
+            <line x1="0" y1="165" x2="820" y2="165" stroke="#1F2229" stroke-width="1"></line>
+            <rect x="88" y="0" width="82" height="220" fill="rgba(252,211,77,0.06)"></rect>
+            <polyline fill="none" stroke="#3D7AF5" stroke-width="2"
+              points="0,108 27,64 54,52 82,86 109,80 136,80 163,80 190,100 218,96 245,124 272,70 299,110 326,90 354,104 381,100 408,132 435,110 462,106 490,84 517,106 544,128 571,140 598,100 625,116 652,128 680,108 707,178 734,86 761,110 788,104"></polyline>
+            <circle cx="788" cy="104" r="3.5" fill="#3D7AF5"></circle>
+          </svg>
+          <div style="display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #282C34;">
+            <div><div style="font-size: 10px; color: #99A4B2; letter-spacing: 0.05em;">LATEST WEEK</div><div style="font-size: 17px; font-weight: 600; margin-top: 3px;" class="tnum">38.9M<span style="font-size: 11px; color: #99A4B2; font-weight: 400;">/day</span></div></div>
+            <div><div style="font-size: 10px; color: #99A4B2; letter-spacing: 0.05em;">Z-SCORE</div><div style="font-size: 17px; font-weight: 600; margin-top: 3px; color: #34D399;" class="tnum">+1.4σ</div></div>
+            <div><div style="font-size: 10px; color: #99A4B2; letter-spacing: 0.05em;">BASELINE</div><div style="font-size: 17px; font-weight: 600; margin-top: 3px;" class="tnum">35.2M</div></div>
+            <div><div style="font-size: 10px; color: #99A4B2; letter-spacing: 0.05em;">SIGNIFICANT</div><div style="font-size: 17px; font-weight: 600; margin-top: 3px; color: #34D399;">yes</div></div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+          <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 16px;">
+            <div style="font-size: 12px; color: #99A4B2;">Subscriber drift</div>
+            <div style="font-size: 20px; font-weight: 600; margin-top: 6px;" class="tnum">+390,000</div>
+            <div style="font-size: 11px; color: #99A4B2; margin-top: 3px;" class="tnum">30d · +0.29% · ±15k precision</div>
+          </div>
+          <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 16px;">
+            <div style="font-size: 12px; color: #99A4B2;">Peer rank momentum</div>
+            <div style="font-size: 20px; font-weight: 600; margin-top: 6px; color: #34D399;" class="tnum">+2</div>
+            <div style="font-size: 11px; color: #99A4B2; margin-top: 3px;">climbing · additive, not scored</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- inspector -->
+      <div style="width: 300px; border-left: 1px solid #282C34; background: #12151C; padding: 20px;">
+        <div style="font-size: 11px; letter-spacing: 0.08em; color: #6B7684; margin-bottom: 14px;">READ</div>
+        <div style="font-size: 22px; font-weight: 600; color: #FCD34D; letter-spacing: -0.01em;">MIXED</div>
+        <div style="font-size: 13px; line-height: 1.5; color: #99A4B2; margin-top: 10px;">
+          Views ran ahead of the tape while price stayed flat — divergence active.
+        </div>
+
+        <div style="height: 1px; background: #282C34; margin: 18px 0;"></div>
+
+        <div style="font-size: 11px; letter-spacing: 0.08em; color: #6B7684; margin-bottom: 12px;">HOW MUCH TO TRUST IT</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; color: #99A4B2;">Confidence</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #FCD34D; background: rgba(252,211,77,0.12); padding: 3px 7px; border-radius: 4px;">C</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; color: #99A4B2;">Days of data</span>
+            <span style="font-size: 12px;" class="tnum">184</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; color: #99A4B2;">Repaired days</span>
+            <span style="font-size: 12px; color: #FCD34D;" class="tnum">3</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 12px; color: #99A4B2;">Backtested</span>
+            <span style="font-size: 12px; color: #99A4B2;">pending</span>
+          </div>
+        </div>
+
+        <div style="height: 1px; background: #282C34; margin: 18px 0;"></div>
+
+        <div style="font-size: 11px; letter-spacing: 0.08em; color: #6B7684; margin-bottom: 10px;">CAVEATS</div>
+        <div style="font-size: 12px; line-height: 1.55; color: #99A4B2;">
+          2–4 Aug had their daily split inferred after a stale upstream count. Totals exact.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

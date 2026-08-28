@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #0C0E13; color: #F3F5F7; }
+    a { color: #2563EB; text-decoration: none; } a:hover { color: #60A5FA; }
+    .tnum { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #0C0E13; padding: 28px 24px 32px; box-sizing: border-box; font-family: Inter, system-ui, sans-serif;">
+
+  <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+    <div style="font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">Daily views · TIPSMUSIC</div>
+    <div style="font-size: 11px; color: #99A4B2;" class="tnum">110 days · 10 May – 27 Aug 2026</div>
+  </div>
+  <div style="font-size: 13px; color: #99A4B2; margin-bottom: 20px;">Control chart — daily series against ±1σ / ±2σ limits from the 110-day mean</div>
+
+  <!-- stat rail -->
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px;">
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 13px;">
+      <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">MA 15</div>
+      <div style="font-size: 19px; font-weight: 600; margin-top: 5px;" class="tnum">34.88M</div>
+      <div style="font-size: 10px; color: #D97706; margin-top: 2px;" class="tnum">−9.2% vs qtr</div>
+    </div>
+    <div style="border: 1px solid #2563EB; background: rgba(37,99,235,0.08); border-radius: 8px; padding: 13px;">
+      <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">MA 30</div>
+      <div style="font-size: 19px; font-weight: 600; margin-top: 5px;" class="tnum">38.95M</div>
+      <div style="font-size: 10px; color: #99A4B2; margin-top: 2px;">plotted below</div>
+    </div>
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 13px;">
+      <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">MA 45</div>
+      <div style="font-size: 19px; font-weight: 600; margin-top: 5px;" class="tnum">38.23M</div>
+      <div style="font-size: 10px; color: #99A4B2; margin-top: 2px;" class="tnum">−0.5% vs qtr</div>
+    </div>
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 13px;">
+      <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">MA 90 · QTR</div>
+      <div style="font-size: 19px; font-weight: 600; margin-top: 5px;" class="tnum">38.43M</div>
+      <div style="font-size: 10px; color: #99A4B2; margin-top: 2px;">baseline</div>
+    </div>
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 13px;">
+      <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">σ · 30D</div>
+      <div style="font-size: 19px; font-weight: 600; margin-top: 5px;" class="tnum">7.06M</div>
+      <div style="font-size: 10px; color: #99A4B2; margin-top: 2px;" class="tnum">18.1% of mean</div>
+    </div>
+  </div>
+
+  <!-- main chart -->
+  <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 18px 18px 14px;">
+    <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 12px; font-size: 11px; color: #99A4B2;">
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 1px; background: #4A5263;"></span>daily actual</span>
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 2px; background: #2563EB;"></span>30-day mean</span>
+      <sc-if value="{{ showControlLines }}" hint-placeholder-val="{{ true }}"><span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 0; border-top: 1px solid #6B7684;"></span>±1σ</span>
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 0; border-top: 1px dashed #D97706;"></span>±2σ · action limit</span>
+      <span style="display: flex; align-items: center; gap: 6px;"><span style="width: 7px; height: 7px; border-radius: 999px; background: #D97706;"></span>out of control · 6 of 109</span></sc-if>
+    </div>
+    <div style="position: relative; padding-right: 54px;">
+      <sc-if value="{{ showControlLines }}" hint-placeholder-val="{{ true }}">
+        <svg width="100%" height="300" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; position: absolute; inset: 0 54px 0 0; z-index: 0;">
+          <rect x="0" y="88" width="1160" height="96" fill="rgba(37,99,235,0.05)"></rect>
+          <line x1="0" y1="41" x2="1160" y2="41" stroke="#D97706" stroke-width="1" stroke-dasharray="6 4"></line>
+          <line x1="0" y1="88" x2="1160" y2="88" stroke="#6B7684" stroke-width="1"></line>
+          <line x1="0" y1="136" x2="1160" y2="136" stroke="#8B97A8" stroke-width="1.5"></line>
+          <line x1="0" y1="184" x2="1160" y2="184" stroke="#6B7684" stroke-width="1"></line>
+          <line x1="0" y1="232" x2="1160" y2="232" stroke="#D97706" stroke-width="1" stroke-dasharray="6 4"></line>
+        </svg>
+      </sc-if>
+      <svg width="100%" height="300" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; position: relative; z-index: 1;">
+        <polyline fill="none" stroke="#4A5263" stroke-width="1" points="0,140 11,157 21,50 32,170 43,216 53,169 64,201 74,195 85,127 96,114 106,139 117,195 128,195 138,91 149,127 160,69 170,130 181,125 192,53 202,159 213,97 223,151 234,120 245,156 255,149 266,126 277,127 287,104 298,71 309,168 319,98 330,129 341,107 351,160 362,57 372,107 383,58 394,131 404,135 415,137 426,258 436,87 447,71 458,197 468,150 479,158 490,158 500,83 511,225 521,158 532,24 543,241 553,120 564,292 575,8 585,53 596,139 607,128 617,145 628,172 639,170 649,162 660,143 670,188 681,130 692,166 702,208 713,150 724,153 734,171 745,160 756,119 766,163 777,124 788,164 798,121 809,123 819,117 830,125 841,117 851,181 862,58 873,44 883,98 894,89 905,89 915,89 926,114 937,111 947,147 958,86 968,141 979,94 990,145 1000,143 1011,166 1022,141 1032,151 1043,102 1054,139 1064,162 1075,179 1086,190 1096,139 1107,164 1117,171 1128,147 1139,239 1149,115 1160,147"></polyline>
+        <polyline fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linejoin="round" points="0,133 11,135 21,131 32,133 43,134 53,135 64,141 74,140 85,143 96,146 106,146 117,150 128,149 138,147 149,148 160,148 170,148 181,146 192,144 202,143 213,139 223,142 234,141 245,143 255,141 266,139 277,137 287,135 298,133 309,136 319,135 330,134 341,136 351,136 362,130 372,128 383,124 394,121 404,122 415,122 426,126 436,123 447,119 458,122 468,123 479,126 490,127 500,125 511,131 521,131 532,129 543,132 553,132 564,136 575,132 585,129 596,130 607,130 617,133 628,133 639,135 649,136 660,138 670,139 681,141 692,143 702,148 713,149 724,149 734,150 745,147 756,148 766,151 777,149 788,149 798,148 809,147 819,148 830,145 841,143 851,148 862,142 873,140 883,133 894,136 905,137 915,136 926,135 937,134 947,133 958,130 968,130 979,128 990,127 1000,127 1011,127 1022,125 1032,125 1043,123 1054,122 1064,122 1075,124 1086,125 1096,125 1107,125 1117,127 1128,128 1139,132 1149,132 1160,133"></polyline>
+      </svg>
+      <sc-if value="{{ showControlLines }}" hint-placeholder-val="{{ true }}">
+        <svg width="100%" height="300" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; position: absolute; inset: 0 54px 0 0; z-index: 2; pointer-events: none;">
+          <circle cx="532" cy="24" r="9" fill="none" stroke="#D97706" stroke-width="3"></circle>
+          <circle cx="575" cy="8" r="9" fill="none" stroke="#D97706" stroke-width="3"></circle>
+          <circle cx="426" cy="258" r="9" fill="none" stroke="#D97706" stroke-width="3"></circle>
+          <circle cx="543" cy="241" r="9" fill="none" stroke="#D97706" stroke-width="3"></circle>
+          <circle cx="564" cy="292" r="9" fill="none" stroke="#D97706" stroke-width="3"></circle>
+          <circle cx="1139" cy="239" r="9" fill="none" stroke="#D97706" stroke-width="3"></circle>
+        </svg>
+        <div style="position: absolute; right: 0; top: 0; width: 50px; height: 300px; z-index: 2; font-family: 'JetBrains Mono', monospace; font-size: 9px;">
+          <div style="position: absolute; top: 34px; color: #D97706;">+2σ<br><span style="color:#6B7684">54.5M</span></div>
+          <div style="position: absolute; top: 81px; color: #8B97A8;">+1σ<br><span style="color:#6B7684">46.4M</span></div>
+          <div style="position: absolute; top: 129px; color: #C3CBD6;">x&#772;<br><span style="color:#6B7684">38.3M</span></div>
+          <div style="position: absolute; top: 177px; color: #8B97A8;">−1σ<br><span style="color:#6B7684">30.2M</span></div>
+          <div style="position: absolute; top: 225px; color: #D97706;">−2σ<br><span style="color:#6B7684">22.2M</span></div>
+        </div>
+      </sc-if>
+    </div>
+        <div style="position: absolute; top: 129px; color: #C3CBD6;">x&#772;<br><span style="color:#6B7684">38.3M</span></div>
+        <div style="position: absolute; top: 177px; color: #8B97A8;">−1σ<br><span style="color:#6B7684">30.2M</span></div>
+        <div style="position: absolute; top: 225px; color: #D97706;">−2σ<br><span style="color:#6B7684">22.2M</span></div>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 10px; color: #6B7684; margin-top: 8px;" class="tnum">
+      <span>10 May</span><span>1 Jun</span><span>24 Jun</span><span>17 Jul</span><span>9 Aug</span><span>27 Aug</span>
+    </div>
+  </div>
+
+  <!-- small multiples: one facet per window, shared scale -->
+  <div style="font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: #99A4B2; margin: 22px 0 10px;">EACH WINDOW, SAME SCALE</div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 12px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-size: 12px; font-weight: 500;">15-day</span>
+        <span style="font-size: 12px; color: #99A4B2;" class="tnum">34.88M</span>
+      </div>
+      <svg width="100%" height="70" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; margin-top: 8px;">
+        <polyline fill="none" stroke="#2563EB" stroke-width="6" points="0,148 11,151 21,141 32,144 43,148 53,143 64,154 74,155 85,157 96,152 106,149 117,150 128,152 138,148 149,152 160,148 170,146 181,151 192,143 202,139 213,134 223,131 234,126 245,128 255,130 266,130 277,125 287,119 298,118 309,120 319,122 330,122 341,121 351,128 362,121 372,122 383,116 394,117 404,115 415,114 426,123 436,120 447,118 458,127 468,125 479,129 490,131 500,130 511,134 521,141 532,135 543,148 553,147 564,157 575,149 585,135 596,139 607,142 617,139 628,140 639,141 649,141 660,145 670,143 681,141 692,150 702,148 713,150 724,141 734,152 745,159 756,158 766,160 777,159 788,158 798,155 809,152 819,151 830,146 841,145 851,146 862,136 873,129 883,126 894,120 905,116 915,114 926,110 937,109 947,108 958,106 968,107 979,105 990,107 1000,108 1011,108 1022,113 1032,120 1043,120 1054,124 1064,129 1075,135 1086,140 1096,142 1107,143 1117,148 1128,149 1139,158 1149,156 1160,157"></polyline>
+      </svg>
+      <div style="font-size: 10px; color: #6B7684; margin-top: 6px;">most reactive · turns first</div>
+    </div>
+
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 12px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-size: 12px; font-weight: 500;">30-day</span>
+        <span style="font-size: 12px; color: #99A4B2;" class="tnum">38.95M</span>
+      </div>
+      <svg width="100%" height="70" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; margin-top: 8px;">
+        <polyline fill="none" stroke="#2563EB" stroke-width="6" points="0,133 11,135 21,131 32,133 43,134 53,135 64,141 74,140 85,143 96,146 106,146 117,150 128,149 138,147 149,148 160,148 170,148 181,146 192,144 202,143 213,139 223,142 234,141 245,143 255,141 266,139 277,137 287,135 298,133 309,136 319,135 330,134 341,136 351,136 362,130 372,128 383,124 394,121 404,122 415,122 426,126 436,123 447,119 458,122 468,123 479,126 490,127 500,125 511,131 521,131 532,129 543,132 553,132 564,136 575,132 585,129 596,130 607,130 617,133 628,133 639,135 649,136 660,138 670,139 681,141 692,143 702,148 713,149 724,149 734,150 745,147 756,148 766,151 777,149 788,149 798,148 809,147 819,148 830,145 841,143 851,148 862,142 873,140 883,133 894,136 905,137 915,136 926,135 937,134 947,133 958,130 968,130 979,128 990,127 1000,127 1011,127 1022,125 1032,125 1043,123 1054,122 1064,122 1075,124 1086,125 1096,125 1107,125 1117,127 1128,128 1139,132 1149,132 1160,133"></polyline>
+      </svg>
+      <div style="font-size: 10px; color: #6B7684; margin-top: 6px;">the working baseline</div>
+    </div>
+
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 12px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-size: 12px; font-weight: 500;">45-day</span>
+        <span style="font-size: 12px; color: #99A4B2;" class="tnum">38.23M</span>
+      </div>
+      <svg width="100%" height="70" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; margin-top: 8px;">
+        <polyline fill="none" stroke="#2563EB" stroke-width="6" points="0,138 11,141 21,138 32,139 43,140 53,140 64,141 74,143 85,142 96,141 106,141 117,143 128,141 138,141 149,139 160,138 170,138 181,138 192,136 202,136 213,135 223,138 234,135 245,138 255,141 266,141 277,141 287,139 298,137 309,139 319,139 330,140 341,138 351,139 362,136 372,133 383,134 394,133 404,133 415,132 426,134 436,132 447,130 458,131 468,133 479,133 490,133 500,134 511,135 521,134 532,131 543,132 553,130 564,134 575,131 585,129 596,128 607,127 617,128 628,129 639,131 649,132 660,132 670,135 681,134 692,136 702,137 713,138 724,138 734,138 745,139 756,139 766,140 777,141 788,141 798,142 809,142 819,142 830,141 841,142 851,144 862,144 873,142 883,141 894,140 905,137 915,137 926,138 937,136 947,136 958,134 968,134 979,134 990,132 1000,132 1011,135 1022,133 1032,133 1043,129 1054,132 1064,134 1075,135 1086,137 1096,136 1107,136 1117,136 1128,136 1139,138 1149,136 1160,137"></polyline>
+      </svg>
+      <div style="font-size: 10px; color: #6B7684; margin-top: 6px;">smooths a release cycle</div>
+    </div>
+
+    <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 12px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-size: 12px; font-weight: 500;">90-day · quarter</span>
+        <span style="font-size: 12px; color: #99A4B2;" class="tnum">38.43M</span>
+      </div>
+      <svg width="100%" height="70" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display: block; margin-top: 8px;">
+        <polyline fill="none" stroke="#2563EB" stroke-width="6" points="0,151 11,152 21,151 32,150 43,151 53,151 64,153 74,154 85,154 96,153 106,152 117,152 128,153 138,152 149,151 160,150 170,149 181,149 192,147 202,148 213,147 223,146 234,146 245,146 255,145 266,145 277,145 287,144 298,143 309,143 319,142 330,141 341,140 351,140 362,140 372,138 383,137 394,136 404,136 415,136 426,137 436,136 447,136 458,136 468,136 479,136 490,137 500,136 511,137 521,137 532,135 543,136 553,137 564,138 575,136 585,135 596,135 607,134 617,134 628,134 639,135 649,135 660,135 670,136 681,135 692,136 702,138 713,136 724,138 734,140 745,140 756,140 766,140 777,139 788,140 798,141 809,141 819,140 830,140 841,139 851,139 862,139 873,137 883,137 894,136 905,135 915,134 926,134 937,133 947,134 958,134 968,133 979,134 990,134 1000,133 1011,133 1022,132 1032,132 1043,131 1054,132 1064,132 1075,132 1086,132 1096,132 1107,133 1117,134 1128,134 1139,135 1149,136 1160,136"></polyline>
+      </svg>
+      <div style="font-size: 10px; color: #6B7684; margin-top: 6px;">the level to beat</div>
+    </div>
+  </div>
+
+  <div style="font-size: 12px; color: #99A4B2; margin-top: 16px; line-height: 1.55; max-width: 100ch;">
+    Limits are ±1σ and ±2σ around the 110-day mean of <span style="color: #F3F5F7;">38,306,722</span> (σ = 8,077,908). Six days fall outside ±2σ — two high, four low — which is <span style="color: #F3F5F7;">5.5% against the 4.6%</span> a normal process would produce, so this series is in control: no day is a genuine special cause. The 15-day mean sits 9.2% below the quarter but never leaves ±1σ. Windows are faceted rather than overlaid because four lines of one hue cannot be told apart reliably; on a shared scale the level differences read directly.
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"showControlLines":{"editor":"boolean","default":true,"section":"Chart"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { showControlLines: this.props.showControlLines ?? true };
+  }
+}
+</script>
+</body>
+</html>

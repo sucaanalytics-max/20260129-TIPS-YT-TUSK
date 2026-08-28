@@ -1,0 +1,139 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Directions"
+    },
+    {
+      "id": "page-2",
+      "name": "Charts"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 980,
+      "title": "A · Verdict first"
+    },
+    {
+      "file": "DirectionB.dc.html",
+      "page": "page-1",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 980,
+      "title": "B · Terminal"
+    },
+    {
+      "file": "DirectionC.dc.html",
+      "page": "page-1",
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 980,
+      "title": "C · Layered workspace"
+    },
+    {
+      "file": "Overview.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 1180,
+      "w": 1440,
+      "h": 900,
+      "title": "A applied · Overview"
+    },
+    {
+      "file": "ChartsViews.dc.html",
+      "page": "page-2",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 950,
+      "title": "Views · MA + σ"
+    },
+    {
+      "file": "ChartsSubscribers.dc.html",
+      "page": "page-2",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Subscribers · MA + σ"
+    },
+    {
+      "file": "ChartsCorrelation.dc.html",
+      "page": "page-2",
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Attention vs price"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "dir-a",
+      "page": "page-1",
+      "x": 0,
+      "y": -190,
+      "w": 440,
+      "text": "A · VERDICT FIRST\n\nThe read is the page. One conclusion per company at 40px, everything else demoted to evidence beneath it.\n\nFixes: the thing you actually want to know stops competing with ten equal-weight panels.\n\nCosts: a graded, caveated model rendered as a big confident word. Risks overclaiming — the opposite of this codebase's instincts."
+    },
+    {
+      "id": "dir-b",
+      "page": "page-1",
+      "x": 1520,
+      "y": -190,
+      "w": 440,
+      "text": "B · TERMINAL\n\nNo cards. Rules, columns, monospace, a command bar. Every signal for both names on one screen with no scrolling.\n\nFixes: density and cross-signal comparison — you read across the matrix in one pass.\n\nCosts: unwelcoming to anyone who isn't in it daily, and hostile to the caveats this model depends on."
+    },
+    {
+      "id": "dir-c",
+      "page": "page-1",
+      "x": 3040,
+      "y": -190,
+      "w": 440,
+      "text": "C · LAYERED WORKSPACE\n\nA rail of signal groups, one focused work area, a permanent trust inspector on the right.\n\nFixes: gives provenance a fixed home — grade, data days, repaired days, caveats always visible.\n\nCosts: you drill instead of scan, and it hides the cross-signal comparison B is best at."
+    },
+    {
+      "id": "applied-note",
+      "page": "page-1",
+      "x": 0,
+      "y": 2120,
+      "w": 620,
+      "text": "Direction A carried onto Overview — same hierarchy move: one plain-language sentence of state-of-play on top, the numbers demoted beneath it. Included so you can judge the system, not just one screen."
+    },
+    {
+      "id": "charts-method",
+      "page": "page-2",
+      "x": 0,
+      "y": -230,
+      "w": 520,
+      "text": "CONTROL CHARTS, REAL DATA\n\nEvery line is computed from fct_channel_daily and fct_adjusted_price_daily — SVG coordinates generated in SQL, not sketched. MA30 back-solves to 38,948,134 views/day, matching a figure verified independently earlier.\n\nLimits are ±1σ and ±2σ around the 110-day mean. The five lines sit at exactly even 47–48px spacing, which is itself the check that the scale is linear."
+    },
+    {
+      "id": "charts-facet",
+      "page": "page-2",
+      "x": 1520,
+      "y": -230,
+      "w": 520,
+      "text": "WHY THE WINDOWS ARE FACETED\n\nFour moving averages of one measure is a sequential relationship, so the instinct is one hue in four steps. The palette validator rejected every such ramp: adjacent steps land at ΔE 8–13, below the 15 floor where full-colour vision can still separate them.\n\nEach window gets its own panel on a shared scale instead. Level differences read directly, and it survives any colour vision."
+    },
+    {
+      "id": "charts-corr",
+      "page": "page-2",
+      "x": 3040,
+      "y": -230,
+      "w": 520,
+      "text": "THE NULL RESULT IS THE RESULT\n\nThree metrics × two companies × fifteen lags = 90 tests. Only 3 clear the nominal 5% line — chance alone predicts 4.5. None survive FDR correction.\n\nCorrelations use daily LOG RETURNS, not price levels: two trending series correlate with almost anything, and that artefact is the most common way this analysis is got wrong. Dual-axis was never an option for the same reason."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-2"
+  }
+}

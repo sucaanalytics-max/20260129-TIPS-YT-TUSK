@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; background: #0C0E13; color: #F3F5F7; }
+    a { color: #3D7AF5; text-decoration: none; } a:hover { color: #7BA5F8; }
+    .tnum { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #0C0E13; font-family: 'JetBrains Mono', ui-monospace, monospace;">
+
+  <!-- terminal command bar -->
+  <div style="display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-bottom: 1px solid #282C34; background: #12151C;">
+    <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em;">TUSK</div>
+    <div style="display: flex; align-items: center; gap: 8px; flex: 1; background: #0C0E13; border: 1px solid #282C34; border-radius: 4px; padding: 5px 10px;">
+      <span style="color: #34D399; font-size: 12px;">&gt;</span>
+      <span style="font-size: 12px; color: #99A4B2;">SIG TIPSMUSIC SAREGAMA 30D</span>
+      <span style="width: 7px; height: 14px; background: #34D399; opacity: 0.8;"></span>
+    </div>
+    <div style="display: flex; gap: 12px; font-size: 10px; color: #99A4B2;">
+      <span><span style="color: #F3F5F7;">F2</span> GROWTH</span>
+      <span><span style="color: #F3F5F7;">F3</span> MKT</span>
+      <span><span style="color: #F3F5F7;">F4</span> STOCK</span>
+      <span><span style="color: #F3F5F7;">F9</span> OPS</span>
+    </div>
+    <div style="font-size: 10px; color: #34D399;" class="tnum">LIVE 06:12Z</div>
+  </div>
+
+  <div style="padding: 16px;">
+
+    <!-- master signal matrix -->
+    <div style="border: 1px solid #282C34; margin-bottom: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: #12151C; border-bottom: 1px solid #282C34;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em;">SIGNAL MATRIX</span>
+        <span style="font-size: 10px; color: #99A4B2;" class="tnum">z-scores vs 60d baseline · * = sig @1.5σ</span>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        <thead>
+          <tr style="color: #99A4B2; font-size: 10px; letter-spacing: 0.06em;">
+            <th style="text-align: left; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">SYM</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">VIEW</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">FRESH</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">SUBS</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">RELSTR</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">LEAD</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">RANK</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">DIVG</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">READ</th>
+            <th style="text-align: right; padding: 7px 12px; font-weight: 500; border-bottom: 1px solid #282C34;">CONF</th>
+          </tr>
+        </thead>
+        <tbody class="tnum">
+          <tr>
+            <td style="padding: 9px 12px; border-bottom: 1px solid #1F2229; font-weight: 700;">TIPS</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399;">+1.4*</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">−0.2</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">+0.4</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #F87171;">−0.8</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">+3d</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399;">+2</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399;">ON</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #FCD34D; font-weight: 700;">MIXED</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #FCD34D;">C</td>
+          </tr>
+          <tr>
+            <td style="padding: 9px 12px; border-bottom: 1px solid #1F2229; font-weight: 700;">SARE</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399;">+0.9</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">+0.1</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399;">+1.7*</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399;">+3.1</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">—</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">0</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #99A4B2;">off</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #34D399; font-weight: 700;">POS</td>
+            <td style="padding: 9px 12px; text-align: right; border-bottom: 1px solid #1F2229; color: #7DD3FC;">B</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px;">
+
+      <div style="border: 1px solid #282C34;">
+        <div style="padding: 6px 12px; background: #12151C; border-bottom: 1px solid #282C34; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;">REACH · 30D</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;" class="tnum">
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">TIPS views</td><td style="padding: 6px 12px; text-align: right;">1,168,444,028</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">SARE views</td><td style="padding: 6px 12px; text-align: right;">1,261,495,774</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">TIPS subs</td><td style="padding: 6px 12px; text-align: right;">133,527,000</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">SARE subs</td><td style="padding: 6px 12px; text-align: right;">160,391,000</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">TIPS Δsub</td><td style="padding: 6px 12px; text-align: right; color: #34D399;">+390,000</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">SARE Δsub</td><td style="padding: 6px 12px; text-align: right; color: #34D399;">+878,000</td></tr>
+        </table>
+      </div>
+
+      <div style="border: 1px solid #282C34;">
+        <div style="padding: 6px 12px; background: #12151C; border-bottom: 1px solid #282C34; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;">REV MODEL · INR</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;" class="tnum">
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">TIPS owned</td><td style="padding: 6px 12px; text-align: right;">2.9 – 4.3cr</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">TIPS topic</td><td style="padding: 6px 12px; text-align: right;">0.9 – 1.4cr</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">TIPS ugc</td><td style="padding: 6px 12px; text-align: right;">0.1 – 0.1cr</td></tr>
+          <tr><td style="padding: 6px 12px; color: #F3F5F7; border-top: 1px solid #282C34;">TIPS total/wk</td><td style="padding: 6px 12px; text-align: right; border-top: 1px solid #282C34; font-weight: 700;">3.9 – 5.8cr</td></tr>
+          <tr><td style="padding: 6px 12px; color: #F3F5F7;">SARE total/wk</td><td style="padding: 6px 12px; text-align: right; font-weight: 700;">4.2 – 6.3cr</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">grade</td><td style="padding: 6px 12px; text-align: right; color: #FCD34D;">C</td></tr>
+        </table>
+      </div>
+
+      <div style="border: 1px solid #282C34;">
+        <div style="padding: 6px 12px; background: #12151C; border-bottom: 1px solid #282C34; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;">DATA INTEGRITY</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;" class="tnum">
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">frozen today</td><td style="padding: 6px 12px; text-align: right; color: #34D399;">0</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">repaired 90d</td><td style="padding: 6px 12px; text-align: right; color: #FCD34D;">114 ch-days</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">max span</td><td style="padding: 6px 12px; text-align: right;">3d</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">last ingest</td><td style="padding: 6px 12px; text-align: right;">01:01Z OK</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">stock asof</td><td style="padding: 6px 12px; text-align: right;">26-AUG</td></tr>
+          <tr><td style="padding: 6px 12px; color: #99A4B2;">ugc asof</td><td style="padding: 6px 12px; text-align: right;">23-AUG</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- sparkline strip -->
+    <div style="border: 1px solid #282C34;">
+      <div style="padding: 6px 12px; background: #12151C; border-bottom: 1px solid #282C34; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;">DAILY VIEWS · 30D · shaded = repaired</div>
+      <div style="padding: 14px 12px;">
+        <svg width="1380" height="90" viewBox="0 0 1380 90" style="display: block;">
+          <rect x="150" y="0" width="138" height="90" fill="rgba(252,211,77,0.07)"></rect>
+          <polyline fill="none" stroke="#3D7AF5" stroke-width="1.5"
+            points="0,44 46,20 92,16 138,32 184,28 230,28 276,28 322,38 368,36 414,48 460,26 506,42 552,34 598,40 644,38 690,52 736,42 782,40 828,30 874,40 920,50 966,56 1012,38 1058,46 1104,50 1150,42 1196,72 1242,32 1288,44 1334,42"></polyline>
+          <polyline fill="none" stroke="#34D399" stroke-width="1.5" stroke-dasharray="3 3"
+            points="0,48 46,26 92,14 138,36 184,32 230,32 276,32 322,42 368,40 414,52 460,22 506,46 552,38 598,44 644,42 690,56 736,46 782,44 828,34 874,44 920,54 966,60 1012,42 1058,50 1104,54 1150,46 1196,76 1242,36 1288,48 1334,46"></polyline>
+        </svg>
+        <div style="display: flex; gap: 18px; font-size: 10px; color: #99A4B2; margin-top: 8px;">
+          <span><span style="color: #3D7AF5;">——</span> TIPSMUSIC</span>
+          <span><span style="color: #34D399;">- -</span> SAREGAMA</span>
+          <span style="margin-left: auto;">2–4 AUG repaired · totals exact, split inferred</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

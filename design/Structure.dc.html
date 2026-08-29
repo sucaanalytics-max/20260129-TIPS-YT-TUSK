@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #FAFAF8; color: #1A1A18; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    a { color: #1A1A18; } a:hover { color: #666; }
+    .hand { font-family: 'Architects Daughter', cursive; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #FAFAF8; padding: 40px 44px 48px; box-sizing: border-box;">
+
+  <div style="border-bottom: 2px solid #1A1A18; padding-bottom: 14px; margin-bottom: 8px;">
+    <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.02em;">Product structure</div>
+  </div>
+  <div class="hand" style="font-size: 15px; color: #6B6B63; margin-bottom: 30px;">
+    one question on the front · everything else demoted to a driver of it
+  </div>
+
+  <!-- the spine -->
+  <div style="display: flex; gap: 20px; align-items: stretch;">
+
+    <!-- level 0 -->
+    <div style="flex: 0 0 330px;">
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 8px;">LEVEL 0 — THE ANSWER</div>
+      <div style="border: 2px solid #1A1A18; background: #FFF; padding: 18px; height: 244px; box-sizing: border-box;">
+        <div style="font-size: 15px; font-weight: 600;">Revenue nowcast</div>
+        <div class="hand" style="font-size: 14px; color: #6B6B63; margin-top: 6px; line-height: 1.5;">
+          What will the music line print this quarter — and how wrong have we been before?
+        </div>
+        <div style="border-top: 1px dashed #C9C9C0; margin: 14px 0; "></div>
+        <div style="font-size: 12px; line-height: 1.9; color: #3A3A35;">
+          · estimate + band<br>
+          · quarter elapsed<br>
+          · movement since last week<br>
+          · <strong>track record</strong> — scored vs actuals
+        </div>
+      </div>
+      <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 8px;">
+        if it can't be scored, it doesn't belong here
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; padding-top: 60px;">
+      <div class="mono" style="font-size: 22px; color: #B5B5AA;">→</div>
+    </div>
+
+    <!-- level 1 -->
+    <div style="flex: 0 0 380px;">
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 8px;">LEVEL 1 — WHY IT MOVED</div>
+      <div style="border: 1.5px solid #1A1A18; background: #FFF; padding: 18px; height: 244px; box-sizing: border-box;">
+        <div style="font-size: 15px; font-weight: 600;">Driver tree</div>
+        <div class="hand" style="font-size: 14px; color: #6B6B63; margin-top: 6px;">reach → monetisation → revenue</div>
+        <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 7px;">
+          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between;">
+            <span>Owned reach</span><span class="mono" style="color: #6B6B63;">measured</span>
+          </div>
+          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between;">
+            <span>Topic / OAC attributed</span><span class="mono" style="color: #6B6B63;">measured</span>
+          </div>
+          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between;">
+            <span>UGC reach</span><span class="mono" style="color: #6B6B63;">sampled</span>
+          </div>
+          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between; background: #F2F2ED;">
+            <span>CPM / rate assumptions</span><span class="mono" style="color: #A06000;">yours to set</span>
+          </div>
+        </div>
+      </div>
+      <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 8px;">
+        assumptions become inputs you own, not buried constants
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; padding-top: 60px;">
+      <div class="mono" style="font-size: 22px; color: #B5B5AA;">→</div>
+    </div>
+
+    <!-- level 2 -->
+    <div style="flex: 1;">
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 8px;">LEVEL 2 — THE RAW SERIES</div>
+      <div style="border: 1px solid #9A9A90; background: #FFF; padding: 18px; height: 244px; box-sizing: border-box;">
+        <div style="font-size: 15px; font-weight: 600;">Evidence</div>
+        <div class="hand" style="font-size: 14px; color: #6B6B63; margin-top: 6px;">where a driver's number came from</div>
+        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; font-size: 12px;">
+          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Control charts</div>
+          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Explore / slicers</div>
+          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Period comparison</div>
+          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Data quality</div>
+          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Channels</div>
+          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Sector demand</div>
+        </div>
+        <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 12px;">
+          today's whole dashboard lives here — as evidence, not as the destination
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- what got cut -->
+  <div style="margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px;">
+    <div>
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 10px;">DEMOTED OR REMOVED</div>
+      <div style="border-top: 1px solid #1A1A18;">
+        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
+          <span>Lead–lag correlation</span>
+          <span class="mono" style="color: #A06000; font-size: 11px;">→ a footnote, not a page</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
+          <span>Implied audio-DSP royalty</span>
+          <span class="mono" style="color: #A06000; font-size: 11px;">→ cut until inputs are fixed</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
+          <span>Event horizon</span>
+          <span class="mono" style="color: #A06000; font-size: 11px;">→ cut, no forward data exists</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
+          <span>The IR "READ" verdict</span>
+          <span class="mono" style="color: #A06000; font-size: 11px;">→ replaced by a scored number</span>
+        </div>
+      </div>
+      <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 10px;">
+        four panels removed. each was showing something we can't stand behind.
+      </div>
+    </div>
+
+    <div>
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 10px;">THE RULE THAT DECIDES PLACEMENT</div>
+      <div style="border: 2px solid #1A1A18; background: #FFF; padding: 18px;">
+        <div style="font-size: 14px; line-height: 1.65;">
+          A figure sits at <strong>Level 0</strong> only if it can be scored against something that
+          actually gets reported.<br><br>
+          At <strong>Level 1</strong> if it feeds a Level 0 number and its assumptions are visible.<br><br>
+          At <strong>Level 2</strong> if it is measured but doesn't yet feed anything.<br><br>
+          <span style="color: #A06000;">Nowhere, if it can't be checked at all.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

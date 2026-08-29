@@ -7,161 +7,171 @@
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
   <style>
-    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #0C0E13; color: #F3F5F7; }
-    a { color: #3D7AF5; text-decoration: none; } a:hover { color: #7BA5F8; }
+    body { margin: 0; background: #FBF9F4; color: #16150F; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    a { color: #8C2F27; text-decoration: none; } a:hover { color: #B03A30; }
+    .serif { font-family: 'Source Serif 4', Georgia, serif; }
     .tnum { font-variant-numeric: tabular-nums; }
   </style>
 </helmet>
 
-<div style="width: 1440px; background: #0C0E13; font-family: Inter, system-ui, sans-serif;">
+<div style="width: 1440px; background: #FBF9F4; padding: 0 0 48px; box-sizing: border-box;">
 
-  <!-- nav -->
-  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid #282C34; background: rgba(18,21,28,0.4);">
-    <div style="display: flex; align-items: center; gap: 24px;">
-      <div style="font-size: 14px; font-weight: 600; letter-spacing: -0.01em;">TUSK <span style="color: #99A4B2; font-weight: 400;">YT × NSE</span></div>
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; color: #99A4B2;">Overview</div>
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; border-radius: 6px; background: rgba(59,130,246,0.15); color: #BFDBFE;">Signals</div>
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; color: #99A4B2;">Market</div>
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; color: #99A4B2;">Growth</div>
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; color: #99A4B2;">Channels</div>
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; color: #99A4B2;">Stock</div>
-        <div style="padding: 6px 12px; font-size: 12px; font-weight: 500; color: #99A4B2;">Ops</div>
-      </div>
+  <!-- masthead -->
+  <div style="border-bottom: 3px double #16150F; padding: 20px 48px 14px; display: flex; align-items: baseline; justify-content: space-between;">
+    <div class="serif" style="font-size: 25px; font-weight: 700; letter-spacing: -0.01em;">Tusk <span style="font-weight: 400; font-style: italic; color: #6E6A5C;">catalogue fundamentals</span></div>
+    <div style="display: flex; gap: 26px; font-size: 12.5px; color: #6E6A5C;">
+      <span style="color: #16150F; border-bottom: 2px solid #8C2F27; padding-bottom: 3px;">Nowcast</span>
+      <span>Drivers</span><span>Evidence</span><span>Ops</span>
     </div>
-    <div style="width: 28px; height: 28px; border-radius: 999px; background: #1F2229; border: 1px solid #282C34;"></div>
   </div>
 
-  <div style="padding: 32px 24px 40px;">
+  <div style="padding: 0 48px;">
 
-    <!-- header -->
-    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px;">
+    <!-- dateline -->
+    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 26px; font-size: 12px; color: #6E6A5C;" class="tnum">
+      <span>QUARTER 2 · FY27 &nbsp;·&nbsp; 1 JUL – 30 SEP 2026</span>
+      <span>65% elapsed &nbsp;·&nbsp; 32 days to the print</span>
+    </div>
+
+    <!-- the two estimates -->
+    <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 36px; align-items: start;">
+
       <div>
-        <div style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em;">Signals</div>
-        <div style="font-size: 13px; color: #99A4B2; margin-top: 4px;">The read, and the evidence under it</div>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #99A4B2;" class="tnum">
-        <span style="width: 6px; height: 6px; border-radius: 999px; background: #34D399;"></span>
-        views through 27 Aug · price 26 Aug
-      </div>
-    </div>
+        <div class="serif" style="font-size: 15px; font-weight: 600; letter-spacing: 0.02em;">TIPS MUSIC</div>
+        <div style="font-size: 11.5px; color: #6E6A5C; margin-top: 2px;">total revenue from operations · single segment</div>
+        <div class="serif tnum" style="font-size: 60px; font-weight: 600; line-height: 1.05; margin-top: 16px; letter-spacing: -0.025em;">
+          ₹112–128<span style="font-size: 26px; font-weight: 400; color: #6E6A5C;">cr</span>
+        </div>
+        <div style="display: inline-block; font-size: 10.5px; letter-spacing: 0.06em; color: #8C2F27; border: 1px solid #8C2F27; padding: 3px 7px; margin-top: 10px;">ILLUSTRATIVE — MODEL NOT YET BUILT</div>
 
-    <!-- THE VERDICT: dominant -->
-    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 32px;">
+        <div style="height: 5px; background: #E7E2D6; margin-top: 20px; position: relative;">
+          <div style="position: absolute; left: 0; top: 0; height: 5px; width: 65%; background: #16150F;"></div>
+        </div>
 
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 24px; border-left: 3px solid #FCD34D;">
-        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em;">TIPSMUSIC</div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #FCD34D; background: rgba(252,211,77,0.12); padding: 3px 8px; border-radius: 4px;">C · preliminary</div>
-        </div>
-        <div style="font-size: 40px; font-weight: 600; letter-spacing: -0.02em; color: #FCD34D; line-height: 1;">MIXED</div>
-        <div style="font-size: 15px; line-height: 1.5; color: #F3F5F7; margin-top: 14px; max-width: 46ch;">
-          Views ran <span style="color: #34D399;">+1.4σ</span> against a flat tape — divergence is active. Catalog freshness is unremarkable for the label, and peer rank held.
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;">
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(52,211,153,0.12); color: #6EE7B7;" class="tnum">views +1.4σ</div>
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: #1F2229; color: #99A4B2;" class="tnum">freshness −0.2σ</div>
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(52,211,153,0.12); color: #6EE7B7;" class="tnum">divergence ON</div>
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: #1F2229; color: #99A4B2;" class="tnum">rank +2</div>
-        </div>
-      </div>
-
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 24px; border-left: 3px solid #34D399;">
-        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.04em;">SAREGAMA</div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #7DD3FC; background: rgba(125,211,252,0.12); padding: 3px 8px; border-radius: 4px;">B · stable</div>
-        </div>
-        <div style="font-size: 40px; font-weight: 600; letter-spacing: -0.02em; color: #34D399; line-height: 1;">POSITIVE</div>
-        <div style="font-size: 15px; line-height: 1.5; color: #F3F5F7; margin-top: 14px; max-width: 46ch;">
-          Subscriber drift and view momentum both positive on a widening base; relative strength beat the midcap index over 30 sessions.
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;">
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(52,211,153,0.12); color: #6EE7B7;" class="tnum">views +0.9σ</div>
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(52,211,153,0.12); color: #6EE7B7;" class="tnum">subs +878k</div>
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: rgba(52,211,153,0.12); color: #6EE7B7;" class="tnum">rel. strength +3.1%</div>
-          <div style="font-size: 11px; padding: 4px 8px; border-radius: 4px; background: #1F2229; color: #99A4B2;" class="tnum">lead/lag n/a</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- EVIDENCE: demoted -->
-    <div style="font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: #99A4B2; margin-bottom: 12px;">EVIDENCE</div>
-    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 28px;">
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">30-DAY VIEWS</div>
-        <div style="font-size: 22px; font-weight: 600; margin-top: 6px;" class="tnum">1.17bn</div>
-        <div style="font-size: 11px; color: #99A4B2; margin-top: 2px;" class="tnum">Tips · 38.9M/day</div>
-      </div>
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">30-DAY VIEWS</div>
-        <div style="font-size: 22px; font-weight: 600; margin-top: 6px;" class="tnum">1.26bn</div>
-        <div style="font-size: 11px; color: #99A4B2; margin-top: 2px;" class="tnum">Saregama · 42.0M/day</div>
-      </div>
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">SUBSCRIBERS</div>
-        <div style="font-size: 22px; font-weight: 600; margin-top: 6px;" class="tnum">133.5M</div>
-        <div style="font-size: 11px; color: #6EE7B7; margin-top: 2px;" class="tnum">+390k · +0.29%</div>
-      </div>
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 10px; letter-spacing: 0.06em; color: #99A4B2;">SUBSCRIBERS</div>
-        <div style="font-size: 22px; font-weight: 600; margin-top: 6px;" class="tnum">160.4M</div>
-        <div style="font-size: 11px; color: #6EE7B7; margin-top: 2px;" class="tnum">+878k · +0.55%</div>
-      </div>
-    </div>
-
-    <!-- revenue + broker, condensed side by side -->
-    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-bottom: 28px;">
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 18px;">
-        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
-          <div style="font-size: 13px; font-weight: 500;">Modelled YouTube revenue</div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #FCD34D; background: rgba(252,211,77,0.12); padding: 3px 6px; border-radius: 4px;">C</div>
-        </div>
-        <div style="display: flex; gap: 28px;">
+        <div style="display: flex; gap: 34px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #D6D1C4;">
           <div>
-            <div style="font-size: 11px; color: #99A4B2;">TIPSMUSIC</div>
-            <div style="font-size: 18px; font-weight: 600; margin-top: 3px;" class="tnum">₹3.9 – 5.8cr<span style="font-size: 11px; color: #99A4B2; font-weight: 400;">/wk</span></div>
+            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">LAST PRINTED · Q1 FY27</div>
+            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹106.51cr</div>
           </div>
           <div>
-            <div style="font-size: 11px; color: #99A4B2;">SAREGAMA</div>
-            <div style="font-size: 18px; font-weight: 600; margin-top: 3px;" class="tnum">₹4.2 – 6.3cr<span style="font-size: 11px; color: #99A4B2; font-weight: 400;">/wk</span></div>
+            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">YEAR ON YEAR</div>
+            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px; color: #2E6B3E;">+20.9%</div>
           </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
-          <div style="display: flex; height: 5px; flex: 1; border-radius: 999px; overflow: hidden; background: #1F2229;">
-            <div style="width: 74%; background: rgba(125,211,252,0.7);"></div>
-            <div style="width: 24%; background: rgba(52,211,153,0.6);"></div>
-            <div style="width: 2%; background: rgba(252,211,77,0.7);"></div>
+          <div>
+            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">FY26 FULL YEAR</div>
+            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹375.5cr</div>
           </div>
-          <div style="font-size: 10px; color: #99A4B2;">owned · topic · ugc</div>
         </div>
       </div>
 
-      <div style="border: 1px solid #282C34; background: #12151C; border-radius: 8px; padding: 18px;">
-        <div style="font-size: 13px; font-weight: 500; margin-bottom: 14px;">Broker consensus</div>
-        <div style="display: flex; gap: 28px;">
+      <div style="background: #D6D1C4; width: 1px; height: 300px;"></div>
+
+      <div>
+        <div class="serif" style="font-size: 15px; font-weight: 600; letter-spacing: 0.02em;">SAREGAMA · MUSIC SEGMENT</div>
+        <div style="font-size: 11.5px; color: #6E6A5C; margin-top: 2px;">music only — excludes artist mgmt, video, events</div>
+        <div class="serif tnum" style="font-size: 60px; font-weight: 600; line-height: 1.05; margin-top: 16px; letter-spacing: -0.025em;">
+          ₹196–224<span style="font-size: 26px; font-weight: 400; color: #6E6A5C;">cr</span>
+        </div>
+        <div style="display: inline-block; font-size: 10.5px; letter-spacing: 0.06em; color: #8C2F27; border: 1px solid #8C2F27; padding: 3px 7px; margin-top: 10px;">ILLUSTRATIVE — MODEL NOT YET BUILT</div>
+
+        <div style="height: 5px; background: #E7E2D6; margin-top: 20px; position: relative;">
+          <div style="position: absolute; left: 0; top: 0; height: 5px; width: 65%; background: #16150F;"></div>
+        </div>
+
+        <div style="display: flex; gap: 34px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #D6D1C4;">
           <div>
-            <div style="font-size: 11px; color: #99A4B2;">Median target</div>
-            <div style="font-size: 18px; font-weight: 600; margin-top: 3px;" class="tnum">₹935</div>
-            <div style="font-size: 11px; color: #6EE7B7; margin-top: 2px;" class="tnum">+12.4% vs spot</div>
+            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">LAST PRINTED · Q1 FY27</div>
+            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹184.6cr</div>
           </div>
           <div>
-            <div style="font-size: 11px; color: #99A4B2;">Coverage</div>
-            <div style="font-size: 18px; font-weight: 600; margin-top: 3px;" class="tnum">8 brokers</div>
-            <div style="font-size: 11px; color: #99A4B2; margin-top: 2px;" class="tnum">17 estimates</div>
+            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">YEAR ON YEAR</div>
+            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px; color: #2E6B3E;">+28.8%</div>
+          </div>
+          <div>
+            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">FY26 SEGMENT</div>
+            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹683.5cr</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- trust footer -->
-    <div style="display: flex; align-items: center; gap: 16px; padding: 12px 16px; border: 1px solid #282C34; border-radius: 8px; background: rgba(18,21,28,0.5);">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#99A4B2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.4-3 8.3-7 9-4-.7-7-4.6-7-9V7l7-4z"></path></svg>
-      <div style="font-size: 12px; color: #99A4B2;">
-        <span style="color: #F3F5F7;">3 days repaired</span> in this window — YouTube served a stale cumulative count 2–4 Aug; totals exact, daily split inferred.
+    <!-- track record -->
+    <div style="margin-top: 40px; border-top: 3px double #16150F; padding-top: 22px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <div class="serif" style="font-size: 21px; font-weight: 600;">Track record</div>
+        <div style="font-size: 12px; color: #6E6A5C; font-style: italic;" class="serif">the only reason to believe the figures above</div>
       </div>
-      <div style="margin-left: auto; font-size: 11px; color: #3D7AF5;">Data quality →</div>
+
+      <div style="margin-top: 18px; border: 1px solid #C9A227; background: #FDF8E8; padding: 18px 20px;">
+        <div class="serif" style="font-size: 17px; font-weight: 600;">No estimate has been scored yet.</div>
+        <div style="font-size: 13.5px; color: #4A463A; line-height: 1.6; margin-top: 7px; max-width: 96ch;">
+          The nowcast has never been checked against a printed result, so it carries no accuracy record and
+          should not be relied on. From the first scored quarter this panel shows every past estimate, its
+          error, and whether the actual landed inside the band. Until then the honest reading is that
+          this is a hypothesis with a number attached.
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin-top: 22px; border-top: 1px solid #D6D1C4;">
+        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">QUARTER</div>
+        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">TIPS ACTUAL</div>
+        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">SAREGAMA MUSIC</div>
+        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">ESTIMATE</div>
+        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">ERROR</div>
+
+        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px;">Q1 FY27</div>
+        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹106.51cr</div>
+        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹184.6cr</div>
+        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">not run</div>
+        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">—</div>
+
+        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px;">Q4 FY26</div>
+        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹103.93cr</div>
+        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹200.4cr</div>
+        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">not run</div>
+        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">—</div>
+      </div>
+    </div>
+
+    <!-- drivers -->
+    <div style="margin-top: 38px;">
+      <div class="serif" style="font-size: 21px; font-weight: 600; margin-bottom: 4px;">What moved it this week</div>
+      <div style="font-size: 12.5px; color: #6E6A5C; margin-bottom: 18px;">measured inputs · <a href="#">open the driver tree →</a></div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;">
+        <div style="border-top: 2px solid #16150F; padding-top: 12px;">
+          <div style="font-size: 11px; letter-spacing: 0.05em; color: #6E6A5C;">OWNED REACH · 30D</div>
+          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">1.17bn</div>
+          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">38.9M/day · Tips</div>
+          <svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none" style="display:block;margin-top:10px;">
+            <polyline fill="none" stroke="#8C2F27" stroke-width="1.5" points="0,18 14,14 28,20 42,12 56,16 70,10 84,15 98,8 112,17 126,11 140,14 154,9 168,13 182,7 196,11"></polyline>
+          </svg>
+        </div>
+        <div style="border-top: 2px solid #16150F; padding-top: 12px;">
+          <div style="font-size: 11px; letter-spacing: 0.05em; color: #6E6A5C;">OWNED REACH · 30D</div>
+          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">1.26bn</div>
+          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">42.0M/day · Saregama</div>
+          <svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none" style="display:block;margin-top:10px;">
+            <polyline fill="none" stroke="#8C2F27" stroke-width="1.5" points="0,20 14,16 28,18 42,14 56,15 70,12 84,16 98,10 112,15 126,9 140,13 154,8 168,12 182,6 196,10"></polyline>
+          </svg>
+        </div>
+        <div style="border-top: 2px solid #16150F; padding-top: 12px;">
+          <div style="font-size: 11px; letter-spacing: 0.05em; color: #6E6A5C;">RELEASES · 30D</div>
+          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">618 / 1,468</div>
+          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">Tips / Saregama</div>
+          <svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none" style="display:block;margin-top:10px;">
+            <polyline fill="none" stroke="#6E6A5C" stroke-width="1.5" points="0,14 14,18 28,12 42,20 56,13 70,17 84,11 98,19 112,14 126,16 140,10 154,18 168,13 182,15 196,12"></polyline>
+          </svg>
+        </div>
+        <div style="border-top: 2px solid #C9A227; padding-top: 12px;">
+          <div style="font-size: 11px; letter-spacing: 0.05em; color: #9A7B10;">RATE ASSUMPTION</div>
+          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">₹94–142</div>
+          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">per 1k views · <span style="color:#9A7B10;">yours to set</span></div>
+          <div style="font-size: 11.5px; color: #6E6A5C; margin-top: 12px; line-height: 1.5;">the widest lever in the model</div>
+        </div>
+      </div>
     </div>
 
   </div>

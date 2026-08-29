@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #FAFAF8; color: #1A1A18; font-family: 'Architects Daughter', cursive; }
+    a { color: #1A1A18; } a:hover { color: #666; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+    .box { border: 1.5px solid #55554E; background: #FFF; }
+    .ghost { border: 1.5px dashed #B5B5AA; background: #F4F4EF; }
+    .lbl { font-size: 13px; color: #55554E; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #FAFAF8; padding: 32px 40px 40px; box-sizing: border-box;">
+
+  <div class="mono" style="font-size: 10px; letter-spacing: 0.12em; color: #8A8A80; margin-bottom: 6px;">WIREFRAME — LEVEL 0 · HOME</div>
+  <div style="font-size: 22px; margin-bottom: 22px;">The nowcast, and whether to believe it</div>
+
+  <!-- top bar -->
+  <div class="ghost" style="height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; margin-bottom: 18px;">
+    <span class="lbl">◻ logo &nbsp; · &nbsp; Nowcast &nbsp; Drivers &nbsp; Evidence &nbsp; Ops</span>
+    <span class="lbl">quarter selector ▾ &nbsp; ◯</span>
+  </div>
+
+  <!-- the hero: two companies side by side -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px;">
+    <div class="box" style="padding: 18px; height: 260px; position: relative;">
+      <div class="lbl mono" style="font-size: 10px; letter-spacing: 0.1em;">COMPANY A</div>
+      <div style="height: 26px;"></div>
+      <div class="ghost" style="height: 62px; display: flex; align-items: center; padding: 0 14px; font-size: 17px;">
+        BIG NUMBER — estimate + band
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <div class="ghost" style="flex: 1; height: 34px; display: flex; align-items: center; padding: 0 10px;" class="lbl">quarter elapsed bar</div>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <div class="ghost" style="flex: 1; height: 52px; display: flex; align-items: center; padding: 0 10px; font-size: 13px;">Δ since last week</div>
+        <div class="ghost" style="flex: 1; height: 52px; display: flex; align-items: center; padding: 0 10px; font-size: 13px;">vs same qtr last year</div>
+      </div>
+      <div style="position: absolute; right: 16px; top: 16px; font-size: 12px; color: #A06000;">↖ illustrative until scored</div>
+    </div>
+
+    <div class="box" style="padding: 18px; height: 260px;">
+      <div class="lbl mono" style="font-size: 10px; letter-spacing: 0.1em;">COMPANY B</div>
+      <div style="height: 26px;"></div>
+      <div class="ghost" style="height: 62px; display: flex; align-items: center; padding: 0 14px; font-size: 17px;">BIG NUMBER — estimate + band</div>
+      <div class="ghost" style="height: 34px; margin-top: 10px; display: flex; align-items: center; padding: 0 10px;" class="lbl">quarter elapsed bar</div>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <div class="ghost" style="flex: 1; height: 52px; display: flex; align-items: center; padding: 0 10px; font-size: 13px;">Δ since last week</div>
+        <div class="ghost" style="flex: 1; height: 52px; display: flex; align-items: center; padding: 0 10px; font-size: 13px;">vs same qtr last year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- track record: the trust engine -->
+  <div class="box" style="padding: 18px; margin-bottom: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
+      <span style="font-size: 17px;">Track record — every past estimate vs what actually printed</span>
+      <span class="lbl">the reason to trust the number above</span>
+    </div>
+    <div class="ghost" style="height: 130px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #55554E;">
+      scored history · one row or dot per quarter · error % · did the actual land inside the band?
+    </div>
+    <div class="lbl" style="margin-top: 10px;">
+      ⚠ on day one this reads “0 quarters scored” — and it should say so loudly rather than imply accuracy
+    </div>
+  </div>
+
+  <!-- drivers strip -->
+  <div>
+    <div style="font-size: 17px; margin-bottom: 10px;">What moved it &nbsp;<span class="lbl">— click through to the driver tree</span></div>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+      <div class="ghost" style="height: 92px; padding: 12px; font-size: 13px;">Owned reach<br><span class="lbl">sparkline + Δ</span></div>
+      <div class="ghost" style="height: 92px; padding: 12px; font-size: 13px;">Attributed reach<br><span class="lbl">sparkline + Δ</span></div>
+      <div class="ghost" style="height: 92px; padding: 12px; font-size: 13px;">Release cadence<br><span class="lbl">sparkline + Δ</span></div>
+      <div class="ghost" style="height: 92px; padding: 12px; font-size: 13px;">Rate assumption<br><span class="lbl">yours — editable</span></div>
+    </div>
+  </div>
+
+  <div class="lbl" style="margin-top: 22px; border-top: 1px solid #D8D8CF; padding-top: 12px;">
+    Deliberately absent: no verdict word, no bias score, no correlation panel, no revenue band we can't defend.
+    The page makes exactly one claim, and shows its scorecard beside it.
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

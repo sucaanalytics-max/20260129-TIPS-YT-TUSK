@@ -6,6 +6,7 @@ node_modules/
 .DS_Store
 **/.DS_Store
 
-# Seeded design-canvas output (~2.6MB vendored editor payload).
+# Seeded design-canvas output (~2.6MB vendored editor payload each).
 # Regenerate from the .dc.html sources + canvas.json with the design skill helper.
-design/tusk-dashboard-rebuild.html
+design/*.html
+!design/*.dc.html

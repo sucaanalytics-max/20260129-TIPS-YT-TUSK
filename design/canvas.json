@@ -2,138 +2,176 @@
   "pages": [
     {
       "id": "page-1",
-      "name": "Directions"
+      "name": "Structure"
     },
     {
       "id": "page-2",
-      "name": "Charts"
+      "name": "Themes"
+    },
+    {
+      "id": "page-3",
+      "name": "Evidence · Level 2"
     }
   ],
   "artboards": [
     {
+      "file": "Structure.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Product structure"
+    },
+    {
+      "file": "WireHome.dc.html",
+      "page": "page-1",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 940,
+      "title": "Wireframe · Level 0"
+    },
+    {
+      "file": "WireDrivers.dc.html",
+      "page": "page-1",
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 800,
+      "title": "Wireframe · Level 1"
+    },
+    {
       "file": "Main.dc.html",
-      "page": "page-1",
-      "x": 0,
-      "y": 0,
-      "w": 1440,
-      "h": 980,
-      "title": "A · Verdict first"
-    },
-    {
-      "file": "DirectionB.dc.html",
-      "page": "page-1",
-      "x": 1520,
-      "y": 0,
-      "w": 1440,
-      "h": 980,
-      "title": "B · Terminal"
-    },
-    {
-      "file": "DirectionC.dc.html",
-      "page": "page-1",
-      "x": 3040,
-      "y": 0,
-      "w": 1440,
-      "h": 980,
-      "title": "C · Layered workspace"
-    },
-    {
-      "file": "Overview.dc.html",
-      "page": "page-1",
-      "x": 0,
-      "y": 1180,
-      "w": 1440,
-      "h": 900,
-      "title": "A applied · Overview"
-    },
-    {
-      "file": "ChartsViews.dc.html",
       "page": "page-2",
       "x": 0,
       "y": 0,
       "w": 1440,
-      "h": 950,
-      "title": "Views · MA + σ"
+      "h": 1200,
+      "title": "A · Broadsheet"
     },
     {
-      "file": "ChartsSubscribers.dc.html",
+      "file": "ThemeB.dc.html",
       "page": "page-2",
       "x": 1520,
       "y": 0,
       "w": 1440,
       "h": 900,
-      "title": "Subscribers · MA + σ"
+      "title": "B · Instrument"
     },
     {
-      "file": "ChartsCorrelation.dc.html",
+      "file": "ThemeC.dc.html",
       "page": "page-2",
       "x": 3040,
       "y": 0,
       "w": 1440,
+      "h": 1100,
+      "title": "C · Blueprint"
+    },
+    {
+      "file": "EvidenceCharts.dc.html",
+      "page": "page-3",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
       "h": 900,
-      "title": "Attention vs price"
+      "title": "Control charts"
+    },
+    {
+      "file": "EvidenceTable.dc.html",
+      "page": "page-3",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 780,
+      "title": "Explore · slicers"
+    },
+    {
+      "file": "EvidencePeriods.dc.html",
+      "page": "page-3",
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 860,
+      "title": "Periods + correlation"
     }
   ],
   "annotations": [
     {
-      "id": "dir-a",
+      "id": "note-structure",
       "page": "page-1",
       "x": 0,
-      "y": -190,
-      "w": 440,
-      "text": "A · VERDICT FIRST\n\nThe read is the page. One conclusion per company at 40px, everything else demoted to evidence beneath it.\n\nFixes: the thing you actually want to know stops competing with ten equal-weight panels.\n\nCosts: a graded, caveated model rendered as a big confident word. Risks overclaiming — the opposite of this codebase's instincts."
+      "y": -240,
+      "w": 520,
+      "text": "THE RETHINK\n\nThe old dashboard showed measured facts, a 10x-wrong model and an unsupported thesis at equal visual weight. That was the real failure — not the layout.\n\nNew rule: a figure reaches the front page only if it can be scored against something that actually gets reported. Everything else is demoted to a driver, or to evidence, or cut.\n\nFour panels are cut outright."
     },
     {
-      "id": "dir-b",
+      "id": "note-wire",
       "page": "page-1",
       "x": 1520,
-      "y": -190,
-      "w": 440,
-      "text": "B · TERMINAL\n\nNo cards. Rules, columns, monospace, a command bar. Every signal for both names on one screen with no scrolling.\n\nFixes: density and cross-signal comparison — you read across the matrix in one pass.\n\nCosts: unwelcoming to anyone who isn't in it daily, and hostile to the caveats this model depends on."
+      "y": -240,
+      "w": 520,
+      "text": "WIREFRAMES, DELIBERATELY UGLY\n\nGreyscale and hand-lettered so you judge structure without style getting a vote.\n\nThe load-bearing move is the track record sitting directly under the estimate. On day one it reads \"0 quarters scored\" — and saying that loudly is the whole design thesis. A number with no record should look like one."
     },
     {
-      "id": "dir-c",
+      "id": "note-drivers",
       "page": "page-1",
       "x": 3040,
-      "y": -190,
-      "w": 440,
-      "text": "C · LAYERED WORKSPACE\n\nA rail of signal groups, one focused work area, a permanent trust inspector on the right.\n\nFixes: gives provenance a fixed home — grade, data days, repaired days, caveats always visible.\n\nCosts: you drill instead of scan, and it hides the cross-signal comparison B is best at."
+      "y": -240,
+      "w": 520,
+      "text": "ASSUMPTIONS BECOME INPUTS\n\nThe catalogue-share constant that made the old royalty model 10x too big was buried in a file. Here every assumption is a control with your name on it, and the sensitivity panel says which one actually matters.\n\nOne assumption carries ~13% of the answer. That is the number to argue about."
     },
     {
-      "id": "applied-note",
-      "page": "page-1",
-      "x": 0,
-      "y": 2120,
-      "w": 620,
-      "text": "Direction A carried onto Overview — same hierarchy move: one plain-language sentence of state-of-play on top, the numbers demoted beneath it. Included so you can judge the system, not just one screen."
-    },
-    {
-      "id": "charts-method",
+      "id": "note-themes",
       "page": "page-2",
       "x": 0,
-      "y": -230,
+      "y": -240,
       "w": 520,
-      "text": "CONTROL CHARTS, REAL DATA\n\nEvery line is computed from fct_channel_daily and fct_adjusted_price_daily — SVG coordinates generated in SQL, not sketched. MA30 back-solves to 38,948,134 views/day, matching a figure verified independently earlier.\n\nLimits are ±1σ and ±2σ around the 110-day mean. The five lines sit at exactly even 47–48px spacing, which is itself the check that the scale is linear."
+      "text": "THREE VISUAL LANGUAGES, ONE SCREEN\n\nSame data, same structure, so the comparison is fair. All three drop the dark-slate / Inter / rounded-card system entirely.\n\nA · BROADSHEET — warm paper, serif numerals, rules instead of cards. Reads like a research note you would publish. Most legible; least \"dashboard\".\n\nMain holds A as the leading candidate."
     },
     {
-      "id": "charts-facet",
+      "id": "note-themeb",
       "page": "page-2",
       "x": 1520,
-      "y": -230,
+      "y": -240,
       "w": 520,
-      "text": "WHY THE WINDOWS ARE FACETED\n\nFour moving averages of one measure is a sequential relationship, so the instinct is one hue in four steps. The palette validator rejected every such ramp: adjacent steps land at ΔE 8–13, below the 15 floor where full-colour vision can still separate them.\n\nEach window gets its own panel on a shared scale instead. Level differences read directly, and it survives any colour vision."
+      "text": "B · INSTRUMENT\n\nNear-black, monospace throughout, hairline rules, amber for anything you own. Every figure on one screen, no scrolling.\n\nFor: density, and reading across both names at once.\nAgainst: unwelcoming unless you are in it daily, and it flattens the difference between a measured number and an assumption."
     },
     {
-      "id": "charts-corr",
+      "id": "note-themec",
       "page": "page-2",
       "x": 3040,
-      "y": -230,
+      "y": -240,
       "w": 520,
-      "text": "THE NULL RESULT IS THE RESULT\n\nThree metrics × two companies × fifteen lags = 90 tests. Only 3 clear the nominal 5% line — chance alone predicts 4.5. None survive FDR correction.\n\nCorrelations use daily LOG RETURNS, not price levels: two trending series correlate with almost anything, and that artefact is the most common way this analysis is got wrong. Dual-axis was never an option for the same reason."
+      "text": "C · BLUEPRINT\n\nTechnical drawing. Visible grid, dimension lines marking quarter-elapsed, revision number in the title block, and a NOT VERIFIED stamp where the track record should be.\n\nThe stamp is the point: a provisional drawing looks provisional. Strongest fit for the epistemics — riskiest if it reads as a gimmick."
+    },
+    {
+      "id": "note-evidence",
+      "page": "page-3",
+      "x": 0,
+      "y": -230,
+      "w": 540,
+      "text": "LEVEL 2 — THE CHARTS AND TABLES YOU ALREADY HAVE\n\nRestyled into the leading theme so the product reads as one thing rather than two. Same data, same statistics — control limits, slicers, quarter comparison — but positioned as how you CHECK a driver, not what you open the product for.\n\nIf you pick theme B or C instead, these follow it."
+    },
+    {
+      "id": "note-ev-table",
+      "page": "page-3",
+      "x": 1520,
+      "y": -230,
+      "w": 540,
+      "text": "THE TABLE EARNS ITS PLACE BY BEING HONEST\n\nReal rows, and they show the texture: subscriber deltas of 0 / 10,000 / 0 / 102,000 down the column, because YouTube quantises to the nearest thousand.\n\nDrag the range before 16 Feb 2026 and channel counts read n/a, never 0."
+    },
+    {
+      "id": "note-ev-periods",
+      "page": "page-3",
+      "x": 3040,
+      "y": -230,
+      "w": 540,
+      "text": "A HARDER LIMIT THAN I FIRST THOUGHT\n\nThe legacy aggregate never recorded video counts, so releases before 2026 are n/a — not comparable at all, rather than comparable-with-caveats like views.\n\n2026 Q1 is flagged mixed: its 3,812 releases are the first per-channel reading, not a release burst.\n\nThe correlation grid ends up here as a footnote — 3 of 90 against 4.5 expected."
     }
   ],
   "launch": {
     "view": "canvas",
-    "page": "page-2"
+    "page": "page-1"
   }
 }

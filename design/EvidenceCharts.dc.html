@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; background: #FBF9F4; color: #16150F; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+    a { color: #8C2F27; text-decoration: none; } a:hover { color: #B03A30; }
+    .serif { font-family: 'Source Serif 4', Georgia, serif; }
+    .tnum { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #FBF9F4; padding: 34px 48px 44px; box-sizing: border-box;">
+
+  <div style="border-bottom: 3px double #16150F; padding-bottom: 12px; margin-bottom: 6px; display: flex; align-items: baseline; justify-content: space-between;">
+    <div class="serif" style="font-size: 24px; font-weight: 700;">Control charts</div>
+    <div style="font-size: 11px; letter-spacing: 0.08em; color: #6E6A5C;">EVIDENCE · LEVEL 2 &nbsp;·&nbsp; 110 DAYS TO 27 AUG 2026</div>
+  </div>
+  <div class="serif" style="font-size: 14px; font-style: italic; color: #6E6A5C; margin-bottom: 26px;">
+    Is the process behaving the way it usually behaves? A narrower question than “is the trend up”, and an answerable one.
+  </div>
+
+  <!-- views -->
+  <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 3px;">
+    <div class="serif" style="font-size: 18px; font-weight: 600;">Daily views · Tips Music</div>
+    <label style="font-size: 12px; color: #6E6A5C; display: flex; align-items: center; gap: 7px;">
+      <span style="display:inline-block;width:26px;height:14px;border:1px solid #16150F;background:#16150F;position:relative;">
+        <span style="position:absolute;right:2px;top:2px;width:9px;height:9px;background:#FBF9F4;"></span>
+      </span>
+      control lines
+    </label>
+  </div>
+  <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-bottom: 14px;">
+    x̄ 38,306,722 &nbsp;·&nbsp; σ 8,077,908 &nbsp;·&nbsp; 6 of 109 days outside ±2σ &nbsp;=&nbsp; 5.5% against the 4.6% a normal process gives
+  </div>
+
+  <div style="position: relative; padding-right: 60px;">
+    <svg width="100%" height="252" viewBox="0 0 1160 300" preserveAspectRatio="none" style="display:block;">
+      <line x1="0" y1="41"  x2="1160" y2="41"  stroke="#8C2F27" stroke-width="1" stroke-dasharray="7 5"></line>
+      <line x1="0" y1="88"  x2="1160" y2="88"  stroke="#C4BFB0" stroke-width="1"></line>
+      <line x1="0" y1="136" x2="1160" y2="136" stroke="#16150F" stroke-width="1.5"></line>
+      <line x1="0" y1="184" x2="1160" y2="184" stroke="#C4BFB0" stroke-width="1"></line>
+      <line x1="0" y1="232" x2="1160" y2="232" stroke="#8C2F27" stroke-width="1" stroke-dasharray="7 5"></line>
+      <polyline fill="none" stroke="#A8A296" stroke-width="1" points="0,140 11,157 21,50 32,170 43,216 53,169 64,201 74,195 85,127 96,114 106,139 117,195 128,195 138,91 149,127 160,69 170,130 181,125 192,53 202,159 213,97 223,151 234,120 245,156 255,149 266,126 277,127 287,104 298,71 309,168 319,98 330,129 341,107 351,160 362,57 372,107 383,58 394,131 404,135 415,137 426,258 436,87 447,71 458,197 468,150 479,158 490,158 500,83 511,225 521,158 532,24 543,241 553,120 564,292 575,8 585,53 596,139 607,128 617,145 628,172 639,170 649,162 660,143 670,188 681,130 692,166 702,208 713,150 724,153 734,171 745,160 756,119 766,163 777,124 788,164 798,121 809,123 819,117 830,125 841,117 851,181 862,58 873,44 883,98 894,89 905,89 915,89 926,114 937,111 947,147 958,86 968,141 979,94 990,145 1000,143 1011,166 1022,141 1032,151 1043,102 1054,139 1064,162 1075,179 1086,190 1096,139 1107,164 1117,171 1128,147 1139,239 1149,115 1160,147"></polyline>
+      <polyline fill="none" stroke="#16150F" stroke-width="2.5" stroke-linejoin="round" points="0,133 11,135 21,131 32,133 43,134 53,135 64,141 74,140 85,143 96,146 106,146 117,150 128,149 138,147 149,148 160,148 170,148 181,146 192,144 202,143 213,139 223,142 234,141 245,143 255,141 266,139 277,137 287,135 298,133 309,136 319,135 330,134 341,136 351,136 362,130 372,128 383,124 394,121 404,122 415,122 426,126 436,123 447,119 458,122 468,123 479,126 490,127 500,125 511,131 521,131 532,129 543,132 553,132 564,136 575,132 585,129 596,130 607,130 617,133 628,133 639,135 649,136 660,138 670,139 681,141 692,143 702,148 713,149 724,149 734,150 745,147 756,148 766,151 777,149 788,149 798,148 809,147 819,148 830,145 841,143 851,148 862,142 873,140 883,133 894,136 905,137 915,136 926,135 937,134 947,133 958,130 968,130 979,128 990,127 1000,127 1011,127 1022,125 1032,125 1043,123 1054,122 1064,122 1075,124 1086,125 1096,125 1107,125 1117,127 1128,128 1139,132 1149,132 1160,133"></polyline>
+      <circle cx="532" cy="24" r="8" fill="none" stroke="#8C2F27" stroke-width="2.5"></circle>
+      <circle cx="575" cy="8" r="8" fill="none" stroke="#8C2F27" stroke-width="2.5"></circle>
+      <circle cx="426" cy="258" r="8" fill="none" stroke="#8C2F27" stroke-width="2.5"></circle>
+      <circle cx="543" cy="241" r="8" fill="none" stroke="#8C2F27" stroke-width="2.5"></circle>
+      <circle cx="564" cy="292" r="8" fill="none" stroke="#8C2F27" stroke-width="2.5"></circle>
+      <circle cx="1139" cy="239" r="8" fill="none" stroke="#8C2F27" stroke-width="2.5"></circle>
+    </svg>
+    <div class="tnum" style="position:absolute;right:0;top:0;width:56px;height:252px;font-size:10px;">
+      <div style="position:absolute;top:28px;color:#8C2F27;">+2σ<br><span style="color:#6E6A5C;">54.5M</span></div>
+      <div style="position:absolute;top:68px;color:#6E6A5C;">+1σ<br><span style="color:#A8A296;">46.4M</span></div>
+      <div style="position:absolute;top:108px;color:#16150F;">x̄<br><span style="color:#6E6A5C;">38.3M</span></div>
+      <div style="position:absolute;top:148px;color:#6E6A5C;">−1σ<br><span style="color:#A8A296;">30.2M</span></div>
+      <div style="position:absolute;top:188px;color:#8C2F27;">−2σ<br><span style="color:#6E6A5C;">22.2M</span></div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#A8A296;margin-top:6px;padding-right:60px;" class="tnum">
+    <span>10 MAY</span><span>1 JUN</span><span>24 JUN</span><span>17 JUL</span><span>9 AUG</span><span>27 AUG</span>
+  </div>
+  <div class="serif" style="font-size: 13.5px; color: #4A463A; margin-top: 12px; line-height: 1.6;">
+    In control. Six excursions, two high and four low, against ~5 expected — no day here is a special cause.
+  </div>
+
+  <!-- subs -->
+  <div style="border-top: 1px solid #D6D1C4; margin-top: 30px; padding-top: 24px;">
+    <div class="serif" style="font-size: 18px; font-weight: 600;">Subscriber net adds · Tips Music</div>
+    <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px; margin-bottom: 14px;">
+      x̄ 15,174 &nbsp;·&nbsp; σ 35,382 &nbsp;·&nbsp; <span style="color:#8C2F27;">12 breaches above +2σ, none below</span>
+    </div>
+
+    <div style="border: 1px solid #C9A227; background: #FDF8E8; padding: 15px 18px; display: flex; gap: 16px;">
+      <div class="serif" style="font-size: 15px; font-weight: 600; color: #7A5E00; white-space: nowrap;">Limits shown, but not valid</div>
+      <div style="font-size: 13px; color: #4A463A; line-height: 1.6;">
+        A Shewhart chart assumes roughly symmetric variation. This series breaches only upward, because YouTube
+        rounds every channel to the nearest 1,000 — so net adds arrive in lumps, not continuously. σ is
+        2.3× the mean. Read the moving average; treat the envelope as decoration.
+      </div>
+    </div>
+
+    <svg width="100%" height="150" viewBox="0 0 1160 172" preserveAspectRatio="none" style="display:block;margin-top:16px;">
+      <line x1="0" y1="32"  x2="1160" y2="32"  stroke="#D8CFA8" stroke-width="1" stroke-dasharray="7 5"></line>
+      <line x1="0" y1="81"  x2="1160" y2="81"  stroke="#E0DACB" stroke-width="1"></line>
+      <line x1="0" y1="130" x2="1160" y2="130" stroke="#16150F" stroke-width="1.5"></line>
+      <polyline fill="none" stroke="#A8A296" stroke-width="1" points="0,151 11,151 21,151 32,151 43,137 54,137 64,151 75,8 86,137 97,151 107,151 118,151 129,151 140,151 150,151 161,123 172,151 183,137 193,150 204,8 215,151 226,151 236,151 247,151 258,151 269,151 279,151 290,137 301,137 311,123 322,151 333,13 344,151 354,12 365,151 376,151 387,137 397,151 408,151 419,151 430,137 440,151 451,8 462,151 473,151 483,137 494,151 505,151 516,151 526,151 537,151 548,137 559,137 569,137 580,13 591,151 601,151 612,137 623,137 634,137 644,13 655,151 666,150 677,151 687,151 698,12 709,151 720,151 730,151 741,151 752,137 763,137 773,151 784,151 795,151 806,137 816,151 827,13 838,137 849,137 859,137 870,151 881,137 891,151 902,151 913,137 924,137 934,151 945,13 956,13 967,151 977,151 988,151 999,151 1010,151 1020,137 1031,151 1042,151 1053,151 1063,151 1074,8 1085,151 1096,151 1106,151 1117,137 1128,151 1139,137 1149,137 1160,151"></polyline>
+      <polyline fill="none" stroke="#16150F" stroke-width="2.5" points="0,104 100,105 200,102 300,103 400,105 500,95 600,93 700,95 800,105 900,104 1000,95 1100,95 1160,105"></polyline>
+    </svg>
+    <div class="serif" style="font-size: 13.5px; color: #4A463A; margin-top: 10px; line-height: 1.6;">
+      The ladder is the real signal: 15-day mean 10,000 against a quarterly 14,256 — growth decelerating ~30%.
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

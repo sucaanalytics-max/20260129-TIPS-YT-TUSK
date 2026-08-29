@@ -614,8 +614,13 @@ import { scoreEstimate, summariseTrackRecord, type ScoredQuarter } from './scori
 
 const band = { low: 90, mid: 100, high: 110 };
 
-test('scoreEstimate: error is measured against the band mid', () => {
-  assert.deepEqual(scoreEstimate(band, 120), { absError: 20, pctError: 20, withinBand: false });
+test('scoreEstimate: error is measured against the band mid, as a share of the ACTUAL', () => {
+  // Percentage error is conventionally relative to what actually happened (MAPE),
+  // which is what a track record reports: 20 off a 120 print is 16.7%, not 20%.
+  const s = scoreEstimate(band, 120);
+  assert.equal(s.absError, 20);
+  assert.equal(Number(s.pctError!.toFixed(4)), 16.6667);
+  assert.equal(s.withinBand, false);
   assert.deepEqual(scoreEstimate(band, 100), { absError: 0, pctError: 0, withinBand: true });
 });
 

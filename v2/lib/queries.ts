@@ -42,6 +42,21 @@ import {
   type AppProxyPoint,
   type RoyaltyCrossCheck,
 } from '@/lib/demand';
+import { buildControlChart, type ControlChart } from '@/lib/control-chart';
+import type { ExplorerMetric } from '@/lib/metrics';
+import {
+  comparePeriods,
+  REGIME_BREAK,
+  type Granularity,
+  type PeriodComparison,
+} from '@/lib/period-compare';
+import {
+  lagCorrelate,
+  alignedLogReturns,
+  criticalR,
+  pValue,
+  type LagResult,
+} from '@/lib/correlation';
 import {
   bucketWeekly,
   trimPartialEdges,
@@ -657,6 +672,190 @@ export async function getDataQuality(opts: { days?: number } = {}): Promise<Data
     imputed_channel_days: (imputedRows ?? []).length,
     unresolved_channels: (frozenRows ?? []).length,
   };
+}
+
+// ---- Explorer / analysis layer ---------------------------------------------
+
+export type { ExplorerMetric } from '@/lib/metrics';
+
+export interface ExplorerRow {
+  date: string;
+  company: Company;
+  views: number | null;
+  subscribers: number | null;
+  releases: number | null;
+  channels: number;
+  imputed: number;
+  /** False before REGIME_BREAK — the row is a single legacy aggregate and cannot be sliced by channel. */
+  sliceable: boolean;
+}
+
+/**
+ * The explorer's base grain: one row per company per day, all three metrics.
+ *
+ * `sliceable` is the important field. Before 2026-02-16 the series is a single
+ * synthetic aggregate row per day, so a channel filter has nothing to bite on;
+ * the UI disables that control for such ranges rather than returning an empty
+ * table and letting the reader conclude the catalogue went quiet.
+ */
+export async function getExplorerRows(opts: {
+  from?: string;
+  to?: string;
+  companies?: Company[];
+} = {}): Promise<ExplorerRow[]> {
+  const supabase = getServiceSupabase();
+  const to = opts.to ?? new Date().toISOString().slice(0, 10);
+  const from = opts.from ?? new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10);
+
+  let q = supabase
+    .from('v_company_daily')
+    .select('date, company, daily_views, daily_subscribers, daily_videos, channels_with_data, imputed_channels')
+    .gte('date', from)
+    .lte('date', to)
+    .order('date', { ascending: true })
+    .limit(5000);
+  if (opts.companies?.length) q = q.in('company', opts.companies);
+
+  const { data } = await q;
+  return ((data ?? []) as Array<{
+    date: string; company: Company;
+    daily_views: number | null; daily_subscribers: number | null; daily_videos: number | null;
+    channels_with_data: number | null; imputed_channels: number | null;
+  }>).map((r) => ({
+    date: r.date,
+    company: r.company,
+    views: r.daily_views == null ? null : Number(r.daily_views),
+    subscribers: r.daily_subscribers == null ? null : Number(r.daily_subscribers),
+    releases: r.daily_videos == null ? null : Number(r.daily_videos),
+    channels: Number(r.channels_with_data ?? 0),
+    imputed: Number(r.imputed_channels ?? 0),
+    sliceable: r.date >= REGIME_BREAK,
+  }));
+}
+
+export interface PeriodComparisonSet {
+  company: Company;
+  metric: ExplorerMetric;
+  granularity: Granularity;
+  periods: PeriodComparison[];
+}
+
+/** Quarter- or year-over-period totals per company, each carrying its regime. */
+export async function getPeriodComparisons(opts: {
+  metric: ExplorerMetric;
+  granularity: Granularity;
+  companies?: Company[];
+}): Promise<PeriodComparisonSet[]> {
+  const rows = await getExplorerRows({ from: '2023-01-01', companies: opts.companies });
+  const companies = [...new Set(rows.map((r) => r.company))].sort();
+  return companies.map((company) => ({
+    company,
+    metric: opts.metric,
+    granularity: opts.granularity,
+    periods: comparePeriods(
+      rows.filter((r) => r.company === company).map((r) => ({ date: r.date, value: r[opts.metric] })),
+      opts.granularity,
+    ),
+  }));
+}
+
+export interface ControlChartResult {
+  company: Company;
+  metric: ExplorerMetric;
+  from: string;
+  to: string;
+  chart: ControlChart;
+}
+
+export async function getControlChart(opts: {
+  company: Company;
+  metric: ExplorerMetric;
+  days?: number;
+  windows?: number[];
+}): Promise<ControlChartResult> {
+  const days = opts.days ?? 110;
+  const from = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const rows = await getExplorerRows({ from, companies: [opts.company] });
+  const points = rows.map((r) => ({ date: r.date, value: r[opts.metric] }));
+  return {
+    company: opts.company,
+    metric: opts.metric,
+    from: points[0]?.date ?? from,
+    to: points[points.length - 1]?.date ?? from,
+    chart: buildControlChart(points, opts.windows ?? [15, 30, 45, 90]),
+  };
+}
+
+export interface LagCorrelationSet {
+  company: Company;
+  metric: ExplorerMetric;
+  lags: LagResult[];
+  /** |r| needed for nominal 5% significance at this n. */
+  critical: number;
+  /** Lags clearing `critical` before any multiple-comparison correction. */
+  nominallySignificant: number;
+  best: { lag: number; r: number; p: number } | null;
+}
+
+/**
+ * Metric-vs-price correlation at lags −7..+7, against daily LOG RETURNS.
+ *
+ * Levels are deliberately not used: two trending series correlate with almost
+ * anything. Callers should render `critical` as a threshold and report how many
+ * lags clear it against how many chance alone predicts (lags × 0.05).
+ */
+export async function getLagCorrelations(opts: {
+  days?: number;
+  lags?: number[];
+} = {}): Promise<LagCorrelationSet[]> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 110;
+  const lags = opts.lags ?? Array.from({ length: 15 }, (_, i) => i - 7);
+  const from = new Date(Date.now() - (days + 20) * 86_400_000).toISOString().slice(0, 10);
+
+  const [rows, { data: priceRows }] = await Promise.all([
+    getExplorerRows({ from }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('symbol, date, adjusted_close')
+      .gte('date', from)
+      .order('date', { ascending: true })
+      .limit(2000),
+  ]);
+
+  const prices = (priceRows ?? []) as Array<{ symbol: Company; date: string; adjusted_close: number | null }>;
+  const out: LagCorrelationSet[] = [];
+
+  for (const company of [...new Set(rows.map((r) => r.company))].sort()) {
+    const px = prices.filter((p) => p.symbol === company);
+    const rets = alignedLogReturns(px.map((p) => (p.adjusted_close == null ? null : Number(p.adjusted_close))));
+    const retSeries = px.map((p, i) => ({ date: p.date, value: rets[i] }));
+
+    for (const metric of ['views', 'subscribers', 'releases'] as ExplorerMetric[]) {
+      const metricSeries = rows
+        .filter((r) => r.company === company)
+        .map((r) => ({ date: r.date, value: r[metric] }));
+      const results = lagCorrelate(metricSeries, retSeries, lags);
+      const maxN = Math.max(0, ...results.map((r) => r.n));
+      const critical = maxN >= 4 ? criticalR(maxN) : 1;
+      const scored = results.filter((r) => r.r != null);
+      const best = scored.reduce<{ lag: number; r: number; p: number } | null>((acc, cur) => {
+        const r = cur.r as number;
+        return acc == null || Math.abs(r) > Math.abs(acc.r)
+          ? { lag: cur.lag, r, p: pValue(r, cur.n) }
+          : acc;
+      }, null);
+      out.push({
+        company,
+        metric,
+        lags: results,
+        critical,
+        nominallySignificant: scored.filter((r) => Math.abs(r.r as number) > critical).length,
+        best,
+      });
+    }
+  }
+  return out;
 }
 
 export async function getOpsRunHistory(opts: { since?: string; limit?: number }): Promise<OpsRunRow[]> {

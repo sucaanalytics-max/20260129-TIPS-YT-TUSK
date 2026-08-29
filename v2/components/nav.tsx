@@ -8,6 +8,8 @@ const ITEMS = [
   { href: '/', label: 'Overview' },
   { href: '/signals', label: 'Signals' },
   { href: '/market', label: 'Market' },
+  { href: '/analysis', label: 'Analysis' },
+  { href: '/explore', label: 'Explore' },
   { href: '/growth', label: 'Growth' },
   { href: '/channels', label: 'Channels' },
   { href: '/correlation', label: 'Correlation' },

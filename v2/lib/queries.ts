@@ -870,11 +870,18 @@ export async function getLagCorrelations(opts: {
 // ---- Nowcast spine ---------------------------------------------------------
 
 /**
+ * How far back topic attribution can be read. Matches the retention the
+ * attribution snapshot actually covers; asking beyond it returns an empty
+ * series, which would read as "no topic reach" rather than "unknown".
+ */
+const TOPIC_LOOKBACK_LIMIT_DAYS = 120;
+
+/**
  * Quarter-to-date reach per driver.
  *
- * Owned views come from v_company_daily. Topic and UGC reuse the existing
- * getTopicReach / getUGCReach snapshots rather than recomputing attribution —
- * one definition of attributed reach, not two.
+ * Owned views come from v_company_daily. Topic reuses the existing
+ * getTopicReach snapshot rather than recomputing attribution — one definition
+ * of attributed reach, not two.
  */
 export async function getNowcastDrivers(opts: {
   company: Company;
@@ -882,15 +889,33 @@ export async function getNowcastDrivers(opts: {
   to: string;
 }): Promise<NowcastDrivers> {
   const supabase = getServiceSupabase();
-  const [{ data: owned }, topic, ugc] = await Promise.all([
+
+  /*
+   * getTopicReach looks back N days from TODAY, not from opts.from. A fixed
+   * window would therefore return nothing for a quarter that starts outside it
+   * and quietly report topicViews = 0 — a wrong number, not a missing one, and
+   * the estimate would still be stored. So size the window to the request and
+   * refuse one we cannot cover.
+   */
+  const daysBack = Math.ceil((Date.now() - Date.parse(`${opts.from}T00:00:00Z`)) / 86_400_000) + 1;
+  if (!Number.isFinite(daysBack) || daysBack < 1) {
+    throw new Error(`getNowcastDrivers: cannot read a topic window from '${opts.from}'`);
+  }
+  if (daysBack > TOPIC_LOOKBACK_LIMIT_DAYS) {
+    throw new Error(
+      `getNowcastDrivers: ${opts.from} is ${daysBack} days back, beyond the ${TOPIC_LOOKBACK_LIMIT_DAYS}-day ` +
+        `topic-attribution window. Backfilling that far would report topicViews = 0 rather than fail.`,
+    );
+  }
+
+  const [{ data: owned }, topic] = await Promise.all([
     supabase
       .from('v_company_daily')
       .select('daily_views')
       .eq('company', opts.company)
       .gte('date', opts.from)
       .lte('date', opts.to),
-    getTopicReach({ company: opts.company, days: 120 }),
-    getUGCReach({ company: opts.company }),
+    getTopicReach({ company: opts.company, days: daysBack }),
   ]);
 
   const ownedViews = ((owned ?? []) as Array<{ daily_views: number | null }>).reduce(
@@ -905,12 +930,14 @@ export async function getNowcastDrivers(opts: {
     .filter((d) => d.date >= opts.from && d.date <= opts.to)
     .reduce((a, d) => a + Number(d.attributed_daily_views ?? 0), 0);
 
-  // UGC reach is a CUMULATIVE discovered figure, not a per-quarter flow, so it
-  // must not be extrapolated by quarter progress — doing so would inflate the
-  // estimate by roughly 1/progress. Reported as 0 until UGC is measured as a
-  // flow; `includeUgc` stays in the model for when it can be.
-  void ugc;
-
+  /*
+   * UGC is deliberately not read at all. Its reach is a CUMULATIVE discovered
+   * figure, not a per-quarter flow, so extrapolating it by quarter progress
+   * would inflate the estimate by roughly 1/progress. An earlier draft fetched
+   * getUGCReach and discarded the result, which cost a multi-query round trip
+   * per company per run against a 120s cron budget for no effect on the output.
+   * `includeUgc` stays in the model for when UGC is measured as a flow.
+   */
   return { ownedViews, topicViews, ugcViews: 0 };
 }
 

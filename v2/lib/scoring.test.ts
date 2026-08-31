@@ -36,14 +36,18 @@ test('summariseTrackRecord: empty history is reported as unproven, not as perfec
 
 test('summariseTrackRecord: hit rate and median absolute percentage error', () => {
   const rows: ScoredQuarter[] = [
-    { fiscalLabel: 'FY26 Q1', estimate: band, actual: 100, absError: 0,  pctError: 0,   withinBand: true },
-    { fiscalLabel: 'FY26 Q2', estimate: band, actual: 120, absError: 20, pctError: 20,  withinBand: false },
-    { fiscalLabel: 'FY26 Q3', estimate: band, actual: 105, absError: 5,  pctError: 5,   withinBand: true },
+    // pctError is MAPE — the error relative to the ACTUAL, not to the estimate.
+    // These are the values scoreEstimate actually emits for these pairs
+    // (20/120 = 16.6667, 5/105 = 4.7619); an earlier draft hardcoded 20 and 5,
+    // which no run of scoreEstimate could ever produce.
+    { fiscalLabel: 'FY26 Q1', estimate: band, actual: 100, absError: 0,  pctError: 0,       withinBand: true },
+    { fiscalLabel: 'FY26 Q2', estimate: band, actual: 120, absError: 20, pctError: 16.6667, withinBand: false },
+    { fiscalLabel: 'FY26 Q3', estimate: band, actual: 105, absError: 5,  pctError: 4.7619,  withinBand: true },
   ];
   const t = summariseTrackRecord(rows);
   assert.equal(t.n, 3);
   assert.equal(Number(t.hitRate!.toFixed(4)), 0.6667);
-  assert.equal(t.medianAbsPctError, 5);
+  assert.equal(t.medianAbsPctError, 4.7619);
   assert.equal(t.worst!.fiscalLabel, 'FY26 Q2');
 });
 

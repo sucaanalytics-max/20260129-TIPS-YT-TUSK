@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { auth } from '@clerk/nextjs/server';
 import { cacheLife, cacheTag } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { getNowcastBreakdown } from '@/lib/queries';
+import { getNowcastBreakdown, getNowcastHeadline } from '@/lib/queries';
 import { CACHE_TAGS } from '@/lib/revalidate';
 import { formatCrore } from '@/lib/financials';
 import { Eyebrow, PageHead, SectionHead, Sheet, Td, Th } from '@/components/broadsheet';
@@ -39,14 +39,16 @@ async function Breakdown() {
   cacheTag(CACHE_TAGS.nowcast, CACHE_TAGS.channels, CACHE_TAGS.signals);
 
   const asof = new Date().toISOString().slice(0, 10);
-  const [tips, sare] = await Promise.all([
+  const [tips, sare, tipsHead, sareHead] = await Promise.all([
     getNowcastBreakdown('TIPSMUSIC', asof),
     getNowcastBreakdown('SAREGAMA', asof),
+    getNowcastHeadline('TIPSMUSIC', asof),
+    getNowcastHeadline('SAREGAMA', asof),
   ]);
 
   const rows = [
-    { label: 'Tips Music', b: tips },
-    { label: 'Saregama · music', b: sare },
+    { label: 'Tips Music', b: tips, head: tipsHead },
+    { label: 'Saregama · music', b: sare, head: sareHead },
   ];
   const a = tips.assumptions;
 
@@ -93,6 +95,53 @@ async function Breakdown() {
           ))}
         </tbody>
       </Sheet>
+
+      <SectionHead
+        title="Sense check"
+        note="not a score — the quarter has not closed"
+      />
+      <p className="text-muted-foreground mt-3 max-w-[90ch] text-[12px] leading-relaxed">
+        This quarter&rsquo;s midpoint set beside the last quarter that actually printed. It is not
+        an accuracy measure: the two are different quarters, and a real score only exists once
+        this one closes and is reported. It is here to catch an estimate that has gone obviously
+        wrong, and to make the model&rsquo;s known bias visible rather than buried.
+      </p>
+      <Sheet className="mt-4">
+        <thead>
+          <tr>
+            <Th left>Company</Th>
+            <Th>Midpoint, this quarter</Th>
+            <Th>Last printed</Th>
+            <Th>Ratio</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const printed = r.head.lastPrinted?.valueInr ?? null;
+            const ratio = printed && printed > 0 ? r.b.result.band.mid / printed : null;
+            return (
+              <tr key={r.label}>
+                <Td left>{r.label}</Td>
+                <Td>{formatCrore(r.b.result.band.mid)}</Td>
+                <Td>
+                  {r.head.lastPrinted
+                    ? `${formatCrore(r.head.lastPrinted.valueInr)} · ${r.head.lastPrinted.fiscalLabel}`
+                    : '—'}
+                </Td>
+                <Td>{ratio === null ? '—' : `${(ratio * 100).toFixed(0)}%`}</Td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Sheet>
+      <p className="text-muted-foreground mt-3 max-w-[90ch] text-[11.5px] leading-relaxed">
+        Saregama reads low against its printed quarter and Tips does not. That is expected and has
+        deliberately <em>not</em> been corrected: the non-YouTube uplift below is a single flat
+        multiplier applied to both, while Saregama&rsquo;s music segment carries far more licensing
+        revenue that never appears on YouTube than Tips&rsquo; single segment does. Fitting the
+        uplift per company to the handful of figures already known would make the track record
+        flattering and meaningless before it has scored a single quarter.
+      </p>
 
       <SectionHead title="Assumptions" note="every one of these is arguable — that is the point" />
       <div className="mt-5 grid gap-x-10 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">

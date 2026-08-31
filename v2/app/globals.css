@@ -3,16 +3,29 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Broadsheet. A printed-page surface, not a trading terminal.
+   *
+   * The token NAMES are unchanged from the dark theme on purpose: every one of
+   * the 62 components already consumes hsl(var(--token)) and none of them
+   * hardcode a Tailwind palette class, so swapping the values here rethemes
+   * the whole app without editing a single component.
+   */
   :root {
-    --background: 222 22% 6%;
-    --foreground: 210 20% 96%;
-    --card: 222 20% 9%;
-    --card-foreground: 210 20% 96%;
-    --muted: 222 14% 14%;
-    --muted-foreground: 215 14% 65%;
-    --accent: 220 90% 60%;
-    --accent-foreground: 210 20% 98%;
-    --border: 220 14% 18%;
+    --paper:      43 47% 97%;   /* #FBF9F4 the sheet */
+    --ink:        51 19% 7%;    /* #16150F the type  */
+
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card:       43 78% 98%;   /* #FEFCF7 a shade brighter than the sheet */
+    --card-foreground: var(--ink);
+    --muted:      44 30% 93%;   /* #F2EFE7 */
+    --muted-foreground: 47 9% 40%;  /* #6E6A5C */
+    --accent:     5 56% 35%;    /* #8C2F27 oxblood — links, the live rule */
+    --accent-foreground: var(--paper);
+    --border:     43 18% 80%;   /* #D6D1C4 the hairline rule */
+
+    --rule-heavy: 51 19% 7%;    /* the double rule under the masthead */
   }
 
   html, body { height: 100%; }
@@ -21,5 +34,24 @@
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /*
+   * Figures are read down a column and compared to each other, so digits must
+   * occupy identical width everywhere. Applied globally rather than per-widget
+   * because every number on this dashboard is a figure to be compared.
+   */
+  table, .tnum, [data-figure] {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* The masthead rule and every section break beneath it. */
+  .rule-double {
+    border-bottom: 3px double hsl(var(--rule-heavy));
+  }
+  .rule-hair {
+    border-bottom: 1px solid hsl(var(--border));
   }
 }

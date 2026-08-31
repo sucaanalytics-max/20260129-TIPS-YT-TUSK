@@ -55,7 +55,7 @@ export function DateRangePresets({ defaultPreset = 'last_30d' as RangePreset }) 
             disabled={isPending}
             className={`rounded-md border px-2.5 py-1 transition-colors ${
               activePreset === opt.value
-                ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+                ? 'border-info bg-info/20 text-info'
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
             } ${isPending ? 'opacity-60' : ''}`}
           >
@@ -90,7 +90,7 @@ export function DateRangePresets({ defaultPreset = 'last_30d' as RangePreset }) 
           <button
             type="submit"
             disabled={!from || !to || isPending}
-            className="rounded-md border border-blue-500 bg-blue-500/20 px-2.5 py-1 text-blue-200 disabled:opacity-40"
+            className="rounded-md border border-info bg-info/20 px-2.5 py-1 text-info disabled:opacity-40"
           >
             Apply
           </button>

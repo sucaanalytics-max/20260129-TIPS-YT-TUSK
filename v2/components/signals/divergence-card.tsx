@@ -18,8 +18,8 @@ export function DivergenceCard({ snapshots }: { snapshots: SignalsSnapshot[] }) 
   if (active.length === 0) return null;
 
   return (
-    <div className="border-amber-500/30 bg-amber-500/5 rounded-lg border p-4">
-      <h3 className="text-amber-200 text-sm font-medium tracking-tight">
+    <div className="border-warning/30 bg-warning/5 rounded-lg border p-4">
+      <h3 className="text-warning text-sm font-medium tracking-tight">
         Divergence watch
       </h3>
       <ul className="mt-2 space-y-1">

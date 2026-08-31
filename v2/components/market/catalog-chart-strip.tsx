@@ -59,7 +59,7 @@ export function CatalogChartStrip({ snapshot }: { snapshot: DemandLayerSnapshot 
                 {m.artist ?? ''}
               </span>
               {m.matched_company ? (
-                <span className="ml-auto shrink-0 rounded bg-sky-500/15 px-1.5 py-0.5 text-[10px] text-sky-300">
+                <span className="ml-auto shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[10px] text-info">
                   {m.matched_company}
                 </span>
               ) : null}

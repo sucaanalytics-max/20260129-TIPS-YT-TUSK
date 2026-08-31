@@ -9,9 +9,9 @@ import { Panel, EmptyNote } from './panel';
  */
 
 const STATUS_STYLE: Record<string, { cls: string; label: string }> = {
-  active: { cls: 'bg-emerald-500/15 text-emerald-300', label: 'active' },
-  paywall: { cls: 'bg-sky-500/15 text-sky-300', label: 'paid-only' },
-  restructuring: { cls: 'bg-amber-500/15 text-amber-300', label: 'restructuring' },
+  active: { cls: 'bg-good/15 text-good', label: 'active' },
+  paywall: { cls: 'bg-info/15 text-info', label: 'paid-only' },
+  restructuring: { cls: 'bg-warning/15 text-warning', label: 'restructuring' },
   shutdown: { cls: 'bg-muted/30 text-muted-foreground', label: 'shut down' },
 };
 

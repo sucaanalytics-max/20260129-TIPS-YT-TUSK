@@ -12,7 +12,7 @@ function fmtPct(n: number | null, digits = 2): string {
 
 function deltaColor(n: number | null): string {
   if (n == null) return 'text-muted-foreground';
-  return n >= 0 ? 'text-emerald-400' : 'text-red-400';
+  return n >= 0 ? 'text-good' : 'text-critical';
 }
 
 export function HeroStats({ deepDive }: { deepDive: StockDeepDive }) {
@@ -71,7 +71,7 @@ export function HeroStats({ deepDive }: { deepDive: StockDeepDive }) {
             <>
               <div className="border-border bg-muted/30 relative mt-3 h-2 overflow-hidden rounded-full">
                 <div
-                  className="absolute top-0 h-full w-1 -translate-x-1/2 bg-blue-400"
+                  className="absolute top-0 h-full w-1 -translate-x-1/2 bg-info"
                   style={{ left: `${(range.position_pct * 100).toFixed(1)}%` }}
                 />
               </div>

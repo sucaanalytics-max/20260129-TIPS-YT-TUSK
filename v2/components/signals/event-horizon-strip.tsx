@@ -1,10 +1,10 @@
 import type { EventTimelineRow } from '@/lib/queries';
 
 const TYPE_DOT: Record<string, string> = {
-  earnings: 'bg-blue-400',
-  release: 'bg-emerald-400',
-  film_release: 'bg-violet-400',
-  corp_action: 'bg-amber-400',
+  earnings: 'bg-info',
+  release: 'bg-good',
+  film_release: 'bg-info',
+  corp_action: 'bg-warning',
   annotation: 'bg-muted',
 };
 

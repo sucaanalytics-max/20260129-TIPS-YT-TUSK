@@ -1,11 +1,11 @@
 import type { StockDeepDive } from '@/lib/queries';
 
 const TYPE_COLOR: Record<string, string> = {
-  split: 'text-red-300',
-  bonus: 'text-amber-300',
-  dividend: 'text-emerald-300',
-  rights: 'text-violet-300',
-  merger: 'text-pink-300',
+  split: 'text-critical',
+  bonus: 'text-warning',
+  dividend: 'text-good',
+  rights: 'text-info',
+  merger: 'text-info',
 };
 
 export function CorporateActionsTable({ deepDives }: { deepDives: StockDeepDive[] }) {

@@ -40,7 +40,7 @@ export function CompanyGrowth({ snapshots }: { snapshots: CompanySnapshot[] }) {
                 <p className="text-foreground mt-0.5 text-sm font-medium tabular-nums">
                   {formatNumber(s.cumulative_subscribers)}{' '}
                   {s.subscribers_yoy_delta != null ? (
-                    <span className={s.subscribers_yoy_delta >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    <span className={s.subscribers_yoy_delta >= 0 ? 'text-good' : 'text-critical'}>
                       {s.subscribers_yoy_delta >= 0 ? '+' : ''}
                       {formatNumber(s.subscribers_yoy_delta)}
                     </span>
@@ -79,7 +79,7 @@ export function CompanyGrowth({ snapshots }: { snapshots: CompanySnapshot[] }) {
                       <td className="text-muted-foreground px-5 py-3 text-right tabular-nums">{formatNumber(priAvg)}</td>
                       <td className="px-5 py-3 text-right tabular-nums">
                         {row?.growth_pct != null ? (
-                          <span className={positive ? 'text-emerald-400' : 'text-red-400'}>
+                          <span className={positive ? 'text-good' : 'text-critical'}>
                             {positive ? '+' : ''}
                             {row.growth_pct.toFixed(2)}%
                           </span>

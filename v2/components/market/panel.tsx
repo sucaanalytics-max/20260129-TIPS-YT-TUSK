@@ -49,9 +49,9 @@ export function SourcePill({
   const label = confidence && confidence !== 'reported' ? `${source} · ${confidence}` : source;
   const cls =
     confidence === 'forecast'
-      ? 'bg-violet-500/15 text-violet-300'
+      ? 'bg-info/15 text-info'
       : confidence === 'estimate'
-        ? 'bg-amber-500/15 text-amber-300'
+        ? 'bg-warning/15 text-warning'
         : 'bg-muted/30 text-muted-foreground';
   const pill = (
     <span className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${cls}`}>{label}</span>

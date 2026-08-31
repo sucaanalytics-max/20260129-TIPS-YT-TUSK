@@ -37,13 +37,13 @@ export function ConfidenceBadge({ estimate }: { estimate: RevenueEstimate }) {
 function gradeClass(grade: string): string {
   switch (grade) {
     case 'A':
-      return 'bg-emerald-500/15 text-emerald-300';
+      return 'bg-good/15 text-good';
     case 'B':
-      return 'bg-sky-500/15 text-sky-300';
+      return 'bg-info/15 text-info';
     case 'C':
-      return 'bg-amber-500/15 text-amber-300';
+      return 'bg-warning/15 text-warning';
     case 'D':
-      return 'bg-orange-500/15 text-orange-300';
+      return 'bg-serious/15 text-serious';
     case 'F':
     default:
       return 'bg-muted/30 text-muted-foreground';

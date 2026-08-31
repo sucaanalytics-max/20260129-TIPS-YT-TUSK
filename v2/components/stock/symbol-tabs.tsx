@@ -24,7 +24,7 @@ export function SymbolTabs({ active }: { active: StockSymbolParam }) {
           href={hrefFor(s)}
           className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
             s === active
-              ? 'bg-blue-500/15 text-blue-200'
+              ? 'bg-info/15 text-info'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
           }`}
           prefetch={false}

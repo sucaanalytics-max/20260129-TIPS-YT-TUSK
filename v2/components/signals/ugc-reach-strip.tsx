@@ -50,9 +50,9 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
     wow == null
       ? 'text-muted-foreground'
       : wow.delta_views > 0
-        ? 'text-emerald-400'
+        ? 'text-good'
         : wow.delta_views < 0
-          ? 'text-red-400'
+          ? 'text-critical'
           : 'text-muted-foreground';
   return (
     <div className="border-border/40 rounded-md border p-3">
@@ -86,7 +86,7 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
         className="text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-2 text-[11px] tabular-nums"
         title={snap.revenueEstimate.methodology}
       >
-        <span className="text-amber-400/80">≈ {fmtInr(snap.revenueEstimate.weekly.low_inr)} – {fmtInr(snap.revenueEstimate.weekly.high_inr)}/wk</span>
+        <span className="text-warning/80">≈ {fmtInr(snap.revenueEstimate.weekly.low_inr)} – {fmtInr(snap.revenueEstimate.weekly.high_inr)}/wk</span>
         <ConfidenceBadge estimate={snap.revenueEstimate} />
         <span className="text-muted-foreground/50">
           (Q-rate {fmtInr(snap.revenueEstimate.quarterly.low_inr)} – {fmtInr(snap.revenueEstimate.quarterly.high_inr)} · catalog-matched only)
@@ -103,7 +103,7 @@ function Card({ snap }: { snap: UGCReachSnapshot }) {
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-foreground truncate" title={s.song}>
                     {s.catalog_matched ? (
-                      <span className="text-emerald-400/80 mr-1" title="Master audio resolved to our catalog">
+                      <span className="text-good/80 mr-1" title="Master audio resolved to our catalog">
                         ✓
                       </span>
                     ) : null}
@@ -195,7 +195,7 @@ function AttributionBadge({
       {totalEnriched > 0 ? (
         <div className="text-muted-foreground/60">
           <span
-            className="text-emerald-400/80"
+            className="text-good/80"
             title="YT's native licensedContent flag from videos.list — set when any partner has Content-ID-claimed the video. Broader than our sampled music-panel check."
           >
             {ytLicensed} of {totalEnriched} ({pctYtLic}%) carry licensedContent flag
@@ -205,14 +205,14 @@ function AttributionBadge({
       {total > 0 ? (
         <div className="text-muted-foreground/60">
           <span
-            className="text-emerald-400/80"
+            className="text-good/80"
             title="Music-panel-confirmed (deeper check, sampled subset)"
           >
             {cid}/{total} ({pctCid}%) music-panel confirmed
           </span>
           <span className="mx-1 text-muted-foreground/40">·</span>
           <span
-            className={catalogMatches > 0 ? 'text-emerald-400/80' : 'text-muted-foreground/60'}
+            className={catalogMatches > 0 ? 'text-good/80' : 'text-muted-foreground/60'}
             title="UGC where master audio resolves to our tracked owned/topic channels"
           >
             {catalogMatches} match OUR catalog

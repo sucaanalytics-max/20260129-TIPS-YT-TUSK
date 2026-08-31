@@ -111,7 +111,7 @@ export function IndiaMarketStrip({ snapshot }: { snapshot: DemandLayerSnapshot }
                 </span>
               ))}
               {fcByMetric.get('paid_subscriptions') ? (
-                <span className="text-violet-300 text-xs tabular-nums">
+                <span className="text-info text-xs tabular-nums">
                   <span className="text-muted-foreground/50 mr-2">→</span>
                   {fmtCount(Number(fcByMetric.get('paid_subscriptions')!.value))}
                   <span className="opacity-70 ml-1 text-[10px]">

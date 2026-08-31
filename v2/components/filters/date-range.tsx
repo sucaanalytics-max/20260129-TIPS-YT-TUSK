@@ -42,7 +42,7 @@ export function DateRange({ defaultDays = 180 }: { defaultDays?: number }) {
           disabled={isPending}
           className={`rounded-md border px-2.5 py-1 transition-colors ${
             active === p.days
-              ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+              ? 'border-info bg-info/20 text-info'
               : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
           }`}
         >

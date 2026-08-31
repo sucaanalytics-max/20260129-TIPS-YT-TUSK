@@ -16,8 +16,8 @@ import { Panel, EmptyNote, fmtCount, fmtSigned } from './panel';
 
 const ARROW = { up: '▲', down: '▼', flat: '◆' } as const;
 const ARROW_COLOR = {
-  up: 'text-emerald-400',
-  down: 'text-red-400',
+  up: 'text-good',
+  down: 'text-critical',
   flat: 'text-muted-foreground',
 } as const;
 
@@ -134,7 +134,7 @@ function Row({ app }: { app: AppProxyRow }) {
               {ARROW[m.direction]}
             </span>
             {m.significant ? (
-              <span className="text-emerald-400 ml-0.5 text-[10px]" title="significant">
+              <span className="text-good ml-0.5 text-[10px]" title="significant">
                 ✓
               </span>
             ) : null}

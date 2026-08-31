@@ -2,22 +2,22 @@ import type { Read } from '@/lib/signals';
 
 const BIAS_STYLES: Record<Read['bias'], { border: string; bg: string; text: string; dot: string }> = {
   POSITIVE: {
-    border: 'border-emerald-500/40',
-    bg: 'bg-emerald-500/5',
-    text: 'text-emerald-300',
-    dot: 'bg-emerald-400',
+    border: 'border-good/40',
+    bg: 'bg-good/5',
+    text: 'text-good',
+    dot: 'bg-good',
   },
   MIXED: {
-    border: 'border-amber-500/40',
-    bg: 'bg-amber-500/5',
-    text: 'text-amber-300',
-    dot: 'bg-amber-400',
+    border: 'border-warning/40',
+    bg: 'bg-warning/5',
+    text: 'text-warning',
+    dot: 'bg-warning',
   },
   NEGATIVE: {
-    border: 'border-red-500/40',
-    bg: 'bg-red-500/5',
-    text: 'text-red-300',
-    dot: 'bg-red-400',
+    border: 'border-critical/40',
+    bg: 'bg-critical/5',
+    text: 'text-critical',
+    dot: 'bg-critical',
   },
 };
 

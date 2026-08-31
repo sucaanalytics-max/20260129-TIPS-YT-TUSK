@@ -36,7 +36,7 @@ export function EarningsTable({ rows, multi }: { rows: EarningsRow[]; multi?: bo
                   <td className="text-foreground tabular-nums py-2 pr-3">
                     {r.event_date}
                     {upcoming ? (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-blue-200">
+                      <span className="ml-2 inline-flex items-center gap-1 rounded bg-info/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-info">
                         upcoming
                       </span>
                     ) : null}
@@ -54,7 +54,7 @@ export function EarningsTable({ rows, multi }: { rows: EarningsRow[]; multi?: bo
                         href={r.results_pdf_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-300 hover:underline"
+                        className="text-info hover:underline"
                       >
                         PDF ↗
                       </a>

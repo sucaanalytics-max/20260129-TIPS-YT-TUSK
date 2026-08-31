@@ -17,7 +17,7 @@ export function KpiGrid({ data }: { data: OverviewData }) {
           {k.delta ? (
             <p
               className={`mt-1 text-xs tabular-nums ${
-                k.delta.startsWith('-') ? 'text-red-400' : 'text-emerald-400'
+                k.delta.startsWith('-') ? 'text-critical' : 'text-good'
               }`}
             >
               {k.delta}

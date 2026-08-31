@@ -97,7 +97,7 @@ async function GrangerBlock() {
               <td className="px-4 py-2 font-mono text-xs">{r.direction}</td>
               <td className="px-4 py-2 text-right tabular-nums">{r.lag}</td>
               <td className="px-4 py-2 text-right tabular-nums">{r.f_statistic.toFixed(3)}</td>
-              <td className={`px-4 py-2 text-right tabular-nums ${r.p_value < 0.05 ? 'text-emerald-400' : ''}`}>
+              <td className={`px-4 py-2 text-right tabular-nums ${r.p_value < 0.05 ? 'text-good' : ''}`}>
                 {r.p_value.toFixed(4)}
               </td>
               <td className="text-muted-foreground px-4 py-2 text-right tabular-nums">{r.n_obs}</td>

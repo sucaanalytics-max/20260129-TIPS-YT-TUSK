@@ -26,7 +26,7 @@ export function RangeSelector({ active }: { active: StockRange }) {
           href={hrefFor(r)}
           className={`rounded-md px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
             r === active
-              ? 'bg-blue-500/15 text-blue-200'
+              ? 'bg-info/15 text-info'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
           }`}
           prefetch={false}

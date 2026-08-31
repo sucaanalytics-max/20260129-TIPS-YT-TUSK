@@ -73,21 +73,21 @@ function Card({ snap }: { snap: ConsolidatedYTRevenue }) {
         <LayerRow
           label="Owned channels"
           symbol="◼"
-          color="text-sky-400/80"
+          color="text-info/80"
           estimate={snap.owned}
           subline={`${snap.owned_channels_count} ch · ${(snap.owned_views_7d / 1e6).toFixed(1)}M views/wk`}
         />
         <LayerRow
           label="Topic + OAC"
           symbol="◆"
-          color="text-emerald-400/70"
+          color="text-good/70"
           estimate={snap.topic}
           subline={`${(snap.composition.topic_pct_mid * 100).toFixed(1)}% of band mid`}
         />
         <LayerRow
           label="UGC Shorts"
           symbol="○"
-          color="text-amber-400/70"
+          color="text-warning/70"
           estimate={snap.ugc}
           subline={`catalog-matched only · ${(snap.composition.ugc_pct_mid * 100).toFixed(2)}% of band mid`}
         />
@@ -149,17 +149,17 @@ function CompositionBar({
     <div className="flex items-center gap-2">
       <span className="bg-muted/20 relative flex h-1.5 w-full overflow-hidden rounded-full">
         <span
-          className="bg-sky-400/70 h-full"
+          className="bg-info/70 h-full"
           style={{ width: `${showOwned * 100}%` }}
           title={`Owned: ${(ownedPct * 100).toFixed(1)}%`}
         />
         <span
-          className="bg-emerald-400/70 h-full"
+          className="bg-good/70 h-full"
           style={{ width: `${showTopic * 100}%` }}
           title={`Topic+OAC: ${(topicPct * 100).toFixed(1)}%`}
         />
         <span
-          className="bg-amber-400/70 h-full"
+          className="bg-warning/70 h-full"
           style={{ width: `${showUgc * 100}%` }}
           title={`UGC: ${(ugcPct * 100).toFixed(2)}%`}
         />
@@ -180,13 +180,13 @@ function ConfidenceBadgeForGrade({ grade }: { grade: string }) {
 function gradeClass(grade: string): string {
   switch (grade) {
     case 'A':
-      return 'bg-emerald-500/15 text-emerald-300';
+      return 'bg-good/15 text-good';
     case 'B':
-      return 'bg-sky-500/15 text-sky-300';
+      return 'bg-info/15 text-info';
     case 'C':
-      return 'bg-amber-500/15 text-amber-300';
+      return 'bg-warning/15 text-warning';
     case 'D':
-      return 'bg-orange-500/15 text-orange-300';
+      return 'bg-serious/15 text-serious';
     case 'F':
     default:
       return 'bg-muted/30 text-muted-foreground';

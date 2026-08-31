@@ -16,7 +16,7 @@ export function FreshnessBadge({ status }: { status: FreshnessRow[] }) {
   }
 
   const colour =
-    stalest.age <= 1 ? 'bg-emerald-400' : stalest.age <= 3 ? 'bg-amber-400' : 'bg-red-400';
+    stalest.age <= 1 ? 'bg-good' : stalest.age <= 3 ? 'bg-warning' : 'bg-critical';
 
   return (
     <span className="text-muted-foreground inline-flex items-center gap-2 text-xs">

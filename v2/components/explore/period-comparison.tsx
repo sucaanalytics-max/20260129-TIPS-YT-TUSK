@@ -59,10 +59,10 @@ export function PeriodComparison({ sets }: { sets: PeriodComparisonSet[] }) {
                         p.changePct == null
                           ? 'text-muted-foreground'
                           : !p.comparable
-                            ? 'text-amber-300'
+                            ? 'text-warning'
                             : p.changePct >= 0
-                              ? 'text-emerald-400'
-                              : 'text-red-400'
+                              ? 'text-good'
+                              : 'text-critical'
                       }`}
                     >
                       {p.changePct == null
@@ -71,7 +71,7 @@ export function PeriodComparison({ sets }: { sets: PeriodComparisonSet[] }) {
                     </td>
                     <td className="py-1.5">
                       {p.regime === 'mixed' ? (
-                        <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-300" title={p.caveat ?? ''}>
+                        <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] text-warning" title={p.caveat ?? ''}>
                           mixed
                         </span>
                       ) : p.regime === 'legacy' ? (
@@ -80,7 +80,7 @@ export function PeriodComparison({ sets }: { sets: PeriodComparisonSet[] }) {
                         <span className="text-muted-foreground/70 text-[10px]">per-channel</span>
                       )}
                       {!p.comparable && p.regime !== 'mixed' ? (
-                        <span className="ml-1 text-amber-300" title={p.caveat ?? ''}>⚠</span>
+                        <span className="ml-1 text-warning" title={p.caveat ?? ''}>⚠</span>
                       ) : null}
                     </td>
                   </tr>

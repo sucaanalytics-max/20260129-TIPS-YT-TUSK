@@ -62,10 +62,10 @@ function Card({ snap }: { snap: BrokerConsensusSnapshot }) {
         range ₹{consensus.target_low ?? '—'} – ₹{consensus.target_high ?? '—'}
       </p>
       <div className="text-muted-foreground/70 mt-1 flex gap-3 text-[10px] tabular-nums">
-        <span className="text-emerald-400/80">{consensus.n_buy} buy/add</span>
-        <span className="text-amber-400/70">{consensus.n_hold} hold</span>
+        <span className="text-good/80">{consensus.n_buy} buy/add</span>
+        <span className="text-warning/70">{consensus.n_hold} hold</span>
         {consensus.n_sell > 0 ? (
-          <span className="text-red-400/80">{consensus.n_sell} sell/reduce</span>
+          <span className="text-critical/80">{consensus.n_sell} sell/reduce</span>
         ) : null}
       </div>
       <ul className="mt-3 space-y-1">
@@ -116,10 +116,10 @@ function RatingBadge({ rating }: { rating: string }) {
   const norm = rating.toUpperCase();
   const cls =
     norm === 'BUY' || norm === 'ADD' || norm === 'ACCUMULATE'
-      ? 'bg-emerald-500/15 text-emerald-300'
+      ? 'bg-good/15 text-good'
       : norm === 'HOLD' || norm === 'NEUTRAL'
-        ? 'bg-amber-500/15 text-amber-300'
-        : 'bg-red-500/15 text-red-300';
+        ? 'bg-warning/15 text-warning'
+        : 'bg-critical/15 text-critical';
   return (
     <span className={`rounded px-1.5 py-0.5 text-[10px] font-mono ${cls}`}>{norm}</span>
   );

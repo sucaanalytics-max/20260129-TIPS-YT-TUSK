@@ -19,7 +19,7 @@ function fmtPct(n: number | null): string {
 
 function color(n: number | null): string {
   if (n == null) return 'text-muted-foreground';
-  return n >= 0 ? 'text-emerald-400' : 'text-red-400';
+  return n >= 0 ? 'text-good' : 'text-critical';
 }
 
 export function ReturnsMatrix({ rows }: { rows: ReturnsMatrixRow[] }) {

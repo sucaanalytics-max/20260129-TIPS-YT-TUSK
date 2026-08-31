@@ -1,10 +1,10 @@
 import type { OpsRunRow } from '@/lib/queries';
 
 const STATUS_COLOR: Record<string, string> = {
-  ok: 'text-emerald-400',
-  partial: 'text-amber-400',
-  failed: 'text-red-400',
-  running: 'text-blue-400',
+  ok: 'text-good',
+  partial: 'text-warning',
+  failed: 'text-critical',
+  running: 'text-info',
 };
 
 export function RunHistory({ runs }: { runs: OpsRunRow[] }) {

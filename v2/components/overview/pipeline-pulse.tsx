@@ -1,10 +1,10 @@
 import type { OpsRunRow } from '@/lib/queries';
 
 const STATUS_DOT: Record<string, string> = {
-  ok: 'bg-emerald-400',
-  partial: 'bg-amber-400',
-  failed: 'bg-red-400',
-  running: 'bg-blue-400 animate-pulse',
+  ok: 'bg-good',
+  partial: 'bg-warning',
+  failed: 'bg-critical',
+  running: 'bg-info animate-pulse',
 };
 
 function ago(iso: string | null): string {

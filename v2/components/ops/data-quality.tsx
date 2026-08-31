@@ -24,11 +24,11 @@ export function DataQuality({ snapshot }: { snapshot: DataQualitySnapshot }) {
         </div>
         <div className="flex items-center gap-2">
           {unresolved_channels > 0 ? (
-            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] text-amber-300">
+            <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] text-warning">
               {unresolved_channels} frozen today
             </span>
           ) : (
-            <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] text-emerald-300">
+            <span className="rounded bg-good/15 px-1.5 py-0.5 text-[10px] text-good">
               nothing frozen today
             </span>
           )}
@@ -72,7 +72,7 @@ export function DataQuality({ snapshot }: { snapshot: DataQualitySnapshot }) {
                     <td className="py-1.5 text-right tabular-nums">
                       <span
                         className={
-                          d.max_span_days >= 7 ? 'text-amber-300' : 'text-muted-foreground'
+                          d.max_span_days >= 7 ? 'text-warning' : 'text-muted-foreground'
                         }
                         title={`The catch-up delta covered ${d.max_span_days} days`}
                       >

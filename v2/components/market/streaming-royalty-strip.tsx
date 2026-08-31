@@ -81,16 +81,16 @@ export function StreamingRoyaltyStrip({
 function InputConflictBanner({ est }: { est: StreamingRoyaltyEstimate }) {
   const cc = est.cross_check;
   return (
-    <div className="mb-4 rounded-md border border-red-500/40 bg-red-500/10 p-3">
-      <p className="text-red-200 text-xs font-medium">
+    <div className="mb-4 rounded-md border border-critical/40 bg-critical/10 p-3">
+      <p className="text-critical text-xs font-medium">
         Estimate suppressed — the source inputs contradict each other
       </p>
-      <ul className="text-red-200/80 mt-1.5 space-y-1 text-[11px]">
+      <ul className="text-critical/80 mt-1.5 space-y-1 text-[11px]">
         {cc.failures.map((f) => (
           <li key={f}>• {f}</li>
         ))}
       </ul>
-      <p className="text-red-200/70 mt-2 text-[11px]">
+      <p className="text-critical/70 mt-2 text-[11px]">
         The ₹0.10/stream min-guarantee rate (2024 broker notes) and the ~6tn India stream
         count (EY-FICCI) are not on the same basis, so multiplying them overstates the
         free-tier leg — which then contributes ~99% of the modelled royalty. Fix the
@@ -110,7 +110,7 @@ function BlockedCard({ est }: { est: StreamingRoyaltyEstimate }) {
         <span className="text-foreground text-xs font-semibold tracking-tight">
           {est.company}
         </span>
-        <span className="rounded bg-red-500/15 px-1.5 py-0.5 text-[10px] font-mono text-red-300">
+        <span className="rounded bg-critical/15 px-1.5 py-0.5 text-[10px] font-mono text-critical">
           unreconciled
         </span>
       </div>
@@ -207,7 +207,7 @@ function Line({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
       <dt className="text-muted-foreground/70">{k}</dt>
-      <dd className={`tabular-nums ${warn ? 'text-amber-300' : 'text-muted-foreground'}`}>{v}</dd>
+      <dd className={`tabular-nums ${warn ? 'text-warning' : 'text-muted-foreground'}`}>{v}</dd>
     </div>
   );
 }

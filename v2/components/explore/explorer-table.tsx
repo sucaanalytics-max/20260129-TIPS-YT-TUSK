@@ -126,7 +126,7 @@ export function ExplorerTable({ rows }: { rows: ExplorerRow[] }) {
               onClick={() => toggle(companies, c, setCompanies)}
               className={`rounded-md border px-2 py-1 ${
                 companies.includes(c) || companies.length === 0
-                  ? 'border-blue-500/60 bg-blue-500/15 text-blue-200'
+                  ? 'border-info/60 bg-info/15 text-info'
                   : 'border-border text-muted-foreground'
               }`}
             >
@@ -143,7 +143,7 @@ export function ExplorerTable({ rows }: { rows: ExplorerRow[] }) {
               onClick={() => toggle(metrics, m, setMetrics)}
               className={`rounded-md border px-2 py-1 ${
                 metrics.includes(m)
-                  ? 'border-blue-500/60 bg-blue-500/15 text-blue-200'
+                  ? 'border-info/60 bg-info/15 text-info'
                   : 'border-border text-muted-foreground'
               }`}
             >
@@ -159,7 +159,7 @@ export function ExplorerTable({ rows }: { rows: ExplorerRow[] }) {
               key={g}
               onClick={() => setGrain(g)}
               className={`rounded-md border px-2 py-1 capitalize ${
-                grain === g ? 'border-blue-500/60 bg-blue-500/15 text-blue-200' : 'border-border text-muted-foreground'
+                grain === g ? 'border-info/60 bg-info/15 text-info' : 'border-border text-muted-foreground'
               }`}
             >
               {g}
@@ -177,7 +177,7 @@ export function ExplorerTable({ rows }: { rows: ExplorerRow[] }) {
         </div>
 
         <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 select-none">
-          <input type="checkbox" checked={hideImputed} onChange={(e) => setHideImputed(e.target.checked)} className="accent-blue-500" />
+          <input type="checkbox" checked={hideImputed} onChange={(e) => setHideImputed(e.target.checked)} className="accent-info" />
           Exclude repaired days
         </label>
 
@@ -185,7 +185,7 @@ export function ExplorerTable({ rows }: { rows: ExplorerRow[] }) {
       </div>
 
       {preRegime ? (
-        <p className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-300">
+        <p className="mb-3 rounded-md border border-warning/30 bg-warning/5 p-2 text-[11px] text-warning">
           This range reaches before {REGIME_BREAK}, where the series is a single legacy
           aggregate row per day. Those rows have no per-channel breakdown, so the channel
           column reads n/a — they are not zero.
@@ -211,7 +211,7 @@ export function ExplorerTable({ rows }: { rows: ExplorerRow[] }) {
                 <td className="text-muted-foreground py-1.5 pr-3">
                   {r.company}
                   {r.imputed > 0 ? (
-                    <span className="ml-1.5 text-amber-400" title={`${r.imputed} channel-days repaired`}>·</span>
+                    <span className="ml-1.5 text-warning" title={`${r.imputed} channel-days repaired`}>·</span>
                   ) : null}
                 </td>
                 {metrics.includes('views') ? <td className="text-foreground py-1.5 pr-3 text-right tabular-nums">{fmt(r.views)}</td> : null}

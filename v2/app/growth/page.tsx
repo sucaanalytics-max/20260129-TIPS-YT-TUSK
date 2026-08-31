@@ -16,10 +16,10 @@ interface Search { company?: string }
 
 export default function GrowthPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
+    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Growth</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Growth</h1>
+        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
           Period-over-period daily views growth — company aggregates + per-channel table
         </p>
         <Suspense fallback={<div className="mt-4 h-8" />}>

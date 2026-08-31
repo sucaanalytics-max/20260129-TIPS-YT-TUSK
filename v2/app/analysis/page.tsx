@@ -17,14 +17,14 @@ import { LagCorrelationGrid } from '@/components/analysis/lag-correlation-grid';
  */
 export default function AnalysisPage() {
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
+    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
       <Suspense fallback={null}>
         <AuthGate />
       </Suspense>
 
       <header className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Analysis</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Analysis</h1>
+        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
           Control limits and lag correlation · 110-day window
         </p>
       </header>

@@ -10,10 +10,10 @@ interface Search { type?: string }
 
 export default function EventsPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
+    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Events</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Events</h1>
+        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
           Event-study CAR over [-5, +5] trading days vs NIFTY MIDCAP 150 · bootstrap 95% CI
         </p>
         <Suspense fallback={<div className="mt-4 h-8" />}>

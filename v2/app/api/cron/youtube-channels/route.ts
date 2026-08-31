@@ -202,15 +202,27 @@ export async function GET(req: Request) {
       const { error } = await supabase
         .from('fct_channel_daily')
         .upsert(chunk, { onConflict: 'channel_id,date' });
-      if (error) {
-        failed.push(
-          ...chunk.map((r) => ({
-            channel_id: r.channel_id as string,
-            error: error.message,
-          })),
-        );
-      } else {
+      if (!error) {
         upserted += chunk.length;
+        continue;
+      }
+      /*
+       * A chunk is all-or-nothing, so one unacceptable row discards up to 24
+       * good ones. That turned a handful of out-of-range deltas into a total
+       * ingest outage: 71 rows offered, 0 written, every day for four days,
+       * with the gap widening each run. Retry the chunk row by row so a bad row
+       * costs one channel-day instead of the whole batch, and report the rows
+       * that genuinely failed rather than tarring the chunk with them.
+       */
+      for (const row of chunk) {
+        const { error: rowError } = await supabase
+          .from('fct_channel_daily')
+          .upsert(row, { onConflict: 'channel_id,date' });
+        if (rowError) {
+          failed.push({ channel_id: row.channel_id as string, error: rowError.message });
+        } else {
+          upserted += 1;
+        }
       }
     }
 

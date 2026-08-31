@@ -31,10 +31,29 @@
  * Critically this is tested against the per-day RATE, not the raw delta. A long
  * freeze produces a large catch-up whose daily share is perfectly ordinary
  * (a 5-day stall on a 45M/day channel arrives as +225M), and discarding that
- * would throw away real data. Kept below the fct_channel_daily CHECK
- * constraint (< 500m) so a repair can never be rejected by the database.
+ * would throw away real data.
+ *
+ * This comment used to claim the rate ceiling kept every repair below the
+ * fct_channel_daily CHECK constraint. It does not, and that gap took the
+ * channel ingest down for four days: where rows are missing the delta is stored
+ * WHOLE, so the value written is the rate times the span, and any span of three
+ * or more days can clear 500m while passing a 200m/day rate test. Every write
+ * was then rejected, which widened the gap, which lengthened the next span — a
+ * failure that could not recover on its own.
+ *
+ * So there are two ceilings now and they mean different things. The RATE
+ * ceiling asks "is this a believable number of views per day?". The STORABLE
+ * ceiling asks "will the database accept this row?" and must equal the CHECK
+ * constraint exactly. A value may pass the first and fail the second.
  */
 export const MAX_PLAUSIBLE_DAILY_VIEWS = 200_000_000;
+
+/**
+ * Mirrors `fct_channel_daily_daily_views_check`: daily_views must be NULL, or
+ * >= 0 and < 500,000,000. Anything at or above this is left UNKNOWN rather than
+ * written, because a rejected row loses the whole batch it travels in.
+ */
+export const MAX_STORABLE_DAILY_VIEWS = 500_000_000;
 
 export interface DeltaPoint {
   date: string;               // YYYY-MM-DD, ascending
@@ -102,6 +121,15 @@ export function computeDailyViews(series: DeltaPoint[]): DeltaResult[] {
     // delta covers. Where rows are missing we keep the value whole (so the
     // total is never lost) and let delta_span_days carry the caveat.
     if (span !== rowsCovered || span === 1) {
+      // ...unless the database would refuse it. Storing the delta whole is the
+      // one path that writes a value larger than the per-day rate, so it is the
+      // one path that can exceed the CHECK constraint. An unknown day costs one
+      // day of reach; a rejected row costs every row in its batch and every day
+      // after it.
+      if (dv >= MAX_STORABLE_DAILY_VIEWS) {
+        clearRunBefore(frozen, i);
+        continue;
+      }
       out[i].daily_views = dv;
       out[i].delta_span_days = span;
       continue;

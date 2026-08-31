@@ -11,7 +11,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { computeDailyViews, MAX_PLAUSIBLE_DAILY_VIEWS, type DeltaPoint } from './view-delta';
+import { computeDailyViews, MAX_PLAUSIBLE_DAILY_VIEWS, type DeltaPoint, MAX_STORABLE_DAILY_VIEWS } from './view-delta';
 
 const pt = (date: string, total_views: number | null): DeltaPoint => ({ date, total_views });
 
@@ -207,4 +207,69 @@ test('computeDailyViews: gap AND freeze together — span from dates, value whol
   assert.equal(r[2].daily_views, 700_000);
   assert.equal(r[2].delta_span_days, 7);
   assert.equal(r[2].imputed, false);
+});
+
+/* ---- the storable ceiling ------------------------------------------------
+ *
+ * The outage of 2026-08-28..31: a delta stored WHOLE is the rate times the
+ * span, so it can pass a 200m/day rate test and still exceed the database's
+ * absolute 500m CHECK constraint. Every write was rejected, which widened the
+ * gap, which lengthened the next span.
+ */
+
+test('a whole-stored delta above the storable ceiling is left unknown', () => {
+  // Rows missing for part of the span, so the delta is stored whole. Rate is
+  // 150m/day — comfortably inside MAX_PLAUSIBLE_DAILY_VIEWS — but the raw value
+  // is 600m, which the database would refuse.
+  const got = computeDailyViews([
+    { date: '2026-08-27', total_views: 1_000_000_000 },
+    { date: '2026-08-31', total_views: 1_600_000_000 },
+  ]);
+  assert.equal(got[1].daily_views, null, '600m must not be offered to the database');
+  assert.ok(MAX_STORABLE_DAILY_VIEWS <= 500_000_000);
+});
+
+test('a whole-stored delta below the storable ceiling is still written', () => {
+  // Same shape, 400m over the same 4-day gap. Acceptable to the constraint, so
+  // it must NOT be discarded — the fix must not throw away good data.
+  const got = computeDailyViews([
+    { date: '2026-08-27', total_views: 1_000_000_000 },
+    { date: '2026-08-31', total_views: 1_400_000_000 },
+  ]);
+  assert.equal(got[1].daily_views, 400_000_000);
+  assert.equal(got[1].delta_span_days, 4);
+});
+
+test('an evenly-split catch-up is unaffected by the storable ceiling', () => {
+  // Every day present, so the delta is split rather than stored whole. Each
+  // share is 150m, well inside the constraint, and the sum stays exact.
+  const got = computeDailyViews([
+    { date: '2026-08-27', total_views: 1_000_000_000 },
+    { date: '2026-08-28', total_views: 1_000_000_000 },
+    { date: '2026-08-29', total_views: 1_000_000_000 },
+    { date: '2026-08-30', total_views: 1_600_000_000 },
+  ]);
+  const written = got.slice(1).map((r) => r.daily_views ?? 0);
+  assert.equal(written.reduce((a, b) => a + b, 0), 600_000_000);
+  for (const v of written) assert.ok(v < MAX_STORABLE_DAILY_VIEWS);
+});
+
+test('every value this module emits is acceptable to the CHECK constraint', () => {
+  // The invariant the old comment claimed but did not hold. Sweep a range of
+  // spans and magnitudes; nothing may come back negative or at/above the bound.
+  for (const span of [1, 2, 3, 4, 7, 12, 30]) {
+    for (const perDay of [0, 1, 1_000_000, 199_000_000, 250_000_000]) {
+      const series = [{ date: '2026-01-01', total_views: 0 }];
+      const end = new Date(Date.UTC(2026, 0, 1 + span)).toISOString().slice(0, 10);
+      series.push({ date: end, total_views: perDay * span });
+      for (const r of computeDailyViews(series)) {
+        if (r.daily_views == null) continue;
+        assert.ok(r.daily_views >= 0, `negative at span ${span}, rate ${perDay}`);
+        assert.ok(
+          r.daily_views < MAX_STORABLE_DAILY_VIEWS,
+          `${r.daily_views} at span ${span}, rate ${perDay} would be rejected`,
+        );
+      }
+    }
+  }
 });

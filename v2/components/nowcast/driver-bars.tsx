@@ -9,7 +9,7 @@ const LABEL: Record<DriverContribution['driver'], string> = {
   ugc: 'UGC',
 };
 
-const VIEWS: Record<DriverContribution['driver'], keyof NowcastDrivers> = {
+const VIEWS: Record<DriverContribution['driver'], 'ownedViews' | 'topicViews' | 'ugcViews'> = {
   owned: 'ownedViews',
   topic: 'topicViews',
   ugc: 'ugcViews',

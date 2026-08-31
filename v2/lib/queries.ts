@@ -911,17 +911,47 @@ export async function getNowcastDrivers(opts: {
   const [{ data: owned }, topic] = await Promise.all([
     supabase
       .from('v_company_daily')
-      .select('daily_views')
+      .select('date, daily_views')
       .eq('company', opts.company)
       .gte('date', opts.from)
       .lte('date', opts.to),
     getTopicReach({ company: opts.company, days: daysBack }),
   ]);
 
-  const ownedViews = ((owned ?? []) as Array<{ daily_views: number | null }>).reduce(
-    (a, r) => a + Number(r.daily_views ?? 0),
-    0,
-  );
+  const ownedRows = (owned ?? []) as Array<{ date: string; daily_views: number | null }>;
+
+  /*
+   * Impute the gap rather than letting it read as zero.
+   *
+   * Not every elapsed day carries a value: YouTube freezes cumulative counts
+   * (~4.7% of channel-days), the repair leaves a genuinely unresolvable day
+   * NULL, and some days are missing from the table entirely. Summing what
+   * exists and then dividing by CALENDAR progress silently treats each of
+   * those unknown days as a zero-view day. Measured on FY27 Q2 at 2026-08-31:
+   * 54 of 62 elapsed days carried a value, so the estimate came out ~13% low.
+   *
+   * A missing day is unknown, not empty, so it is imputed at the observed
+   * daily mean -- which is exactly what scaling the total by
+   * elapsed/observed does. Where coverage is complete this is a no-op.
+   */
+  const observedRows = ownedRows.filter((r) => r.daily_views != null);
+  const observedDays = observedRows.length;
+  const elapsedDays =
+    Math.round(
+      (Date.parse(`${opts.to}T00:00:00Z`) - Date.parse(`${opts.from}T00:00:00Z`)) / 86_400_000,
+    ) + 1;
+
+  const observedViews = observedRows.reduce((a, r) => a + Number(r.daily_views), 0);
+  const coverage = observedDays > 0 ? observedDays / elapsedDays : 0;
+
+  if (observedDays === 0) {
+    throw new Error(
+      `getNowcastDrivers: no usable owned-view day for ${opts.company} in ${opts.from}..${opts.to}. ` +
+        `Refusing to report zero reach as a measurement.`,
+    );
+  }
+
+  const ownedViews = observedViews / coverage;
 
   // TopicReachSnapshot exposes a daily `series`, not a period total — sum the
   // days inside this quarter rather than reusing totals.last_30d, which is a
@@ -938,7 +968,7 @@ export async function getNowcastDrivers(opts: {
    * per company per run against a 120s cron budget for no effect on the output.
    * `includeUgc` stays in the model for when UGC is measured as a flow.
    */
-  return { ownedViews, topicViews, ugcViews: 0 };
+  return { ownedViews, topicViews, ugcViews: 0, observedDays, elapsedDays };
 }
 
 /**

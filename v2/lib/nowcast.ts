@@ -12,12 +12,20 @@
  */
 
 export interface NowcastDrivers {
-  /** Quarter-to-date views on owned channels. */
+  /** Quarter-to-date views on owned channels, imputed to full day coverage. */
   ownedViews: number;
   /** Quarter-to-date views attributed via Topic / OAC channels. */
   topicViews: number;
   /** Quarter-to-date UGC reach. A sampled lower bound. */
   ugcViews: number;
+  /**
+   * Day coverage behind the figures above. Carried for auditability only —
+   * computeNowcast ignores these, because getNowcastDrivers has already
+   * imputed the gap. They are stored with the estimate so a later reader can
+   * see how much of the quarter was actually observed.
+   */
+  observedDays?: number;
+  elapsedDays?: number;
 }
 
 export interface NowcastAssumptions {

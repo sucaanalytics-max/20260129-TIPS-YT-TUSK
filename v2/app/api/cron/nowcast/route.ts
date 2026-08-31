@@ -57,7 +57,7 @@ export async function GET(req: Request) {
   // revalidate leaves the dashboard serving a stale render over fresh rows,
   // which is exactly the failure that went unnoticed for two months (see
   // lib/revalidate.ts), so it is written down rather than dropped.
-  const revalidate: BumpResult | null = written > 0 ? bumpTags(CACHE_TAGS.overview, CACHE_TAGS.ops) : null;
+  const revalidate: BumpResult | null = written > 0 ? bumpTags(CACHE_TAGS.nowcast, CACHE_TAGS.overview, CACHE_TAGS.ops) : null;
 
   await supabase
     .from('ops_ingest_run')

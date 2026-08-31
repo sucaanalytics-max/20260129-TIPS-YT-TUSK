@@ -57,4 +57,5 @@ export const CACHE_TAGS = {
   signals: 'signals',
   rank: 'rank',
   market: 'market',
+  nowcast: 'nowcast',
 } as const;

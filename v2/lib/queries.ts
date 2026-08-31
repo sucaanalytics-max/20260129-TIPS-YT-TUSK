@@ -1030,6 +1030,127 @@ export async function storeNowcast(opts: {
  * was made. Unconfirmed financials are excluded — a misparsed line would poison
  * the record permanently.
  */
+/**
+ * Everything the front page says about one company.
+ *
+ * Deliberately tolerant of an empty nowcast table: until the cron has run for
+ * the first time there is no band, and the page must say so rather than render
+ * a zero. `band: null` is the honest state, not an error.
+ */
+export interface NowcastHeadline {
+  company: Company;
+  fiscal: FiscalQuarter;
+  quarterProgress: number;
+  /** Null until the nowcast cron has stored an estimate for this quarter. */
+  band: { low: number; mid: number; high: number; asof: string } | null;
+  /** The most recent quarter actually reported, and what it printed. */
+  lastPrinted: { fiscalLabel: string; valueInr: number } | null;
+  /** Year-on-year change on lastPrinted, as a fraction. Null when the year-ago quarter is absent. */
+  yoy: number | null;
+  fullYear: { fiscalLabel: string; valueInr: number } | null;
+  trackRecord: TrackRecord;
+}
+
+export async function getNowcastHeadline(
+  company: Company,
+  asof: string,
+): Promise<NowcastHeadline> {
+  const supabase = getServiceSupabase();
+  const fiscal = fiscalQuarterOf(asof);
+
+  const [{ data: latest }, { data: reported }, trackRecord] = await Promise.all([
+    supabase
+      .from('fct_revenue_nowcast')
+      .select('asof, band_low_inr, band_mid_inr, band_high_inr')
+      .eq('company', company)
+      .eq('fiscal_label', fiscal.label)
+      .order('asof', { ascending: false })
+      .limit(1),
+    supabase
+      .from('fct_reported_financials')
+      .select('fiscal_label, value_inr')
+      .eq('company', company)
+      .eq('line_item', TARGET_LINE_ITEM[company]),
+    getTrackRecord(company),
+  ]);
+
+  const rows = (reported ?? []) as Array<{ fiscal_label: string; value_inr: number }>;
+  const byLabel = new Map(rows.map((r) => [r.fiscal_label, Number(r.value_inr)]));
+
+  // Quarterly labels carry a "Qn" suffix; a bare "FY26" is the full year. Sorting
+  // the quarterly labels lexically is safe because the format is fixed-width.
+  const quarterly = rows.filter((r) => / Q[1-4]$/.test(r.fiscal_label)).sort((a, b) =>
+    a.fiscal_label < b.fiscal_label ? 1 : -1,
+  );
+  const last = quarterly[0] ?? null;
+
+  let yoy: number | null = null;
+  let lastPrinted: NowcastHeadline['lastPrinted'] = null;
+  if (last) {
+    lastPrinted = { fiscalLabel: last.fiscal_label, valueInr: Number(last.value_inr) };
+    const m = /^FY(\d{2}) Q([1-4])$/.exec(last.fiscal_label);
+    if (m) {
+      const prior = byLabel.get(`FY${String(Number(m[1]) - 1).padStart(2, '0')} Q${m[2]}`);
+      // Guard the denominator: a zero prior year would make yoy infinite, which
+      // would render as a nonsense percentage rather than an absent one.
+      if (prior !== undefined && prior > 0) yoy = (lastPrinted.valueInr - prior) / prior;
+    }
+  }
+
+  const fullYearRow = rows
+    .filter((r) => /^FY\d{2}$/.test(r.fiscal_label))
+    .sort((a, b) => (a.fiscal_label < b.fiscal_label ? 1 : -1))[0];
+
+  const b = ((latest ?? []) as Array<{
+    asof: string; band_low_inr: number; band_mid_inr: number; band_high_inr: number;
+  }>)[0];
+
+  return {
+    company,
+    fiscal,
+    quarterProgress: quarterProgress(asof),
+    band: b
+      ? {
+          low: Number(b.band_low_inr),
+          mid: Number(b.band_mid_inr),
+          high: Number(b.band_high_inr),
+          asof: b.asof,
+        }
+      : null,
+    lastPrinted,
+    yoy,
+    fullYear: fullYearRow
+      ? { fiscalLabel: fullYearRow.fiscal_label, valueInr: Number(fullYearRow.value_inr) }
+      : null,
+    trackRecord,
+  };
+}
+
+/**
+ * The nowcast recomputed live from today's drivers, so /drivers shows the
+ * working rather than the stored answer. The cron's row is the record; this is
+ * the derivation, and the two agreeing is itself a useful check.
+ */
+export async function getNowcastBreakdown(
+  company: Company,
+  asof: string,
+  assumptions: NowcastAssumptions = DEFAULT_ASSUMPTIONS,
+): Promise<{
+  fiscal: FiscalQuarter;
+  drivers: NowcastDrivers;
+  assumptions: NowcastAssumptions;
+  result: ReturnType<typeof computeNowcast>;
+}> {
+  const fiscal = fiscalQuarterOf(asof);
+  const drivers = await getNowcastDrivers({ company, from: fiscal.start, to: asof });
+  const result = computeNowcast({
+    drivers,
+    assumptions,
+    quarterProgress: quarterProgress(asof),
+  });
+  return { fiscal, drivers, assumptions, result };
+}
+
 export async function getTrackRecord(company: Company): Promise<TrackRecord> {
   const supabase = getServiceSupabase();
   const [{ data: actuals }, { data: estimates }] = await Promise.all([

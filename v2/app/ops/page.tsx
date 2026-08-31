@@ -14,10 +14,10 @@ import { CACHE_TAGS } from '@/lib/revalidate';
 
 export default function OpsPage() {
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <header className="mb-6">
-        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Ops</h1>
-        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
+        <h1 className="text-2xl font-semibold tracking-tight">Ops</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Cron run history + error log for the last 7 days
         </p>
       </header>

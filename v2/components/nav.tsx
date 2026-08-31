@@ -4,70 +4,56 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 
-/**
- * Four sections, not twelve links.
- *
- * The old nav listed every page flat, which made a raw-series page look as
- * important as the answer. These follow the structure the design settled on:
- * Level 0 is the estimate, Level 1 is what moved it, Level 2 is the evidence
- * underneath, and Ops is the health of the pipe that feeds all three.
- *
- * `owns` lists the routes that belong to a section so a deep page still lights
- * up its parent — /channels is Evidence even though it is not under /evidence.
- */
-const SECTIONS = [
-  { href: '/', label: 'Nowcast', owns: [] as string[] },
-  { href: '/drivers', label: 'Drivers', owns: ['/signals'] },
-  {
-    href: '/evidence',
-    label: 'Evidence',
-    owns: ['/explore', '/analysis', '/growth', '/channels', '/market', '/stock', '/data', '/correlation', '/events'],
-  },
-  { href: '/ops', label: 'Ops', owns: [] as string[] },
+const ITEMS = [
+  { href: '/', label: 'Overview' },
+  { href: '/nowcast', label: 'Nowcast' },
+  { href: '/drivers', label: 'Drivers' },
+  { href: '/signals', label: 'Signals' },
+  { href: '/analysis', label: 'Analysis' },
+  { href: '/explore', label: 'Explore' },
+  { href: '/market', label: 'Market' },
+  { href: '/growth', label: 'Growth' },
+  { href: '/channels', label: 'Channels' },
+  { href: '/correlation', label: 'Correlation' },
+  { href: '/events', label: 'Events' },
+  { href: '/stock', label: 'Stock' },
+  { href: '/data', label: 'Data' },
+  { href: '/ops', label: 'Ops' },
 ];
 
-export function Masthead() {
+export function Nav() {
   const pathname = usePathname();
-
-  const isActive = (href: string, owns: string[]) =>
-    href === '/'
-      ? pathname === '/'
-      : pathname === href || pathname.startsWith(`${href}/`) || owns.some((p) => pathname.startsWith(p));
-
   return (
-    <header className="rule-double bg-background sticky top-0 z-20">
-      <div className="mx-auto flex max-w-[1440px] items-baseline justify-between gap-8 px-6 pb-3.5 pt-5 md:px-12">
-        <Link href="/" className="font-serif text-[25px] font-bold leading-none tracking-[-0.01em]">
-          Tusk{' '}
-          <span className="text-muted-foreground text-[22px] font-normal italic">
-            catalogue fundamentals
-          </span>
-        </Link>
-
-        <nav className="flex items-baseline gap-6 md:gap-[26px]">
-          {SECTIONS.map((s) => {
-            const active = isActive(s.href, s.owns);
-            return (
-              <Link
-                key={s.href}
-                href={s.href}
-                aria-current={active ? 'page' : undefined}
-                className={
-                  active
-                    ? 'border-accent text-foreground border-b-2 pb-[3px] text-[12.5px]'
-                    : 'text-muted-foreground hover:text-foreground border-b-2 border-transparent pb-[3px] text-[12.5px] transition-colors'
-                }
-              >
-                {s.label}
-              </Link>
-            );
-          })}
-          <UserButton
-            afterSignOutUrl="/sign-in"
-            appearance={{ elements: { avatarBox: 'h-6 w-6' } }}
-          />
-        </nav>
+    <nav className="border-border bg-card/40 sticky top-0 z-10 border-b backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+        <div className="flex items-center gap-6">
+          <Link href="/" className="text-foreground text-sm font-semibold tracking-tight">
+            TUSK
+            <span className="text-muted-foreground ml-2 font-normal">YT × NSE</span>
+          </Link>
+          <ul className="flex items-center gap-1">
+            {ITEMS.map((item) => {
+              const active =
+                item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      active
+                        ? 'bg-blue-500/15 text-blue-200'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <UserButton afterSignOutUrl="/sign-in" appearance={{ elements: { avatarBox: 'h-7 w-7' } }} />
       </div>
-    </header>
+    </nav>
   );
 }

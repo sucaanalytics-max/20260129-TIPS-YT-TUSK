@@ -8,10 +8,10 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 
 export default function CorrelationPage() {
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <header className="mb-6">
-        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Correlation</h1>
-        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
+        <h1 className="text-2xl font-semibold tracking-tight">Correlation</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Log-returns × log-growth-views — rolling Pearson r at multiple windows · Granger summary below
         </p>
       </header>
@@ -97,7 +97,7 @@ async function GrangerBlock() {
               <td className="px-4 py-2 font-mono text-xs">{r.direction}</td>
               <td className="px-4 py-2 text-right tabular-nums">{r.lag}</td>
               <td className="px-4 py-2 text-right tabular-nums">{r.f_statistic.toFixed(3)}</td>
-              <td className={`px-4 py-2 text-right tabular-nums ${r.p_value < 0.05 ? 'text-good' : ''}`}>
+              <td className={`px-4 py-2 text-right tabular-nums ${r.p_value < 0.05 ? 'text-emerald-400' : ''}`}>
                 {r.p_value.toFixed(4)}
               </td>
               <td className="text-muted-foreground px-4 py-2 text-right tabular-nums">{r.n_obs}</td>

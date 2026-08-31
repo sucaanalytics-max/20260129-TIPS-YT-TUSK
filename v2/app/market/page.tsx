@@ -33,15 +33,15 @@ import { CatalogChartStrip } from '@/components/market/catalog-chart-strip';
  */
 export default function MarketPage() {
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <Suspense fallback={null}>
         <AuthGate />
       </Suspense>
 
       <header className="mb-8 flex items-baseline justify-between">
         <div>
-          <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Market</h1>
-          <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
+          <h1 className="text-3xl font-semibold tracking-tight">Market</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             India music-streaming demand · paid-migration tailwind — sector context, graded
             LOW, not weighted into the IR read
           </p>

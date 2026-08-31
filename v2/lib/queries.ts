@@ -4388,3 +4388,50 @@ export async function getDemandLayer(): Promise<DemandLayerSnapshot> {
     },
   };
 }
+
+/**
+ * Every figure read off a filing, confirmed or not.
+ *
+ * The nowcast is scored against these rows, so they are the evidence and belong
+ * on screen rather than only inside getTrackRecord's closure. Unconfirmed rows
+ * are returned DELIBERATELY — getNowcastHeadline filters them out of the
+ * headline, and the only way a reader can tell a checked figure from an
+ * unchecked one is to see both with the flag attached.
+ */
+export interface ReportedFinancialRow {
+  company: Company;
+  fiscal_label: string;
+  line_item: string;
+  /** RUPEES. Divide by 1e7 for crore (rupeesToCrore).*/
+  value_inr: number;
+  confirmed: boolean;
+  source_url: string | null;
+  notes: string | null;
+}
+
+export async function getReportedFinancials(): Promise<ReportedFinancialRow[]> {
+  const supabase = getServiceSupabase();
+  const { data } = await supabase
+    .from('fct_reported_financials')
+    .select('company, fiscal_label, line_item, value_inr, source_url, confirmed_by, notes')
+    .order('company', { ascending: true })
+    .order('fiscal_label', { ascending: false });
+
+  return ((data ?? []) as Array<{
+    company: string;
+    fiscal_label: string;
+    line_item: string;
+    value_inr: number | string;
+    source_url: string | null;
+    confirmed_by: string | null;
+    notes: string | null;
+  }>).map((r) => ({
+    company: r.company as Company,
+    fiscal_label: r.fiscal_label,
+    line_item: r.line_item,
+    value_inr: Number(r.value_inr),
+    confirmed: r.confirmed_by != null,
+    source_url: r.source_url,
+    notes: r.notes,
+  }));
+}

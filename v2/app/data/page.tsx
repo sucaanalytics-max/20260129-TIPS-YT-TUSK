@@ -15,10 +15,10 @@ interface Search {
 
 export default function DataPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <header className="mb-6">
-        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Data</h1>
-        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
+        <h1 className="text-2xl font-semibold tracking-tight">Data</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Filterable per-channel daily rows · CSV export
         </p>
       </header>

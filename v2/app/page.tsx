@@ -2,104 +2,165 @@ import { Suspense } from 'react';
 import { auth } from '@clerk/nextjs/server';
 import { cacheLife, cacheTag } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { getNowcastHeadline } from '@/lib/queries';
+import {
+  getDualSymbolHeadline,
+  getDualSymbolChartSeries,
+  getCompanyGrowth,
+  getFreshness,
+  getEventHorizon,
+  getOpsRunHistory,
+} from '@/lib/queries';
+import {
+  parseStockRange,
+  resolveStockRange,
+  STOCK_RANGE_LABEL,
+  type StockRange,
+} from '@/lib/stock-range';
 import { CACHE_TAGS } from '@/lib/revalidate';
-import { Eyebrow, SectionHead } from '@/components/broadsheet';
-import { EstimateColumn } from '@/components/nowcast/estimate-column';
-import { TrackRecordPanel } from '@/components/nowcast/track-record';
+import { FreshnessBadge } from '@/components/freshness-badge';
+import { CompanyGrowth } from '@/components/breakdowns/company-growth';
+import { EventHorizonStrip } from '@/components/signals/event-horizon-strip';
+import { DualSymbolKpiStrip } from '@/components/overview/dual-symbol-kpi-strip';
+import { DualSymbolChart } from '@/components/overview/dual-symbol-chart';
+import { PipelinePulse } from '@/components/overview/pipeline-pulse';
+import { RangeSelector } from '@/components/stock/range-selector';
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-function pretty(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${d} ${MONTHS[m - 1]} ${y}`;
-}
-
-const DAY = 86_400_000;
-
-/**
- * Level 0 — the answer.
- *
- * One question, asked plainly, with the caveat attached to the number rather
- * than hidden in a footnote. Everything else on this site exists to justify
- * what these two columns say.
- */
-export default async function NowcastPage() {
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
+  const params = await searchParams;
+  const range: StockRange = parseStockRange(params.range);
+
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-12 md:px-12">
-      <Suspense fallback={<HeadlineSkeleton />}>
-        <Headline />
+    <main className="mx-auto max-w-7xl px-6 py-10">
+      <header className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">TUSK · YT × NSE</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Daily monitor — TIPSMUSIC + SAREGAMA · range:{' '}
+            <span className="text-foreground font-medium">{STOCK_RANGE_LABEL[range]}</span>
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <RangeSelector active={range} />
+          <Suspense fallback={<span className="text-muted-foreground text-xs">checking…</span>}>
+            <Freshness />
+          </Suspense>
+        </div>
+      </header>
+
+      <Suspense fallback={<KpiSkeleton />}>
+        <Headline range={range} />
       </Suspense>
+
+      <section className="mt-8">
+        <Suspense fallback={<ChartSkeleton />}>
+          <ChartBlock range={range} />
+        </Suspense>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-foreground mb-4 text-sm font-medium uppercase tracking-wider">
+          Growth — daily views, current vs prior period
+        </h2>
+        <p className="text-muted-foreground mb-3 text-xs">
+          Multi-period reference (independent of the page range selector).
+        </p>
+        <Suspense fallback={<MatrixSkeleton />}>
+          <Growth />
+        </Suspense>
+      </section>
+
+      <section className="mt-10 grid gap-4 lg:grid-cols-2">
+        <Suspense fallback={<CardSkeleton />}>
+          <Events />
+        </Suspense>
+        <Suspense fallback={<CardSkeleton />}>
+          <Pulse />
+        </Suspense>
+      </section>
     </main>
   );
 }
 
-async function Headline() {
+async function Freshness() {
+  'use cache';
+  cacheLife('minutes');
+  cacheTag(CACHE_TAGS.ops, CACHE_TAGS.overview, CACHE_TAGS.stock);
+  const status = await getFreshness();
+  return <FreshnessBadge status={status} />;
+}
+
+async function Headline({ range }: { range: StockRange }) {
   'use cache';
   cacheLife('hours');
-  cacheTag(CACHE_TAGS.nowcast, CACHE_TAGS.overview);
+  cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
+  const rows = await getDualSymbolHeadline({ range });
+  return <DualSymbolKpiStrip rows={rows} />;
+}
 
-  // The cron stamps its own asof; the page reads "today" so the dateline stays
-  // right even on a day the cron has not run yet.
-  const asof = new Date().toISOString().slice(0, 10);
-  const [tips, sare] = await Promise.all([
-    getNowcastHeadline('TIPSMUSIC', asof),
-    getNowcastHeadline('SAREGAMA', asof),
-  ]);
+async function ChartBlock({ range }: { range: StockRange }) {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.overview, CACHE_TAGS.stock, CACHE_TAGS.channels);
+  const { from, to } = resolveStockRange(range);
+  const data = await getDualSymbolChartSeries({ from, to });
+  return <DualSymbolChart data={data} />;
+}
 
-  const fq = tips.fiscal;
-  const daysLeft = Math.max(
-    0,
-    Math.round((Date.parse(`${fq.end}T00:00:00Z`) - Date.parse(`${asof}T00:00:00Z`)) / DAY),
-  );
+async function Growth() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.overview, CACHE_TAGS.channels);
+  const snapshots = await getCompanyGrowth();
+  return <CompanyGrowth snapshots={snapshots} />;
+}
 
+async function Events() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.events);
+  const events = await getEventHorizon({ days: 14 });
+  return <EventHorizonStrip events={events} />;
+}
+
+async function Pulse() {
+  'use cache';
+  cacheLife('minutes');
+  cacheTag(CACHE_TAGS.ops);
+  const runs = await getOpsRunHistory({ limit: 5 });
+  return <PipelinePulse runs={runs} />;
+}
+
+function KpiSkeleton() {
   return (
-    <>
-      <div className="text-muted-foreground flex flex-wrap items-baseline justify-between gap-3 py-3.5 pb-6 text-xs">
-        <span className="tnum uppercase tracking-[0.04em]">
-          Quarter {fq.q} · {fq.label} &nbsp;·&nbsp; {pretty(fq.start)} – {pretty(fq.end)}
-        </span>
-        <span className="tnum">
-          {(tips.quarterProgress * 100).toFixed(0)}% elapsed &nbsp;·&nbsp;{' '}
-          {daysLeft} day{daysLeft === 1 ? '' : 's'} to quarter end
-        </span>
-      </div>
-
-      <div className="grid items-start gap-9 md:grid-cols-[1fr_1px_1fr]">
-        <EstimateColumn head={tips} />
-        <div className="bg-border hidden h-[300px] w-px md:block" />
-        <EstimateColumn head={sare} />
-      </div>
-
-      <SectionHead title="Track record" note="the only reason to believe the figures above" />
-      <TrackRecordPanel
-        records={[
-          { company: 'TIPSMUSIC', label: 'Tips Music', track: tips.trackRecord },
-          { company: 'SAREGAMA', label: 'Saregama · music', track: sare.trackRecord },
-        ]}
-      />
-
-      <div className="text-muted-foreground mt-10 max-w-[90ch] text-[11.5px] leading-relaxed">
-        <Eyebrow className="mb-1.5">How the estimate is built</Eyebrow>
-        Measured quarter-to-date reach on owned channels and Topic/OAC-attributed channels is
-        extrapolated to a full quarter on elapsed days, converted at a rupee-per-thousand-views
-        band, and uplifted for revenue that does not appear on YouTube. UGC reach is tracked but
-        deliberately excluded: it is a cumulative discovered figure rather than a quarterly flow,
-        so extrapolating it would inflate the estimate. Internal research tool — not investment
-        advice.
-      </div>
-    </>
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="border-border bg-card/50 h-28 animate-pulse rounded-lg border" />
+      ))}
+    </section>
   );
 }
 
-function HeadlineSkeleton() {
+function ChartSkeleton() {
+  return <div className="border-border bg-card/50 h-80 animate-pulse rounded-lg border" />;
+}
+
+function MatrixSkeleton() {
   return (
-    <div className="grid animate-pulse gap-9 py-10 md:grid-cols-2">
-      <div className="bg-muted h-72" />
-      <div className="bg-muted h-72" />
+    <div className="space-y-4">
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className="border-border bg-card/50 h-64 animate-pulse rounded-lg border" />
+      ))}
     </div>
   );
+}
+
+function CardSkeleton() {
+  return <div className="border-border bg-card/50 h-48 animate-pulse rounded-lg border" />;
 }

@@ -10,10 +10,10 @@ interface Search { company?: string }
 
 export default function ChannelsPage({ searchParams }: { searchParams: Promise<Search> }) {
   return (
-    <main className="mx-auto max-w-[1440px] px-6 pb-12 pt-8 md:px-12">
+    <main className="mx-auto max-w-7xl px-6 py-10">
       <header className="mb-6">
-        <h1 className="rule-double font-serif text-2xl font-bold tracking-[-0.01em] pb-3">Channels</h1>
-        <p className="text-muted-foreground mt-3 max-w-[90ch] font-serif text-sm italic">
+        <h1 className="text-2xl font-semibold tracking-tight">Channels</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Per-channel daily stats and language rollup · subscriber deltas are noisy below 1k subs due to YT rounding
         </p>
         <Suspense fallback={<div className="mt-4 h-8" />}>
@@ -51,7 +51,7 @@ async function Tabs({ searchParams }: { searchParams: Promise<Search> }) {
           href={c ? `/channels?company=${c}` : '/channels'}
           className={`rounded-md border px-2.5 py-1 ${
             (company ?? '') === (c ?? '')
-              ? 'border-info bg-info/20 text-info'
+              ? 'border-blue-500 bg-blue-500/20 text-blue-200'
               : 'border-border text-muted-foreground'
           }`}
         >

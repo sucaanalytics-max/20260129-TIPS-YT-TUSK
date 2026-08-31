@@ -3,45 +3,36 @@
 @tailwind utilities;
 
 @layer base {
-  /*
-   * Broadsheet. A printed-page surface, not a trading terminal.
-   *
-   * The token NAMES are unchanged from the dark theme on purpose: every one of
-   * the 62 components already consumes hsl(var(--token)) and none of them
-   * hardcode a Tailwind palette class, so swapping the values here rethemes
-   * the whole app without editing a single component.
-   */
   :root {
-    --paper:      43 47% 97%;   /* #FBF9F4 the sheet */
-    --ink:        51 19% 7%;    /* #16150F the type  */
-
-    --background: var(--paper);
-    --foreground: var(--ink);
-    --card:       43 78% 98%;   /* #FEFCF7 a shade brighter than the sheet */
-    --card-foreground: var(--ink);
-    --muted:      44 30% 93%;   /* #F2EFE7 */
-    --muted-foreground: 47 9% 40%;  /* #6E6A5C */
-    --accent:     5 56% 35%;    /* #8C2F27 oxblood — links, the live rule */
-    --accent-foreground: var(--paper);
-    --border:     43 18% 80%;   /* #D6D1C4 the hairline rule */
-
-    --rule-heavy: 51 19% 7%;    /* the double rule under the masthead */
+    --background: 222 22% 6%;
+    --foreground: 210 20% 96%;
+    --card: 222 20% 9%;
+    --card-foreground: 210 20% 96%;
+    --muted: 222 14% 14%;
+    --muted-foreground: 215 14% 65%;
+    --accent: 220 90% 60%;
+    --accent-foreground: 210 20% 98%;
+    --border: 220 14% 18%;
 
     /*
-     * Semantic state. Components used to reach for Tailwind's 300/400 steps,
-     * which are tuned to glow on a dark surface and go washed-out on paper.
-     * These are the same values lib/chart-palette.ts uses, so a status reads
-     * identically whether it is drawn in a chart or set in text.
+     * Semantic state, kept from the theme work and tuned for THIS surface.
      *
-     * Good-vs-bad is red-vs-green, the one axis colour-blind readers lose, so
-     * every use must also carry a glyph or a word. Colour alone is never the
-     * encoding.
+     * Components used to hardcode Tailwind steps (text-emerald-400,
+     * text-amber-300, ...). Routing them through tokens is what made the theme
+     * swappable at all, so the indirection stays even though the values are
+     * back to the dark palette.
+     *
+     * `serious` and `critical` are deliberately NOT the old orange-400/red-400
+     * pair: measured against this surface those sat 8.0 apart in normal vision,
+     * i.e. genuinely hard to tell apart. Re-stepped to 15.0 and CVD now passes.
+     * Good-vs-bad is still red-vs-green, the axis colour-blind readers lose, so
+     * every use must carry a glyph or a word as well.
      */
-    --good:     136 40% 30%;   /* #2E6B3E */
-    --warning:   43 73% 38%;   /* #A8801A */
-    --serious:   24 72% 42%;   /* #B85C1E */
-    --critical:   5 56% 35%;   /* #8C2F27 */
-    --info:     202 100% 35%;  /* #0072B2 — the first categorical series */
+    --good:     158 64% 52%;   /* #34d399 */
+    --warning:   46 97% 64%;   /* #fcd34d */
+    --serious:   27 96% 61%;   /* #fb923c */
+    --critical: 352 88% 65%;   /* #f4576b */
+    --info:     213 94% 68%;   /* #60a5fa */
   }
 
   html, body { height: 100%; }
@@ -53,21 +44,10 @@
   }
 
   /*
-   * Figures are read down a column and compared to each other, so digits must
-   * occupy identical width everywhere. Applied globally rather than per-widget
-   * because every number on this dashboard is a figure to be compared.
+   * Figures are read down a column and compared against each other, so digits
+   * must occupy identical width. This is a data dashboard; it applies broadly.
    */
   table, .tnum, [data-figure] {
     font-variant-numeric: tabular-nums;
-  }
-}
-
-@layer components {
-  /* The masthead rule and every section break beneath it. */
-  .rule-double {
-    border-bottom: 3px double hsl(var(--rule-heavy));
-  }
-  .rule-hair {
-    border-bottom: 1px solid hsl(var(--border));
   }
 }

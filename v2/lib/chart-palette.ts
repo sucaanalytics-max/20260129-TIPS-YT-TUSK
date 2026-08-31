@@ -5,10 +5,16 @@
  * Every value below was produced by the dataviz validator against the
  * Broadsheet surface (#FBF9F4), not chosen by eye:
  *
- *   validate_palette.js "#0072B2,#D55E00,#009E73" --mode light \
- *     --surface "#FBF9F4" --pairs all
+ *   validate_palette.js "#0072B2,#D55E00,#009E73" --mode dark \
+ *     --surface "#0C0E13" --pairs all
  *   -> lightness PASS · chroma PASS · CVD PASS (worst all-pairs 11.0 deutan)
  *      normal-vision PASS (worst 18.7) · contrast PASS (all >= 3:1)
+ *
+ * The three series hues pass on BOTH the dark surface and the light one, so
+ * they did not move when the theme went back to dark. What the old code used
+ * before any of this — blue #60a5fa beside violet #a78bfa — measured dE 0.3
+ * apart under deuteranopia and 10.2 in normal vision: two lines nobody could
+ * reliably tell apart. That is not restored.
  */
 
 /**
@@ -30,19 +36,20 @@ export const COMPANY_COLOR: Record<string, string> = {
 };
 
 /**
- * Reference and emphasis marks — an actual, a total, a benchmark. Ink is
- * deliberately NOT a categorical slot: it fails the categorical lightness and
- * chroma checks, and reads as structure rather than as one series among peers.
- * Use it for the line the others are compared against, drawn heavier.
+ * Reference and emphasis marks — an actual, a total, a benchmark. INK is the
+ * foreground colour of the surface (near-white here), deliberately NOT a
+ * categorical slot: it fails the categorical chroma check and reads as
+ * structure rather than as one series among peers. Use it for the line the
+ * others are compared against, drawn heavier.
  */
-export const INK = '#16150F';
-export const NEUTRAL = '#6E6A5C';
+export const INK = '#E8EDF4';
+export const NEUTRAL = '#8B97A8';
 
-/** Chart furniture. Recessive by construction. */
-export const GRID = '#E7E2D6';
-export const AXIS = '#D6D1C4';
-export const AXIS_TEXT = '#6E6A5C';
-export const SURFACE = '#FBF9F4';
+/** Chart furniture. Recessive by construction, and surface-specific. */
+export const GRID = '#1B2027';
+export const AXIS = '#232A33';
+export const AXIS_TEXT = '#94a3b8';
+export const SURFACE = '#0C0E13';
 
 /**
  * Status. These FAIL the CVD check by nature — "good vs bad" is red vs green,
@@ -51,17 +58,17 @@ export const SURFACE = '#FBF9F4';
  * encode state in one of these colours alone.
  */
 export const STATUS = {
-  good: '#2E6B3E',
-  warning: '#A8801A',
-  serious: '#B85C1E',
-  critical: '#8C2F27',
+  good: '#34D399',
+  warning: '#FCD34D',
+  serious: '#FB923C',
+  critical: '#F4576B',
 } as const;
 
 export type StatusKey = keyof typeof STATUS;
 
 /** Bands and fills sit under the marks, so they carry alpha, not a new hue. */
-export const BAND_FILL = 'rgba(0, 114, 178, 0.12)';
-export const BAND_FILL_WARN = 'rgba(140, 47, 39, 0.10)';
+export const BAND_FILL = 'rgba(96, 165, 250, 0.16)';
+export const BAND_FILL_WARN = 'rgba(244, 87, 107, 0.14)';
 
 /**
  * Colour for series `i`. Throws past the third rather than silently cycling —

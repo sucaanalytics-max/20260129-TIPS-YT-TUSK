@@ -11,6 +11,10 @@
     {
       "id": "page-3",
       "name": "Evidence · Level 2"
+    },
+    {
+      "id": "page-4",
+      "name": "Screens · every surface"
     }
   ],
   "artboards": [
@@ -94,6 +98,60 @@
       "w": 1440,
       "h": 860,
       "title": "Periods + correlation"
+    },
+    {
+      "file": "ScreenDrivers.dc.html",
+      "page": "page-4",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 760,
+      "title": "Drivers · Level 1"
+    },
+    {
+      "file": "ScreenChannels.dc.html",
+      "page": "page-4",
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 620,
+      "title": "Channels"
+    },
+    {
+      "file": "ScreenStock.dc.html",
+      "page": "page-4",
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 720,
+      "title": "Share price"
+    },
+    {
+      "file": "ScreenMarket.dc.html",
+      "page": "page-4",
+      "x": 0,
+      "y": 900,
+      "w": 1440,
+      "h": 760,
+      "title": "Sector demand"
+    },
+    {
+      "file": "ScreenOps.dc.html",
+      "page": "page-4",
+      "x": 1520,
+      "y": 900,
+      "w": 1440,
+      "h": 700,
+      "title": "Instrument health"
+    },
+    {
+      "file": "ScreenSignIn.dc.html",
+      "page": "page-4",
+      "x": 3040,
+      "y": 900,
+      "w": 1440,
+      "h": 900,
+      "title": "Sign in"
     }
   ],
   "annotations": [
@@ -168,10 +226,34 @@
       "y": -230,
       "w": 540,
       "text": "A HARDER LIMIT THAN I FIRST THOUGHT\n\nThe legacy aggregate never recorded video counts, so releases before 2026 are n/a — not comparable at all, rather than comparable-with-caveats like views.\n\n2026 Q1 is flagged mixed: its 3,812 releases are the first per-channel reading, not a release burst.\n\nThe correlation grid ends up here as a footnote — 3 of 90 against 4.5 expected."
+    },
+    {
+      "id": "note-screens",
+      "page": "page-4",
+      "x": 0,
+      "y": -230,
+      "w": 540,
+      "text": "EVERY REMAINING SURFACE, IN BROADSHEET\n\nThe app now has one visual language end to end. Level 1 is the driver tree; the rest are Level 2 evidence plus the one unauthenticated screen.\n\nThe sensitivity panel on Drivers is the point of the whole level: the MEASURED input moves the answer least (±₹7cr), and the two assumptions you set move it most (±₹31cr and ±₹19cr). That is the honest shape of this model."
+    },
+    {
+      "id": "note-screens-2",
+      "page": "page-4",
+      "x": 1520,
+      "y": -230,
+      "w": 540,
+      "text": "CONCENTRATION IS THE UNHEDGED RISK\n\n64% of Tips' 30-day reach sits on ONE channel; Saregama's largest is 39%. A single algorithm change moves two thirds of one estimate.\n\nThat belongs on a page, not buried in a channel table — so Channels leads with it rather than with a leaderboard."
+    },
+    {
+      "id": "note-screens-3",
+      "page": "page-4",
+      "x": 3040,
+      "y": -230,
+      "w": 540,
+      "text": "REAL PRICES THIS TIME\n\nTIPS ₹648.05 (−1.81%), SAREGAMA ₹492.80 (+1.09%), close 28 Aug. My earlier Overview mockup used ₹832.40 and ₹604.15 — illustrative and wrong; these are from fct_adjusted_price_daily.\n\nThe share-price screen deliberately draws NO line between reach and price. It is context for your judgement, nothing more."
     }
   ],
   "launch": {
     "view": "canvas",
-    "page": "page-1"
+    "page": "page-4"
   }
 }

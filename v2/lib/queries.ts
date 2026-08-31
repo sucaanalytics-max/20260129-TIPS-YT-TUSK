@@ -57,6 +57,15 @@ import {
   pValue,
   type LagResult,
 } from '@/lib/correlation';
+import { fiscalQuarterOf, quarterProgress, type FiscalQuarter } from '@/lib/fiscal';
+import {
+  computeNowcast,
+  DEFAULT_ASSUMPTIONS,
+  type NowcastAssumptions,
+  type NowcastDrivers,
+} from '@/lib/nowcast';
+import { scoreEstimate, summariseTrackRecord, type ScoredQuarter, type TrackRecord } from '@/lib/scoring';
+import { TARGET_LINE_ITEM } from '@/lib/financials';
 import {
   bucketWeekly,
   trimPartialEdges,
@@ -856,6 +865,180 @@ export async function getLagCorrelations(opts: {
     }
   }
   return out;
+}
+
+// ---- Nowcast spine ---------------------------------------------------------
+
+/**
+ * Quarter-to-date reach per driver.
+ *
+ * Owned views come from v_company_daily. Topic and UGC reuse the existing
+ * getTopicReach / getUGCReach snapshots rather than recomputing attribution —
+ * one definition of attributed reach, not two.
+ */
+export async function getNowcastDrivers(opts: {
+  company: Company;
+  from: string;
+  to: string;
+}): Promise<NowcastDrivers> {
+  const supabase = getServiceSupabase();
+  const [{ data: owned }, topic, ugc] = await Promise.all([
+    supabase
+      .from('v_company_daily')
+      .select('daily_views')
+      .eq('company', opts.company)
+      .gte('date', opts.from)
+      .lte('date', opts.to),
+    getTopicReach({ company: opts.company, days: 120 }),
+    getUGCReach({ company: opts.company }),
+  ]);
+
+  const ownedViews = ((owned ?? []) as Array<{ daily_views: number | null }>).reduce(
+    (a, r) => a + Number(r.daily_views ?? 0),
+    0,
+  );
+
+  // TopicReachSnapshot exposes a daily `series`, not a period total — sum the
+  // days inside this quarter rather than reusing totals.last_30d, which is a
+  // rolling window and would not line up with the quarter boundary.
+  const topicViews = topic.series
+    .filter((d) => d.date >= opts.from && d.date <= opts.to)
+    .reduce((a, d) => a + Number(d.attributed_daily_views ?? 0), 0);
+
+  // UGC reach is a CUMULATIVE discovered figure, not a per-quarter flow, so it
+  // must not be extrapolated by quarter progress — doing so would inflate the
+  // estimate by roughly 1/progress. Reported as 0 until UGC is measured as a
+  // flow; `includeUgc` stays in the model for when it can be.
+  void ugc;
+
+  return { ownedViews, topicViews, ugcViews: 0 };
+}
+
+/**
+ * Preconditions mirroring the CHECK constraints on fct_revenue_nowcast:
+ *   band_low_inr <= band_mid_inr <= band_high_inr
+ *   quarter_progress > 0 AND quarter_progress <= 1
+ *
+ * Both are reachable from bad input — a caller-supplied CPM band in the wrong
+ * order, or an `asof` that does not parse as a date — and a constraint
+ * violation would surface inside a cron as an opaque Postgres error naming a
+ * constraint rather than the assumption that broke it. Fail here instead, so
+ * the row is never sent and the message says what was wrong.
+ */
+function assertStorableNowcast(row: {
+  band_low_inr: number;
+  band_mid_inr: number;
+  band_high_inr: number;
+  projected_views: number;
+  quarter_progress: number;
+}): void {
+  const numbers: Array<[string, number]> = [
+    ['band_low_inr', row.band_low_inr],
+    ['band_mid_inr', row.band_mid_inr],
+    ['band_high_inr', row.band_high_inr],
+    ['projected_views', row.projected_views],
+    ['quarter_progress', row.quarter_progress],
+  ];
+  for (const [name, value] of numbers) {
+    if (!Number.isFinite(value)) throw new Error(`storeNowcast: ${name} is not finite (${value})`);
+  }
+  if (!(row.quarter_progress > 0 && row.quarter_progress <= 1)) {
+    throw new Error(
+      `storeNowcast: quarter_progress ${row.quarter_progress} outside (0, 1] — asof must be a real date inside its own quarter`,
+    );
+  }
+  if (!(row.band_low_inr <= row.band_mid_inr && row.band_mid_inr <= row.band_high_inr)) {
+    throw new Error(
+      `storeNowcast: band out of order (low ${row.band_low_inr}, mid ${row.band_mid_inr}, high ${row.band_high_inr}) — check the CPM assumptions`,
+    );
+  }
+}
+
+/** Append today's estimate. Idempotent per (company, quarter, asof). */
+export async function storeNowcast(opts: {
+  company: Company;
+  asof: string;
+  assumptions?: NowcastAssumptions;
+  ingestRunId?: number;
+}): Promise<{ fiscal: FiscalQuarter; mid: number }> {
+  const supabase = getServiceSupabase();
+  const fiscal = fiscalQuarterOf(opts.asof);
+  const assumptions = opts.assumptions ?? DEFAULT_ASSUMPTIONS;
+
+  const drivers = await getNowcastDrivers({
+    company: opts.company,
+    from: fiscal.start,
+    to: opts.asof,
+  });
+  const result = computeNowcast({
+    drivers,
+    assumptions,
+    quarterProgress: quarterProgress(opts.asof),
+  });
+
+  const row = {
+    company: opts.company,
+    fiscal_label: fiscal.label,
+    asof: opts.asof,
+    band_low_inr: Math.round(result.band.low),
+    band_mid_inr: Math.round(result.band.mid),
+    band_high_inr: Math.round(result.band.high),
+    projected_views: Math.round(result.projectedViews),
+    quarter_progress: result.quarterProgress,
+    drivers,
+    assumptions,
+    ingest_run_id: opts.ingestRunId ?? null,
+  };
+  assertStorableNowcast(row);
+
+  const { error } = await supabase
+    .from('fct_revenue_nowcast')
+    .upsert(row, { onConflict: 'company,fiscal_label,asof' });
+  if (error) throw new Error(`storeNowcast upsert: ${error.message}`);
+  return { fiscal, mid: result.band.mid };
+}
+
+/**
+ * Score every quarter where a CONFIRMED actual exists and a pre-print estimate
+ * was made. Unconfirmed financials are excluded — a misparsed line would poison
+ * the record permanently.
+ */
+export async function getTrackRecord(company: Company): Promise<TrackRecord> {
+  const supabase = getServiceSupabase();
+  const [{ data: actuals }, { data: estimates }] = await Promise.all([
+    supabase
+      .from('fct_reported_financials')
+      .select('fiscal_label, value_inr')
+      .eq('company', company)
+      .eq('line_item', TARGET_LINE_ITEM[company])
+      .not('confirmed_by', 'is', null),
+    supabase
+      .from('fct_revenue_nowcast')
+      .select('fiscal_label, asof, band_low_inr, band_mid_inr, band_high_inr')
+      .eq('company', company)
+      .order('asof', { ascending: true }),
+  ]);
+
+  // The estimate that counts is the last one made before the quarter closed.
+  const lastByQuarter = new Map<string, { low: number; mid: number; high: number }>();
+  for (const e of (estimates ?? []) as Array<{
+    fiscal_label: string; band_low_inr: number; band_mid_inr: number; band_high_inr: number;
+  }>) {
+    lastByQuarter.set(e.fiscal_label, {
+      low: Number(e.band_low_inr),
+      mid: Number(e.band_mid_inr),
+      high: Number(e.band_high_inr),
+    });
+  }
+
+  const scored: ScoredQuarter[] = [];
+  for (const a of (actuals ?? []) as Array<{ fiscal_label: string; value_inr: number }>) {
+    const estimate = lastByQuarter.get(a.fiscal_label);
+    if (!estimate) continue;             // never estimated — not a miss, just absent
+    const actual = Number(a.value_inr);
+    scored.push({ fiscalLabel: a.fiscal_label, estimate, actual, ...scoreEstimate(estimate, actual) });
+  }
+  return summariseTrackRecord(scored);
 }
 
 export async function getOpsRunHistory(opts: { since?: string; limit?: number }): Promise<OpsRunRow[]> {

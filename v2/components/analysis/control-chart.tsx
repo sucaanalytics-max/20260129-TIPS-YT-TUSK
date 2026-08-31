@@ -87,7 +87,7 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
             type="checkbox"
             checked={showLimits}
             onChange={(e) => setShowLimits(e.target.checked)}
-            className="accent-blue-500"
+            className="accent-info"
           />
           Control lines
         </label>
@@ -168,13 +168,21 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
           />
           ringed = outside ±2σ
         </span>
-        {([15, 45, 90] as const).map((w) =>
-          movingAverages[w] ? (
+        {/* Read the LAST element, not the last non-null one. Searching backwards
+            reaches arbitrarily far into the past, so during an ingest freeze the
+            legend would print a fortnight-old average as if it were today's.
+            An unavailable average is unknown, not zero (lib/control-chart.ts) —
+            so it renders as an em dash, never a fabricated 0. */}
+        {([15, 45, 90] as const).map((w) => {
+          const ma = movingAverages[w];
+          if (!ma) return null;
+          const latest = ma[ma.length - 1];
+          return (
             <span key={w} className="tabular-nums">
-              MA{w} {fmt([...movingAverages[w]].reverse().find((v) => v != null) ?? 0)}
+              MA{w} {latest == null ? '—' : fmt(latest)}
             </span>
-          ) : null,
-        )}
+          );
+        })}
         <span className="ml-auto tabular-nums">
           {violations.length} of {limits.n} outside ±2σ ·{' '}
           {((violations.length / limits.n) * 100).toFixed(1)}%

@@ -59,7 +59,7 @@ async function Breakdown() {
           <div key={r.label}>
             <div className="font-serif text-[15px] font-semibold tracking-[0.02em]">{r.label}</div>
             <div className="text-muted-foreground mt-0.5 text-[11.5px]">
-              {r.b.fiscal.label} Q{r.b.fiscal.q} to date · {(r.b.result.quarterProgress * 100).toFixed(0)}% elapsed
+              {r.b.fiscal.label} to date · {(r.b.result.quarterProgress * 100).toFixed(0)}% elapsed
             </div>
             <DriverBars
               contributions={r.b.result.contributions}
@@ -86,8 +86,8 @@ async function Breakdown() {
           {rows.map((r) => (
             <tr key={r.label}>
               <Td left>{r.label}</Td>
-              <Td>{r.b.drivers.ownedViews.toLocaleString('en-IN')}</Td>
-              <Td>{r.b.drivers.topicViews.toLocaleString('en-IN')}</Td>
+              <Td>{Math.round(r.b.drivers.ownedViews).toLocaleString('en-IN')}</Td>
+              <Td>{Math.round(r.b.drivers.topicViews).toLocaleString('en-IN')}</Td>
               <Td className="text-muted-foreground">not counted</Td>
               <Td>{Math.round(r.b.result.projectedViews).toLocaleString('en-IN')}</Td>
               <Td>{formatCrore(r.b.result.band.mid)}</Td>

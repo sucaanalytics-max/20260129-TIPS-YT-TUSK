@@ -16,7 +16,19 @@ const SCALE = 200; // px per 1.0 of r
  * Presented as a grid on one shared scale so the comparison is honest, and with
  * the significance threshold drawn — because the finding here is that almost
  * nothing crosses it, which only reads if the line is visible.
+ *
+ * SIGN CONVENTION — do not re-invert this. lagCorrelate pairs metric[t] with
+ * ret[t + lag], so a POSITIVE lag means the METRIC moved first and the return
+ * followed: attention leading price, the direction this dashboard exists to
+ * test. A NEGATIVE lag means the return moved first. The x axis runs −7 on the
+ * left to +7 on the right, so the RIGHT-hand half is "metric moved first".
+ * The caption said the opposite until 2026-08-31; every legend below must agree
+ * with lib/correlation.ts:62, and the fix belongs in the words, never in the
+ * bar order or the sign of the lag array.
  */
+const leadLabel = (lag: number): string =>
+  lag > 0 ? 'metric moved first' : lag < 0 ? 'price moved first' : 'same day';
+
 export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
   const [showSig, setShowSig] = useState(true);
   const companies = [...new Set(sets.map((s) => s.company))].sort();
@@ -34,7 +46,8 @@ export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
             What moves the share price?
           </h3>
           <p className="text-muted-foreground text-xs">
-            each metric against daily log returns, lags −7 to +7 · metric leads ← · → price leads
+            each metric against daily log returns, lags −7 to +7 · price moved first ← · →
+            metric moved first
           </p>
           <p className="text-muted-foreground/80 mt-0.5 text-[11px]">
             bars above the baseline are positive r, below it negative · dashed rule = 5%
@@ -46,7 +59,7 @@ export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
             type="checkbox"
             checked={showSig}
             onChange={(e) => setShowSig(e.target.checked)}
-            className="accent-blue-500"
+            className="accent-info"
           />
           Significance
         </label>
@@ -69,7 +82,7 @@ export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
                     </span>
                     <span className="text-muted-foreground text-[10px] tabular-nums">
                       {set.best
-                        ? `best ${set.best.r >= 0 ? '+' : ''}${set.best.r.toFixed(3)} @ ${set.best.lag >= 0 ? '+' : ''}${set.best.lag}`
+                        ? `best ${set.best.r >= 0 ? '+' : ''}${set.best.r.toFixed(3)} @ ${set.best.lag >= 0 ? '+' : ''}${set.best.lag}d · ${leadLabel(set.best.lag)}`
                         : 'no data'}
                     </span>
                   </div>

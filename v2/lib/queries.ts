@@ -64,6 +64,11 @@ import {
   type NowcastAssumptions,
   type NowcastDrivers,
 } from '@/lib/nowcast';
+import {
+  imputePerChannel,
+  imputeByDayCoverage,
+  type ChannelDayReading,
+} from '@/lib/nowcast-coverage';
 import { scoreEstimate, summariseTrackRecord, type ScoredQuarter, type TrackRecord } from '@/lib/scoring';
 import { TARGET_LINE_ITEM } from '@/lib/financials';
 import {
@@ -908,17 +913,104 @@ export async function getNowcastDrivers(opts: {
     );
   }
 
-  const [{ data: owned }, topic] = await Promise.all([
+  const elapsedDays =
+    Math.round(
+      (Date.parse(`${opts.to}T00:00:00Z`) - Date.parse(`${opts.from}T00:00:00Z`)) / 86_400_000,
+    ) + 1;
+  if (!Number.isFinite(elapsedDays) || elapsedDays < 1) {
+    throw new Error(
+      `getNowcastDrivers: '${opts.from}'..'${opts.to}' is not a usable window (${elapsedDays} days)`,
+    );
+  }
+
+  const [{ data: ownedChans }, topic] = await Promise.all([
     supabase
-      .from('v_company_daily')
-      .select('date, daily_views')
+      .from('dim_channel')
+      .select('channel_id')
       .eq('company', opts.company)
-      .gte('date', opts.from)
-      .lte('date', opts.to),
+      .eq('channel_type', 'owned')
+      .eq('is_active', true),
     getTopicReach({ company: opts.company, days: daysBack }),
   ]);
 
-  const ownedRows = (owned ?? []) as Array<{ date: string; daily_views: number | null }>;
+  const ownedChannelIds = ((ownedChans ?? []) as Array<{ channel_id: string }>).map(
+    (c) => c.channel_id,
+  );
+  if (ownedChannelIds.length === 0) {
+    throw new Error(
+      `getNowcastDrivers: no active owned channels for ${opts.company}. ` +
+        `Refusing to report zero reach as a measurement.`,
+    );
+  }
+
+  /*
+   * Read the owned leg PER CHANNEL rather than from v_company_daily.
+   *
+   * v_company_daily is `sum(f.daily_views) ... GROUP BY date, company`, and
+   * Postgres sum() SKIPS NULLs. On a day where some channels are frozen and
+   * some report, the view therefore returns a NON-NULL PARTIAL total, which
+   * the old day-level imputation counted as a fully observed day — so coverage
+   * read 1.0 and nothing was imputed, missing exactly the frozen-channel case
+   * the imputation was written for. The view's channels_with_data cannot fix
+   * that either: it is count(DISTINCT channel_id), and a frozen channel still
+   * has a row, so it does not fall when a channel's daily_views goes NULL.
+   *
+   * Per-channel rows show the NULLs directly, and they let each channel be
+   * imputed at ITS OWN mean. That matters because owned channels are wildly
+   * unequal: scaling a company total by 16/15 when the missing channel is the
+   * largest one would be badly wrong in a way a channel-count ratio cannot see.
+   *
+   * The channel set is dim_channel's active owned channels — the same set
+   * v_company_daily's primary branch aggregates. The view's secondary branch
+   * (inactive channels, used only on days when NO active channel reported) is
+   * deliberately not reproduced: such a day is a company-wide outage, and
+   * imputing it from a different roster would be a discontinuity, not a
+   * measurement.
+   */
+  const ownedReadings: ChannelDayReading[] = [];
+  const PAGE = 1000;
+  const MAX_PAGES = 40; // 25 channels x 92 days ~ 2,300 rows; 40k is head-room
+  for (let page = 0; ; page += 1) {
+    if (page >= MAX_PAGES) {
+      throw new Error(
+        `getNowcastDrivers: owned channel-day read for ${opts.company} exceeded ${MAX_PAGES * PAGE} rows — ` +
+          `refusing to silently truncate the window`,
+      );
+    }
+    const { data, error } = await supabase
+      .from('fct_channel_daily')
+      // delta_span_days and daily_views_imputed are load-bearing, not extras:
+      // 0026 can leave one row carrying several days of views, and counting
+      // such a row as a single observed day over-imputes the shortfall.
+      .select('channel_id, date, daily_views, delta_span_days, daily_views_imputed')
+      .in('channel_id', ownedChannelIds)
+      .gte('date', opts.from)
+      .lte('date', opts.to)
+      // Total ordering, so paging can neither repeat nor skip a row.
+      .order('date', { ascending: true })
+      .order('channel_id', { ascending: true })
+      .range(page * PAGE, page * PAGE + PAGE - 1);
+    if (error) {
+      throw new Error(`getNowcastDrivers: owned channel-day read failed — ${error.message}`);
+    }
+    const rows = (data ?? []) as Array<{
+      channel_id: string;
+      date: string;
+      daily_views: number | null;
+      delta_span_days: number | null;
+      daily_views_imputed: boolean | null;
+    }>;
+    for (const r of rows) {
+      ownedReadings.push({
+        channelId: r.channel_id,
+        date: r.date,
+        value: r.daily_views == null ? null : Number(r.daily_views),
+        spanDays: r.delta_span_days == null ? null : Number(r.delta_span_days),
+        imputed: r.daily_views_imputed === true,
+      });
+    }
+    if (rows.length < PAGE) break;
+  }
 
   /*
    * Impute the gap rather than letting it read as zero.
@@ -928,37 +1020,82 @@ export async function getNowcastDrivers(opts: {
    * NULL, and some days are missing from the table entirely. Summing what
    * exists and then dividing by CALENDAR progress silently treats each of
    * those unknown days as a zero-view day. Measured on FY27 Q2 at 2026-08-31:
-   * 54 of 62 elapsed days carried a value, so the estimate came out ~13% low.
+   * 54 of 62 elapsed days carried a company-level value, so the estimate came
+   * out ~13% low — and the frozen single channels on top of that were invisible.
    *
-   * A missing day is unknown, not empty, so it is imputed at the observed
-   * daily mean -- which is exactly what scaling the total by
-   * elapsed/observed does. Where coverage is complete this is a no-op.
+   * A missing channel-day is unknown, not empty, so it is imputed at that
+   * channel's own observed daily mean. Where coverage is complete this is a
+   * no-op. `observedDays` below counts only days on which EVERY reporting
+   * channel reported a MEASURED value; a day made whole by a spread catch-up
+   * is counted separately as `imputedDays`, because 0026's own column comment
+   * says such a value must never be presented as measured.
    */
-  const observedRows = ownedRows.filter((r) => r.daily_views != null);
-  const observedDays = observedRows.length;
-  const elapsedDays =
-    Math.round(
-      (Date.parse(`${opts.to}T00:00:00Z`) - Date.parse(`${opts.from}T00:00:00Z`)) / 86_400_000,
-    ) + 1;
-
-  const observedViews = observedRows.reduce((a, r) => a + Number(r.daily_views), 0);
-  const coverage = observedDays > 0 ? observedDays / elapsedDays : 0;
-
-  if (observedDays === 0) {
+  const ownedCoverage = imputePerChannel({
+    readings: ownedReadings,
+    channelIds: ownedChannelIds,
+    elapsedDays,
+  });
+  if (!ownedCoverage) {
     throw new Error(
-      `getNowcastDrivers: no usable owned-view day for ${opts.company} in ${opts.from}..${opts.to}. ` +
+      `getNowcastDrivers: no usable owned-view reading for ${opts.company} in ${opts.from}..${opts.to} ` +
+        `across ${ownedChannelIds.length} active owned channels. ` +
         `Refusing to report zero reach as a measurement.`,
     );
   }
+  const ownedViews = ownedCoverage.views;
+  const observedDays = ownedCoverage.observedDays;
 
-  const ownedViews = observedViews / coverage;
-
-  // TopicReachSnapshot exposes a daily `series`, not a period total — sum the
-  // days inside this quarter rather than reusing totals.last_30d, which is a
-  // rolling window and would not line up with the quarter boundary.
-  const topicViews = topic.series
-    .filter((d) => d.date >= opts.from && d.date <= opts.to)
-    .reduce((a, d) => a + Number(d.attributed_daily_views ?? 0), 0);
+  /*
+   * The topic leg gets the SAME treatment, and the same refusal.
+   *
+   * Two failures used to hide here. First, getTopicReach returns an empty
+   * snapshot whenever its attribution inputs are missing (no catalog_share
+   * rows, or no active topic channels for those artists) — that made
+   * topicViews 0, dropped the band ~28%, and the estimate was still stored
+   * with nothing in ops_error_log. The owned leg has always refused to report
+   * zero reach as a measurement; the topic leg now refuses too. Genuinely zero
+   * attributed reach on channels that DID report is still a measurement and is
+   * allowed through as 0 — only missing inputs are an error.
+   *
+   * Second, the series was summed over whatever days happened to be present
+   * and then extrapolated by CALENDAR progress — precisely the bug the owned
+   * leg was fixed for, worth ~13% on the leg and ~3.6% on the whole band.
+   *
+   * The snapshot is a day-level aggregate, so the topic leg can only be scaled
+   * by each day's channel shortfall, which assumes the absent channels are of
+   * average size. That is weaker than the owned leg's per-channel imputation,
+   * and tolerable here only because topic reach is spread over many comparable
+   * channels rather than a handful of very unequal ones.
+   */
+  if (topic.channelsTracked === 0) {
+    throw new Error(
+      `getNowcastDrivers: no Topic/OAC attribution inputs for ${opts.company} — dim_artist_label has no ` +
+        `catalog_share rows, or dim_channel has no active topic channels for those artists. The topic leg is ` +
+        `~28% of the band; refusing to report missing attribution as zero reach.`,
+    );
+  }
+  const topicCoverage = imputeByDayCoverage({
+    // TopicReachSnapshot exposes a daily `series`, not a period total — take
+    // the days inside this quarter rather than reusing totals.last_30d, which
+    // is a rolling window and would not line up with the quarter boundary.
+    days: topic.series
+      .filter((d) => d.date >= opts.from && d.date <= opts.to)
+      .map((d) => ({
+        date: d.date,
+        value: d.attributed_daily_views,
+        channelsReporting: d.channels_reporting,
+        channelDaysCovered: d.channel_days_covered,
+      })),
+    elapsedDays,
+  });
+  if (!topicCoverage) {
+    throw new Error(
+      `getNowcastDrivers: ${opts.company} tracks ${topic.channelsTracked} Topic/OAC channels but not one ` +
+        `carried an attributed reading in ${opts.from}..${opts.to}. Missing attribution inputs are not ` +
+        `zero reach; refusing to report them as zero.`,
+    );
+  }
+  const topicViews = topicCoverage.views;
 
   /*
    * UGC is deliberately not read at all. Its reach is a CUMULATIVE discovered
@@ -968,6 +1105,8 @@ export async function getNowcastDrivers(opts: {
    * per company per run against a 120s cron budget for no effect on the output.
    * `includeUgc` stays in the model for when UGC is measured as a flow.
    */
+  // Both legs are rounded by the imputers: a fractional view does not exist,
+  // and these are written to fct_revenue_nowcast.drivers as jsonb.
   return { ownedViews, topicViews, ugcViews: 0, observedDays, elapsedDays };
 }
 
@@ -1096,11 +1235,24 @@ export async function getNowcastHeadline(
       .eq('fiscal_label', fiscal.label)
       .order('asof', { ascending: false })
       .limit(1),
+    /*
+     * CONFIRMED rows only, matching getTrackRecord and what migration 0027
+     * mandates. fct_reported_financials deliberately allows an unconfirmed row
+     * (extraction_method 'pdf'/'api', confirmed_by NULL) so a filing can be
+     * ingested before a human has checked it. Without this filter a misparsed
+     * figure would print on the front page as "Last printed", set the YoY
+     * numerator AND denominator, and set the full-year line — while the track
+     * record nine lines below, which does filter, ignored it. One screen, two
+     * answers about what has been reported, with the unchecked number in the
+     * more prominent position. An unconfirmed figure renders as the em dash
+     * the components already handle; that is the honest state.
+     */
     supabase
       .from('fct_reported_financials')
       .select('fiscal_label, value_inr')
       .eq('company', company)
-      .eq('line_item', TARGET_LINE_ITEM[company]),
+      .eq('line_item', TARGET_LINE_ITEM[company])
+      .not('confirmed_by', 'is', null),
     getTrackRecord(company),
   ]);
 
@@ -3400,7 +3552,26 @@ export interface TopicReachSnapshot {
   daysAvailable: number;
   // Daily series of attributed views (raw × catalog_share, summed across all
   // Topic+OAC channels of artists in this company). Sorted ascending by date.
-  series: Array<{ date: string; attributed_daily_views: number }>;
+  series: Array<{
+    date: string;
+    attributed_daily_views: number;
+    /**
+     * Channels that actually CONTRIBUTED a value on this date — not how many
+     * rows exist. A frozen channel keeps its row with daily_views NULL, so a
+     * day can carry a real-looking total built from only part of the roster.
+     * Without this a partial day is indistinguishable from a complete one and
+     * reads as a genuine dip. Compare against the largest count in the window.
+     */
+    channels_reporting: number;
+    /**
+     * Channel-days of exposure this date's value represents: the sum of
+     * `delta_span_days` over the contributing channels. Usually equal to
+     * `channels_reporting`, but larger where 0026 left a catch-up whole on an
+     * unfreeze day. Without it the nowcast scales such a day UP for a freeze
+     * whose views that very value already carries.
+     */
+    channel_days_covered: number;
+  }>;
   // Rolling sums for headline figures
   totals: {
     last_1d: number;
@@ -3482,7 +3653,9 @@ export async function getTopicReach(opts: {
   const channelIds = channels.map((c) => c.channel_id);
   const { data: facts } = await supabase
     .from('fct_channel_daily')
-    .select('channel_id, date, daily_views, subscribers')
+    // delta_span_days: a 0026 catch-up row holds several days of views, so the
+    // day it lands on must not be scaled up again for the freeze it resolves.
+    .select('channel_id, date, daily_views, subscribers, delta_span_days')
     .in('channel_id', channelIds)
     .gte('date', since)
     .order('date', { ascending: true });
@@ -3491,22 +3664,38 @@ export async function getTopicReach(opts: {
     date: string;
     daily_views: number | null;
     subscribers: number | null;
+    delta_span_days: number | null;
   }>;
 
-  // 4) Aggregate attributed views per date
+  // 4) Aggregate attributed views per date, carrying how many channels
+  //    actually contributed — a day built from half the roster is not the same
+  //    measurement as a day built from all of it.
   const dayAggregate = new Map<string, number>();
+  const dayChannels = new Map<string, Set<string>>();
+  const daySpan = new Map<string, number>();
   for (const r of factRows) {
     if (r.daily_views == null) continue;
     const share = shareByChannel.get(r.channel_id) ?? 0;
     if (share <= 0) continue;
     const attributed = Number(r.daily_views) * share;
     dayAggregate.set(r.date, (dayAggregate.get(r.date) ?? 0) + attributed);
+    const contributors = dayChannels.get(r.date) ?? new Set<string>();
+    contributors.add(r.channel_id);
+    dayChannels.set(r.date, contributors);
+    const span =
+      r.delta_span_days != null && Number.isFinite(Number(r.delta_span_days)) &&
+      Number(r.delta_span_days) >= 1
+        ? Math.floor(Number(r.delta_span_days))
+        : 1;
+    daySpan.set(r.date, (daySpan.get(r.date) ?? 0) + span);
   }
   const series = [...dayAggregate.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, attributed_daily_views]) => ({
       date,
       attributed_daily_views: Math.round(attributed_daily_views),
+      channels_reporting: dayChannels.get(date)?.size ?? 0,
+      channel_days_covered: daySpan.get(date) ?? dayChannels.get(date)?.size ?? 0,
     }));
 
   // 5) Rolling totals

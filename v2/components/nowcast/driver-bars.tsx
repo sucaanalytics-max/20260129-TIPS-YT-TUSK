@@ -34,6 +34,8 @@ export function DriverBars({
   // Excluded drivers contribute nothing and would otherwise render as an
   // unexplained empty row; they are shown, but greyed and named as excluded.
   const shown = contributions.filter((c) => c.driver !== 'ugc' || drivers.ugcViews > 0);
+  // pctOfMid arrives from computeNowcast ALREADY on a 0-100 scale (it is
+  // (mid / band.mid) * 100). Never multiply it by 100 again on the way out.
   const max = Math.max(...shown.map((c) => c.pctOfMid), 1);
 
   return (
@@ -49,9 +51,9 @@ export function DriverBars({
             <div className="flex items-baseline justify-between gap-4 text-[12.5px]">
               <span>{LABEL[c.driver]}</span>
               <span className="tnum text-muted-foreground">
-                {drivers[VIEWS[c.driver]].toLocaleString('en-IN')} views ·{' '}
+                {Math.round(drivers[VIEWS[c.driver]]).toLocaleString('en-IN')} views ·{' '}
                 <span className="text-foreground font-medium">{formatCrore(c.mid)}</span> ·{' '}
-                {(c.pctOfMid * 100).toFixed(0)}%
+                {c.pctOfMid.toFixed(0)}%
               </span>
             </div>
             <div className="bg-muted mt-1.5 h-[7px]">

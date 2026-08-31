@@ -30,7 +30,9 @@ test('alignedLogReturns: non-positive prices yield null rather than NaN/-Infinit
 });
 
 test('lagCorrelate: aligns metric[t] with return[t+lag]', () => {
-  // return leads metric by exactly one day -> lag +1 is the perfect match
+  // The metric leads the return by exactly one day: metric[t] is reproduced by
+  // ret[t+1]. lagCorrelate pairs metric[t] with ret[t+lag], so lag +1 is the
+  // perfect match — POSITIVE LAG = METRIC MOVED FIRST.
   const metric = [{ date: '2026-01-01', value: 1 }, { date: '2026-01-02', value: 2 },
                   { date: '2026-01-03', value: 3 }, { date: '2026-01-04', value: 4 }];
   const ret = [{ date: '2026-01-02', value: 1 }, { date: '2026-01-03', value: 2 },
@@ -38,6 +40,32 @@ test('lagCorrelate: aligns metric[t] with return[t+lag]', () => {
   const out = lagCorrelate(metric, ret, [0, 1]);
   assert.equal(out.find((o) => o.lag === 1)!.r, 1);
   assert.ok(out.find((o) => o.lag === 1)!.n >= 3);
+});
+
+test('lagCorrelate: the sign of the lag says WHICH series moved first', () => {
+  // This test exists because the /explore legend was inverted: it read the
+  // right-hand (positive-lag) half of the grid as "price leads" when the maths
+  // says the opposite. Pin the convention in both directions so no caption can
+  // be re-inverted without a failing test.
+  const dates = ['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05',
+                 '2026-01-06', '2026-01-07', '2026-01-08'];
+  const wave = [1, 5, 2, 8, 3, 9, 4, 7];
+
+  // Case A — the metric spikes on day t and the return echoes it on day t+2.
+  // Attention leads price: the peak must land on lag +2, never −2.
+  const metricA = dates.map((date, i) => ({ date, value: wave[i] }));
+  const retA = dates.map((date, i) => ({ date, value: i >= 2 ? wave[i - 2] : 0 }));
+  const a = lagCorrelate(metricA, retA, [-2, 0, 2]);
+  assert.equal(a.find((o) => o.lag === 2)!.r, 1);
+  assert.ok(a.find((o) => o.lag === -2)!.r! < 1);
+
+  // Case B — the mirror image. The return moves first and the metric echoes it
+  // two days later. Price leads attention: the peak must land on lag −2.
+  const retB = dates.map((date, i) => ({ date, value: wave[i] }));
+  const metricB = dates.map((date, i) => ({ date, value: i >= 2 ? wave[i - 2] : 0 }));
+  const b = lagCorrelate(metricB, retB, [-2, 0, 2]);
+  assert.equal(b.find((o) => o.lag === -2)!.r, 1);
+  assert.ok(b.find((o) => o.lag === 2)!.r! < 1);
 });
 
 test('lagCorrelate: too few overlapping pairs yields a null r, never a fake one', () => {

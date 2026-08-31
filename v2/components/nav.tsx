@@ -17,11 +17,11 @@ import { UserButton } from '@clerk/nextjs';
  */
 const SECTIONS = [
   { href: '/', label: 'Nowcast', owns: [] as string[] },
-  { href: '/drivers', label: 'Drivers', owns: ['/signals', '/growth'] },
+  { href: '/drivers', label: 'Drivers', owns: ['/signals'] },
   {
     href: '/evidence',
     label: 'Evidence',
-    owns: ['/explore', '/analysis', '/channels', '/market', '/stock', '/data', '/correlation', '/events'],
+    owns: ['/explore', '/analysis', '/growth', '/channels', '/market', '/stock', '/data', '/correlation', '/events'],
   },
   { href: '/ops', label: 'Ops', owns: [] as string[] },
 ];

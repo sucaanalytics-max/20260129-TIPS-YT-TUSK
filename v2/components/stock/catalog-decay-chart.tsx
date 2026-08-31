@@ -12,6 +12,14 @@ import {
   Legend,
 } from 'recharts';
 import type { DecayCurve } from '@/lib/signals';
+import {
+  AXIS,
+  AXIS_TEXT,
+  GRID,
+  INK,
+  seriesColor,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 interface DecayPoint {
   video_age_days: number;
@@ -94,29 +102,30 @@ export function CatalogDecayChart({
       </header>
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={scatter} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
+          <CartesianGrid stroke={GRID} />
           <XAxis
             type="number"
             dataKey="log_age"
             domain={[0, 'dataMax']}
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v: number) => `${Math.round(10 ** v - 1)}d`}
-            label={{ value: 'video age (days, log)', position: 'insideBottom', offset: -2, fill: '#94a3b8', fontSize: 10 }}
+            label={{ value: 'video age (days, log)', position: 'insideBottom', offset: -2, fill: AXIS_TEXT, fontSize: 10 }}
           />
           <YAxis
             type="number"
             dataKey="log_views"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={fmt10}
-            label={{ value: 'daily views (log)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }}
+            label={{ value: 'daily views (log)', angle: -90, position: 'insideLeft', fill: AXIS_TEXT, fontSize: 10 }}
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(15,23,42,0.95)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
               borderRadius: 6,
+              color: INK,
             }}
             formatter={(v: number, name: string) =>
               name === 'log_views'
@@ -126,21 +135,23 @@ export function CatalogDecayChart({
                   : v
             }
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
           <Scatter
             name="(age, views) sample"
             data={scatter}
-            fill="#60a5fa"
-            fillOpacity={0.4}
+            fill={seriesColor(0)}
+            fillOpacity={0.55}
             line={false}
             shape="circle"
           />
+          {/* The fit is the reference the cloud is read against, so it is ink
+              and heavier than the marks it summarises. */}
           <Line
             name="power-law fit"
             data={fitLine}
             dataKey="log_views"
-            stroke="#f472b6"
-            strokeWidth={2}
+            stroke={INK}
+            strokeWidth={2.5}
             dot={false}
             isAnimationActive={false}
           />

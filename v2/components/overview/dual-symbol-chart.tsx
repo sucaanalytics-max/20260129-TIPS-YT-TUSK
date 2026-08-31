@@ -14,6 +14,14 @@ import {
 import type { DualSymbolChartRow } from '@/lib/queries';
 import { MASelector } from '@/components/charts/dual-axis-line';
 import { MA_WINDOWS, rollingMeanField, type MASmoothing } from '@/lib/smoothing';
+import {
+  AXIS,
+  AXIS_TEXT,
+  COMPANY_COLOR,
+  GRID,
+  INK,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 function abbrev(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
@@ -46,7 +54,7 @@ function TickerSelector({
           onClick={() => onChange(opt.value)}
           className={`rounded-md border px-2.5 py-1 transition-colors ${
             value === opt.value
-              ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+              ? 'border-foreground bg-foreground/10 text-foreground'
               : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
           }`}
         >
@@ -92,7 +100,8 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
             Daily views × adjusted close — TIPS vs SARE
           </h3>
           <p className="text-muted-foreground text-xs">
-            Left axis: daily views · Right axis: ₹ adjusted close
+            Left axis: daily views (solid) · Right axis: ₹ adjusted close (dashed) · colour =
+            company
             {smoothing !== 'abs' ? ` · views smoothed (${smoothing.toUpperCase()})` : null}
           </p>
         </div>
@@ -104,39 +113,42 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
 
       <ResponsiveContainer width="100%" height={360}>
         <LineChart data={smoothed} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
+          {/* Both companies appear on both axes, so the axes stay furniture and
+              the two measures are separated by line style instead. */}
           <YAxis
             yAxisId="views"
             orientation="left"
-            stroke="#60a5fa"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v) => abbrev(v)}
           />
           <YAxis
             yAxisId="price"
             orientation="right"
-            stroke="#fbbf24"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v) => `₹${v.toFixed(0)}`}
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(15,23,42,0.95)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
               borderRadius: 6,
+              color: INK,
             }}
-            labelStyle={{ color: '#cbd5e1' }}
+            labelStyle={{ color: AXIS_TEXT }}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
           {showTips && (
             <Line
               yAxisId="views"
               type="monotone"
               dataKey="tips_views"
               name="TIPS views"
-              stroke="#60a5fa"
-              strokeWidth={1.5}
+              stroke={COMPANY_COLOR.TIPSMUSIC}
+              strokeWidth={2}
               dot={false}
               connectNulls
             />
@@ -147,8 +159,8 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
               type="monotone"
               dataKey="sare_views"
               name="SARE views"
-              stroke="#a78bfa"
-              strokeWidth={1.5}
+              stroke={COMPANY_COLOR.SAREGAMA}
+              strokeWidth={2}
               dot={false}
               connectNulls
             />
@@ -159,8 +171,9 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
               type="monotone"
               dataKey="tips_close"
               name="TIPS price"
-              stroke="#fbbf24"
-              strokeWidth={1.5}
+              stroke={COMPANY_COLOR.TIPSMUSIC}
+              strokeWidth={2}
+              strokeDasharray="3 3"
               dot={false}
               connectNulls
             />
@@ -171,8 +184,8 @@ export function DualSymbolChart({ data }: { data: DualSymbolChartRow[] }) {
               type="monotone"
               dataKey="sare_close"
               name="SARE price"
-              stroke="#f97316"
-              strokeWidth={1.5}
+              stroke={COMPANY_COLOR.SAREGAMA}
+              strokeWidth={2}
               strokeDasharray="3 3"
               dot={false}
               connectNulls

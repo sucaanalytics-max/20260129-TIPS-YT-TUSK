@@ -19,6 +19,7 @@ import {
   type StockRange,
 } from '@/lib/stock-range';
 import { CACHE_TAGS } from '@/lib/revalidate';
+import { COMPANY_COLOR, NEUTRAL } from '@/lib/chart-palette';
 import { SymbolTabs } from '@/components/stock/symbol-tabs';
 import { RangeSelector } from '@/components/stock/range-selector';
 import { HeroStats } from '@/components/stock/hero-stats';
@@ -160,7 +161,7 @@ async function RelPerf({ symbols, range }: { symbols: string[]; range: StockRang
   const series = await Promise.all(
     symbols.map(async (s) => ({
       symbol: s,
-      color: s === 'TIPSMUSIC' ? '#60a5fa' : '#a78bfa',
+      color: COMPANY_COLOR[s] ?? NEUTRAL,
       data: await getRelativePerformanceSeries({
         symbol: s,
         indexName: 'NIFTY_MIDCAP_150',

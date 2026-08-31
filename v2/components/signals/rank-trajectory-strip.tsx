@@ -1,4 +1,5 @@
 import { Sparkline } from '@/components/charts/sparkline';
+import { COMPANY_COLOR, NEUTRAL, STATUS } from '@/lib/chart-palette';
 
 interface RankPoint {
   asof: string;
@@ -57,14 +58,16 @@ export function RankTrajectoryStrip({ trajectories }: { trajectories: CompanyTra
           // Invert for display so improving rank goes up
           const max = ranks.length ? Math.max(...ranks) : 0;
           const inverted = ranks.map((r) => (max != null ? max - r : 0));
+          // Colour reinforces the ▲/▼ glyph and the word beside it; it is
+          // never the only channel carrying "climbed" vs "dropped".
           const deltaColor =
             delta == null
-              ? 'text-muted-foreground'
+              ? NEUTRAL
               : delta > 0
-                ? 'text-emerald-400'
+                ? STATUS.good
                 : delta < 0
-                  ? 'text-red-400'
-                  : 'text-muted-foreground';
+                  ? STATUS.critical
+                  : NEUTRAL;
           return (
             <div key={t.company} className="border-border/40 rounded-md border p-3">
               <div className="flex items-baseline justify-between">
@@ -78,7 +81,7 @@ export function RankTrajectoryStrip({ trajectories }: { trajectories: CompanyTra
               <p className="text-foreground mt-1 text-lg font-semibold tabular-nums">
                 {latest != null ? `#${latest.toLocaleString()}` : '—'}
               </p>
-              <p className={`text-xs tabular-nums ${deltaColor}`}>
+              <p className="text-xs tabular-nums" style={{ color: deltaColor }}>
                 {delta == null
                   ? '—'
                   : delta > 0
@@ -92,7 +95,7 @@ export function RankTrajectoryStrip({ trajectories }: { trajectories: CompanyTra
                   values={inverted.length > 0 ? inverted : [null]}
                   width={240}
                   height={36}
-                  color={t.company === 'TIPSMUSIC' ? '#60a5fa' : '#a78bfa'}
+                  color={COMPANY_COLOR[t.company] ?? NEUTRAL}
                 />
               </div>
             </div>

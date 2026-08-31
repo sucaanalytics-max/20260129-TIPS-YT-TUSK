@@ -21,6 +21,14 @@ import {
   rollingMeanField,
   type MASmoothing,
 } from '@/lib/smoothing';
+import {
+  AXIS,
+  AXIS_TEXT,
+  COMPANY_COLOR,
+  GRID,
+  INK,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 /** Cumulative UGC "discovered reach" headline (from getUGCReach) — shown
  * SEPARATELY from the owned+topic flow line (different time base + sampled). */
@@ -34,8 +42,9 @@ export interface UgcHeadline {
 type Mode = 'owned' | 'total';
 type TotalCompany = 'TIPSMUSIC' | 'SAREGAMA' | 'both';
 
-const TIPS_COLOR = '#60a5fa';
-const SARE_COLOR = '#a78bfa';
+/** A company keeps its hue on every screen — these are the only two in play. */
+const TIPS_COLOR = COMPANY_COLOR.TIPSMUSIC;
+const SARE_COLOR = COMPANY_COLOR.SAREGAMA;
 
 export function CompanyViewsLine({
   data,
@@ -109,7 +118,7 @@ export function CompanyViewsLine({
                 onClick={() => setMode(m)}
                 className={`rounded-md border px-2.5 py-1 transition-colors ${
                   mode === m
-                    ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+                    ? 'border-foreground bg-foreground/10 text-foreground'
                     : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
                 }`}
               >
@@ -124,7 +133,7 @@ export function CompanyViewsLine({
                 onClick={() => setSmoothing(opt.value)}
                 className={`rounded-md border px-2.5 py-1 transition-colors ${
                   smoothing === opt.value
-                    ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+                    ? 'border-foreground bg-foreground/10 text-foreground'
                     : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
                 }`}
               >
@@ -138,7 +147,7 @@ export function CompanyViewsLine({
                 onClick={() => setTotalCompany(c)}
                 className={`rounded-md border px-2.5 py-1 transition-colors ${
                   totalCompany === c
-                    ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+                    ? 'border-foreground bg-foreground/10 text-foreground'
                     : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
                 }`}
               >
@@ -151,48 +160,58 @@ export function CompanyViewsLine({
       {mode === 'owned' ? (
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={smoothed} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-            <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-            <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} tickFormatter={(v) => abbrev(v)} />
+            <CartesianGrid stroke={GRID} />
+            <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
+            <YAxis stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} tickFormatter={(v) => abbrev(v)} />
             <Tooltip
-              contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6 }}
-              labelStyle={{ color: '#cbd5e1' }}
+              contentStyle={{
+                background: SURFACE,
+                border: `1px solid ${AXIS}`,
+                borderRadius: 6,
+                color: INK,
+              }}
+              labelStyle={{ color: AXIS_TEXT }}
               formatter={(v: number) => v?.toLocaleString?.() ?? String(v)}
             />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Line type="monotone" dataKey="tipsmusic" name={`Tips ${smoothing !== 'abs' ? `(${smoothing.toUpperCase()})` : ''}`} stroke={TIPS_COLOR} strokeWidth={1.5} dot={false} connectNulls />
-            <Line type="monotone" dataKey="saregama" name={`Saregama ${smoothing !== 'abs' ? `(${smoothing.toUpperCase()})` : ''}`} stroke={SARE_COLOR} strokeWidth={1.5} dot={false} connectNulls />
+            <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
+            <Line type="monotone" dataKey="tipsmusic" name={`Tips ${smoothing !== 'abs' ? `(${smoothing.toUpperCase()})` : ''}`} stroke={TIPS_COLOR} strokeWidth={2} dot={false} connectNulls />
+            <Line type="monotone" dataKey="saregama" name={`Saregama ${smoothing !== 'abs' ? `(${smoothing.toUpperCase()})` : ''}`} stroke={SARE_COLOR} strokeWidth={2} dot={false} connectNulls />
           </LineChart>
         </ResponsiveContainer>
       ) : (
         <>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={totalRows} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="week" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-              <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} tickFormatter={(v) => abbrev(v)} />
+              <CartesianGrid stroke={GRID} />
+              <XAxis dataKey="week" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
+              <YAxis stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} tickFormatter={(v) => abbrev(v)} />
               <Tooltip
-                contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6 }}
-                labelStyle={{ color: '#cbd5e1' }}
+                contentStyle={{
+                  background: SURFACE,
+                  border: `1px solid ${AXIS}`,
+                  borderRadius: 6,
+                  color: INK,
+                }}
+                labelStyle={{ color: AXIS_TEXT }}
                 formatter={(v: number | number[], name: string) =>
                   Array.isArray(v)
                     ? [`${abbrev(v[0])}–${abbrev(v[1])}`, name]
                     : [v?.toLocaleString?.() ?? String(v), name]
                 }
               />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
               {coverageShade(totalReach, totalCompany)}
               {totalCompany === 'TIPSMUSIC' && (
-                <Area type="monotone" dataKey="tips_band" name="Tips band" stroke="none" fill={TIPS_COLOR} fillOpacity={0.15} connectNulls isAnimationActive={false} />
+                <Area type="monotone" dataKey="tips_band" name="Tips band" stroke="none" fill={TIPS_COLOR} fillOpacity={0.22} connectNulls isAnimationActive={false} />
               )}
               {(totalCompany === 'TIPSMUSIC' || totalCompany === 'both') && (
-                <Line type="monotone" dataKey="tips_mid" name="Tips total" stroke={TIPS_COLOR} strokeWidth={1.5} dot={false} connectNulls />
+                <Line type="monotone" dataKey="tips_mid" name="Tips total" stroke={TIPS_COLOR} strokeWidth={2} dot={false} connectNulls />
               )}
               {totalCompany === 'SAREGAMA' && (
-                <Area type="monotone" dataKey="sare_band" name="Saregama band" stroke="none" fill={SARE_COLOR} fillOpacity={0.15} connectNulls isAnimationActive={false} />
+                <Area type="monotone" dataKey="sare_band" name="Saregama band" stroke="none" fill={SARE_COLOR} fillOpacity={0.22} connectNulls isAnimationActive={false} />
               )}
               {(totalCompany === 'SAREGAMA' || totalCompany === 'both') && (
-                <Line type="monotone" dataKey="sare_mid" name="Saregama total" stroke={SARE_COLOR} strokeWidth={1.5} dot={false} connectNulls />
+                <Line type="monotone" dataKey="sare_mid" name="Saregama total" stroke={SARE_COLOR} strokeWidth={2} dot={false} connectNulls />
               )}
             </ComposedChart>
           </ResponsiveContainer>
@@ -242,9 +261,15 @@ function coverageShade(totalReach: TotalReachResult, totalCompany: TotalCompany)
     <ReferenceArea
       x1={firstWeek}
       x2={start}
-      fill="rgba(255,255,255,0.05)"
+      fill={GRID}
+      fillOpacity={1}
       stroke="none"
-      label={{ value: 'owned only (topic not yet tracked)', position: 'insideTop', fontSize: 10, fill: '#64748b' }}
+      label={{
+        value: 'owned only (topic not yet tracked)',
+        position: 'insideTop',
+        fontSize: 10,
+        fill: AXIS_TEXT,
+      }}
     />
   );
 }

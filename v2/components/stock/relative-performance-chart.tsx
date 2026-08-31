@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import type { RelPerfRow } from '@/lib/queries';
+import { AXIS, AXIS_TEXT, GRID, INK, SURFACE } from '@/lib/chart-palette';
 
 interface SeriesInput {
   symbol: string;
@@ -57,23 +58,25 @@ export function RelativePerformanceChart({
       </p>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
           <YAxis
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(15,23,42,0.95)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
               borderRadius: 6,
+              color: INK,
             }}
             formatter={(v: number) => `${(v * 100).toFixed(2)}%`}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
+          {/* Parity with the index is the benchmark every series is read against. */}
+          <ReferenceLine y={0} stroke={INK} strokeWidth={1.5} />
           {series.map((s) => (
             <Line
               key={s.symbol}
@@ -81,7 +84,7 @@ export function RelativePerformanceChart({
               dataKey={s.symbol}
               name={s.symbol}
               stroke={s.color}
-              strokeWidth={1.5}
+              strokeWidth={2}
               dot={false}
               connectNulls
             />

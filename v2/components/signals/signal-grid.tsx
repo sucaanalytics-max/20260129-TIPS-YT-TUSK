@@ -1,15 +1,21 @@
 import type { SignalsSnapshot } from '@/lib/signals';
 import { SignalTile } from './signal-tile';
 
+/**
+ * Eight metrics, each in its own labelled tile — small multiples, not eight
+ * series on one axis. There is no shared scale for a hue to identify against,
+ * so every sparkline draws in the tile default (ink) rather than cycling eight
+ * colours past the three-slot categorical ceiling.
+ */
 const COLS = [
-  { key: 'viewMomentum', label: 'View momentum', fmt: 'sigma' as const, color: '#60a5fa' },
-  { key: 'catalogFreshness', label: 'Catalog fresh', fmt: 'ratio' as const, color: '#a78bfa' },
-  { key: 'leadLag', label: 'Lead-lag r', fmt: 'r' as const, color: '#10b981' },
-  { key: 'relativeStrength', label: 'Rel. strength', fmt: 'pct' as const, color: '#f59e0b' },
-  { key: 'divergence', label: 'Divergence', fmt: 'sigma' as const, color: '#ef4444' },
-  { key: 'subscriberDrift', label: 'Subs drift', fmt: 'sigma' as const, color: '#94a3b8' },
-  { key: 'peerRankMomentum', label: 'Peer rank Δ', fmt: 'count' as const, color: '#22d3ee' },
-  { key: 'liveEventDensity', label: 'Live events 30d', fmt: 'count' as const, color: '#f472b6' },
+  { key: 'viewMomentum', label: 'View momentum', fmt: 'sigma' as const },
+  { key: 'catalogFreshness', label: 'Catalog fresh', fmt: 'ratio' as const },
+  { key: 'leadLag', label: 'Lead-lag r', fmt: 'r' as const },
+  { key: 'relativeStrength', label: 'Rel. strength', fmt: 'pct' as const },
+  { key: 'divergence', label: 'Divergence', fmt: 'sigma' as const },
+  { key: 'subscriberDrift', label: 'Subs drift', fmt: 'sigma' as const },
+  { key: 'peerRankMomentum', label: 'Peer rank Δ', fmt: 'count' as const },
+  { key: 'liveEventDensity', label: 'Live events 30d', fmt: 'count' as const },
 ] as const;
 
 export function SignalGrid({ snapshots }: { snapshots: SignalsSnapshot[] }) {
@@ -33,7 +39,6 @@ export function SignalGrid({ snapshots }: { snapshots: SignalsSnapshot[] }) {
                 label={col.label}
                 cell={snap[col.key]}
                 fmt={col.fmt}
-                sparkColor={col.color}
               />
             ))}
           </div>

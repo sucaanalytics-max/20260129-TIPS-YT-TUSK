@@ -1,4 +1,5 @@
 import { Sparkline } from '@/components/charts/sparkline';
+import { COMPANY_COLOR, INK, NEUTRAL, STATUS } from '@/lib/chart-palette';
 import type { TopicReachSnapshot } from '@/lib/queries';
 import { fmtInr } from '@/lib/revenue-cpm';
 import { ConfidenceBadge } from './confidence-badge';
@@ -51,14 +52,16 @@ export function TopicReachStrip({ snapshots }: { snapshots: TopicReachSnapshot[]
 
 function Card({ snap }: { snap: TopicReachSnapshot }) {
   const wow = snap.weekOverWeek;
+  // Colour reinforces the ▲/▼ glyph and the "vs prior 7d" wording already in
+  // the string — it is never the sole carrier of direction.
   const wowColor =
     wow == null
-      ? 'text-muted-foreground'
+      ? NEUTRAL
       : wow.delta_views > 0
-        ? 'text-emerald-400'
+        ? STATUS.good
         : wow.delta_views < 0
-          ? 'text-red-400'
-          : 'text-muted-foreground';
+          ? STATUS.critical
+          : NEUTRAL;
   const sparkValues = snap.series.map((p) => p.attributed_daily_views);
   return (
     <div className="border-border/40 rounded-md border p-3">
@@ -73,7 +76,7 @@ function Card({ snap }: { snap: TopicReachSnapshot }) {
         {fmtBig(snap.totals.last_7d)}{' '}
         <span className="text-muted-foreground text-xs font-normal">7-day attributed views</span>
       </p>
-      <p className={`text-xs tabular-nums ${wowColor}`}>
+      <p className="text-xs tabular-nums" style={{ color: wowColor }}>
         {wow == null
           ? '— (need ≥14 days for WoW)'
           : wow.delta_views > 0
@@ -90,7 +93,7 @@ function Card({ snap }: { snap: TopicReachSnapshot }) {
         className="text-muted-foreground/80 mt-1.5 flex flex-wrap items-center gap-2 text-[11px] tabular-nums"
         title={snap.revenueEstimate.methodology}
       >
-        <span className="text-amber-400/80">≈ {fmtInr(snap.revenueEstimate.weekly.low_inr)} – {fmtInr(snap.revenueEstimate.weekly.high_inr)}/wk</span>
+        <span className="text-foreground">≈ {fmtInr(snap.revenueEstimate.weekly.low_inr)} – {fmtInr(snap.revenueEstimate.weekly.high_inr)}/wk</span>
         <ConfidenceBadge estimate={snap.revenueEstimate} />
         <span className="text-muted-foreground/50">
           (Q-rate {fmtInr(snap.revenueEstimate.quarterly.low_inr)} – {fmtInr(snap.revenueEstimate.quarterly.high_inr)})
@@ -102,13 +105,14 @@ function Card({ snap }: { snap: TopicReachSnapshot }) {
             values={sparkValues.length ? sparkValues : [null]}
             width={240}
             height={36}
-            color={snap.company === 'TIPSMUSIC' ? '#60a5fa' : '#a78bfa'}
+            color={COMPANY_COLOR[snap.company] ?? NEUTRAL}
           />
         </div>
       ) : null}
       <div className="mt-3">
         <p className="text-muted-foreground/70 mb-1 text-[10px] uppercase tracking-wider">
-          top contributors (7d)
+          top contributors (7d) · <span style={{ color: INK }}>◆</span> official artist ·{' '}
+          <span style={{ color: NEUTRAL }}>○</span> auto topic
         </p>
         <ul className="space-y-1">
           {snap.topContributors.map((c) => (
@@ -122,7 +126,7 @@ function Card({ snap }: { snap: TopicReachSnapshot }) {
                   title={c.channel_name}
                 >
                   <span
-                    className={c.kind === 'oac' ? 'text-emerald-400/70' : 'text-amber-400/70'}
+                    style={{ color: c.kind === 'oac' ? INK : NEUTRAL }}
                     title={c.kind === 'oac' ? 'Official Artist Channel' : 'Auto-generated Topic'}
                   >
                     {c.kind === 'oac' ? '◆' : '○'}

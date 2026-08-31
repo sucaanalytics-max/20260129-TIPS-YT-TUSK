@@ -18,19 +18,32 @@ import {
 import type { StockDeepDive } from '@/lib/queries';
 import { MASelector } from '@/components/charts/dual-axis-line';
 import { MA_WINDOWS, rollingMeanArray, type MASmoothing } from '@/lib/smoothing';
+import {
+  AXIS,
+  AXIS_TEXT,
+  COMPANY_COLOR,
+  GRID,
+  INK,
+  NEUTRAL,
+  seriesColor,
+  SURFACE,
+} from '@/lib/chart-palette';
 
-const SYMBOL_COLOR: Record<string, { price: string; adj: string; views: string }> = {
-  TIPSMUSIC: { price: '#fbbf24', adj: '#60a5fa', views: '#22d3ee' },
-  SAREGAMA: { price: '#f97316', adj: '#a78bfa', views: '#f472b6' },
-};
+/**
+ * Price and views are different quantities, not peer series, so they do not
+ * both need a company hue: the adjusted-close line carries the company colour
+ * (identical on every screen), raw close is the same quantity shadowed in
+ * neutral, and YouTube views take a single fixed slot regardless of company.
+ *
+ * Corporate-action markers used to carry five hues past the three-slot
+ * ceiling; every marker already prints its own label, so the colour was
+ * redundant and they are now uniform ink rings.
+ */
+const VIEWS_COLOR = seriesColor(2);
 
-const MARKER_COLOR: Record<string, string> = {
-  split: '#ef4444',
-  bonus: '#f59e0b',
-  dividend: '#34d399',
-  rights: '#a78bfa',
-  merger: '#ec4899',
-};
+function symbolColor(symbol: string): string {
+  return COMPANY_COLOR[symbol] ?? COMPANY_COLOR.TIPSMUSIC;
+}
 
 function abbrev(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
@@ -96,7 +109,7 @@ export function StockPriceChart({
       </div>
     );
   }
-  const c = SYMBOL_COLOR[deepDive.symbol] ?? SYMBOL_COLOR.TIPSMUSIC;
+  const adjColor = symbolColor(deepDive.symbol);
   const priceByDate = new Map(
     deepDive.prices.map((p) => [p.date, p.adjusted_close ?? p.close]),
   );
@@ -117,7 +130,8 @@ export function StockPriceChart({
             {deepDive.symbol} · {deepDive.from} → {deepDive.to}
           </h3>
           <p className="text-muted-foreground text-xs">
-            Solid = adjusted close · dashed = raw close · markers = corp actions · {c.views === '#22d3ee' ? 'cyan' : 'pink'} = YT daily views (right axis)
+            Solid = adjusted close · dashed = raw close · labelled rings = corp actions ·
+            right axis = YT daily views
             {smoothing !== 'abs' ? ` · views smoothed (${smoothing.toUpperCase()})` : null}
           </p>
         </div>
@@ -125,40 +139,43 @@ export function StockPriceChart({
       </header>
       <ResponsiveContainer width="100%" height={340}>
         <ComposedChart data={merged} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
           <YAxis
             yAxisId="price"
             orientation="left"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v: number) => `₹${v.toFixed(0)}`}
           />
+          {/* The right axis carries only the views line, so it takes that
+              line's colour and the reader can tell the two scales apart. */}
           <YAxis
             yAxisId="views"
             orientation="right"
-            stroke={c.views}
-            tick={{ fontSize: 11 }}
+            stroke={VIEWS_COLOR}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v: number) => abbrev(v)}
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(15,23,42,0.95)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
               borderRadius: 6,
+              color: INK,
             }}
             formatter={(v: number, name: string) =>
               name.includes('views') ? abbrev(v) : `₹${v.toFixed(2)}`
             }
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
           <Line
             yAxisId="price"
             type="monotone"
             dataKey="adjusted_close"
             name={`${deepDive.symbol} adj close`}
-            stroke={c.adj}
-            strokeWidth={1.5}
+            stroke={adjColor}
+            strokeWidth={2}
             dot={false}
             connectNulls
           />
@@ -167,8 +184,8 @@ export function StockPriceChart({
             type="monotone"
             dataKey="close"
             name={`${deepDive.symbol} raw close`}
-            stroke={c.price}
-            strokeWidth={1}
+            stroke={NEUTRAL}
+            strokeWidth={1.5}
             strokeDasharray="3 3"
             dot={false}
             connectNulls
@@ -178,8 +195,8 @@ export function StockPriceChart({
             type="monotone"
             dataKey="daily_views"
             name={`${deepDive.symbol} YT views`}
-            stroke={c.views}
-            strokeWidth={1.5}
+            stroke={VIEWS_COLOR}
+            strokeWidth={2}
             dot={false}
             connectNulls
           />
@@ -190,9 +207,10 @@ export function StockPriceChart({
               y={d.y}
               yAxisId="price"
               r={5}
-              fill={MARKER_COLOR[d.action] ?? '#94a3b8'}
-              stroke="rgba(15,23,42,0.9)"
-              label={{ value: d.label, fill: '#cbd5e1', fontSize: 10, position: 'top' }}
+              fill={INK}
+              stroke={SURFACE}
+              strokeWidth={1.5}
+              label={{ value: d.label, fill: INK, fontSize: 10, position: 'top' }}
             />
           ))}
         </ComposedChart>
@@ -200,19 +218,20 @@ export function StockPriceChart({
 
       <ResponsiveContainer width="100%" height={compactVolume ? 80 : 140}>
         <BarChart data={deepDive.prices} margin={{ top: 0, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-          <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} tickFormatter={(v: number) => abbrev(v)} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 10, fill: AXIS_TEXT }} />
+          <YAxis stroke={AXIS} tick={{ fontSize: 10, fill: AXIS_TEXT }} tickFormatter={(v: number) => abbrev(v)} />
           <Tooltip
             contentStyle={{
-              background: 'rgba(15,23,42,0.95)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
               borderRadius: 6,
+              color: INK,
             }}
             formatter={(v: number) => v.toLocaleString()}
           />
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-          <Bar dataKey="volume" name="Volume" fill={c.adj} fillOpacity={0.5} />
+          <ReferenceLine y={0} stroke={AXIS} />
+          <Bar dataKey="volume" name="Volume" fill={adjColor} fillOpacity={0.7} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -271,7 +290,8 @@ export function StockPriceChartCompare({ deepDives }: { deepDives: StockDeepDive
             Compare · adjusted close + YT daily views
           </h3>
           <p className="text-muted-foreground text-xs">
-            Left axis: ₹ adjusted close · Right axis: YT daily views · corp-action markers omitted
+            Left axis: ₹ adjusted close (solid) · Right axis: YT daily views (dashed) ·
+            colour = company · corp-action markers omitted
             {smoothing !== 'abs' ? ` · views smoothed (${smoothing.toUpperCase()})` : null}
           </p>
         </div>
@@ -279,65 +299,63 @@ export function StockPriceChartCompare({ deepDives }: { deepDives: StockDeepDive
       </header>
       <ResponsiveContainer width="100%" height={360}>
         <ComposedChart data={merged} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
+          {/* Both companies appear on both axes here, so the axes stay
+              furniture and price vs views is carried by line style. */}
           <YAxis
             yAxisId="price"
             orientation="left"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v: number) => `₹${v.toFixed(0)}`}
           />
           <YAxis
             yAxisId="views"
             orientation="right"
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v: number) => abbrev(v)}
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(15,23,42,0.95)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
               borderRadius: 6,
+              color: INK,
             }}
             formatter={(v: number, name: string) =>
               name.includes('views') ? abbrev(v) : `₹${v.toFixed(2)}`
             }
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
-          {deepDives.map((d) => {
-            const c = SYMBOL_COLOR[d.symbol] ?? SYMBOL_COLOR.TIPSMUSIC;
-            return (
-              <Line
-                key={`${d.symbol}-adj`}
-                yAxisId="price"
-                type="monotone"
-                dataKey={`${d.symbol}_adj`}
-                name={`${d.symbol} adj close`}
-                stroke={c.adj}
-                strokeWidth={1.5}
-                dot={false}
-                connectNulls
-              />
-            );
-          })}
-          {deepDives.map((d) => {
-            const c = SYMBOL_COLOR[d.symbol] ?? SYMBOL_COLOR.TIPSMUSIC;
-            return (
-              <Line
-                key={`${d.symbol}-views`}
-                yAxisId="views"
-                type="monotone"
-                dataKey={`${d.symbol}_views`}
-                name={`${d.symbol} YT views`}
-                stroke={c.views}
-                strokeWidth={1.5}
-                dot={false}
-                connectNulls
-              />
-            );
-          })}
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
+          {deepDives.map((d) => (
+            <Line
+              key={`${d.symbol}-adj`}
+              yAxisId="price"
+              type="monotone"
+              dataKey={`${d.symbol}_adj`}
+              name={`${d.symbol} adj close`}
+              stroke={symbolColor(d.symbol)}
+              strokeWidth={2}
+              dot={false}
+              connectNulls
+            />
+          ))}
+          {deepDives.map((d) => (
+            <Line
+              key={`${d.symbol}-views`}
+              yAxisId="views"
+              type="monotone"
+              dataKey={`${d.symbol}_views`}
+              name={`${d.symbol} YT views`}
+              stroke={symbolColor(d.symbol)}
+              strokeWidth={2}
+              strokeDasharray="4 3"
+              dot={false}
+              connectNulls
+            />
+          ))}
         </ComposedChart>
       </ResponsiveContainer>
     </div>

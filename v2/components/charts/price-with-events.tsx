@@ -11,6 +11,15 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
+import {
+  AXIS,
+  AXIS_TEXT,
+  GRID,
+  INK,
+  NEUTRAL,
+  seriesColor,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 interface PricePoint {
   date: string;
@@ -24,14 +33,6 @@ interface CorporateAction {
   action_type: string;
   label: string;
 }
-
-const MARKER_COLOR: Record<string, string> = {
-  split: '#ef4444',
-  bonus: '#f59e0b',
-  dividend: '#34d399',
-  rights: '#a78bfa',
-  merger: '#ec4899',
-};
 
 export function PriceWithEvents({
   prices,
@@ -61,28 +62,34 @@ export function PriceWithEvents({
     <div className="border-border bg-card rounded-lg border p-4">
       <h3 className="text-foreground text-sm font-medium">TIPSMUSIC adjusted close with corp-action markers</h3>
       <p className="text-muted-foreground mb-3 text-xs">
-        Dashed line = raw close · solid = corp-action-adjusted
+        Dashed line = raw close · solid = corp-action-adjusted · each ringed marker is
+        labelled with the corporate action it stands for
       </p>
       <ResponsiveContainer width="100%" height={360}>
         <LineChart data={prices} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
           <YAxis
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v) => `₹${v.toFixed(0)}`}
           />
           <Tooltip
-            contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6 }}
+            contentStyle={{
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
+              borderRadius: 6,
+              color: INK,
+            }}
             formatter={(v: number) => `₹${v.toFixed(2)}`}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
           <Line
             type="monotone"
             dataKey="adjusted_close"
             name="Adjusted close"
-            stroke="#60a5fa"
-            strokeWidth={1.5}
+            stroke={seriesColor(0)}
+            strokeWidth={2}
             dot={false}
             connectNulls
           />
@@ -90,8 +97,8 @@ export function PriceWithEvents({
             type="monotone"
             dataKey="close"
             name="Raw close"
-            stroke="#f97316"
-            strokeWidth={1}
+            stroke={NEUTRAL}
+            strokeWidth={1.5}
             strokeDasharray="3 3"
             dot={false}
             connectNulls
@@ -102,9 +109,10 @@ export function PriceWithEvents({
               x={d.x}
               y={d.y}
               r={5}
-              fill={MARKER_COLOR[d.action] ?? '#94a3b8'}
-              stroke="rgba(15,23,42,0.9)"
-              label={{ value: d.label, fill: '#cbd5e1', fontSize: 10, position: 'top' }}
+              fill={INK}
+              stroke={SURFACE}
+              strokeWidth={1.5}
+              label={{ value: d.label, fill: INK, fontSize: 10, position: 'top' }}
             />
           ))}
         </LineChart>

@@ -13,6 +13,15 @@ import {
 } from 'recharts';
 import type { DualAxisRow } from '@/lib/queries';
 import { MA_OPTIONS, MA_WINDOWS, rollingMeanField, type MASmoothing } from '@/lib/smoothing';
+import {
+  AXIS,
+  AXIS_TEXT,
+  GRID,
+  INK,
+  NEUTRAL,
+  seriesColor,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 export function DualAxisLine({ data }: { data: DualAxisRow[] }) {
   const [smoothing, setSmoothing] = useState<MASmoothing>('abs');
@@ -50,34 +59,41 @@ export function DualAxisLine({ data }: { data: DualAxisRow[] }) {
 
       <ResponsiveContainer width="100%" height={340}>
         <LineChart data={smoothed} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
+          {/* Two axes in different units: each axis line takes its own series'
+              colour so the reader can tell which scale a line belongs to. */}
           <YAxis
             yAxisId="views"
             orientation="left"
-            stroke="#60a5fa"
-            tick={{ fontSize: 11 }}
+            stroke={seriesColor(0)}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v) => abbrev(v)}
           />
           <YAxis
             yAxisId="price"
             orientation="right"
-            stroke="#fbbf24"
-            tick={{ fontSize: 11 }}
+            stroke={seriesColor(1)}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v) => `₹${v.toFixed(0)}`}
           />
           <Tooltip
-            contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6 }}
-            labelStyle={{ color: '#cbd5e1' }}
+            contentStyle={{
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
+              borderRadius: 6,
+              color: INK,
+            }}
+            labelStyle={{ color: AXIS_TEXT }}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
           <Line
             yAxisId="views"
             type="monotone"
             dataKey="daily_views"
             name={smoothing === 'abs' ? 'Daily views' : `Daily views (${smoothing.toUpperCase()})`}
-            stroke="#60a5fa"
-            strokeWidth={1.5}
+            stroke={seriesColor(0)}
+            strokeWidth={2}
             dot={false}
             connectNulls
           />
@@ -86,8 +102,8 @@ export function DualAxisLine({ data }: { data: DualAxisRow[] }) {
             type="monotone"
             dataKey="adjusted_close"
             name="TIPSMUSIC adjusted close"
-            stroke="#fbbf24"
-            strokeWidth={1.5}
+            stroke={seriesColor(1)}
+            strokeWidth={2}
             dot={false}
             connectNulls
           />
@@ -96,8 +112,8 @@ export function DualAxisLine({ data }: { data: DualAxisRow[] }) {
             type="monotone"
             dataKey="close"
             name="TIPSMUSIC close (raw)"
-            stroke="#f97316"
-            strokeWidth={1}
+            stroke={NEUTRAL}
+            strokeWidth={1.5}
             strokeDasharray="3 3"
             dot={false}
             connectNulls
@@ -126,7 +142,7 @@ export function MASelector({
           onClick={() => onChange(opt.value)}
           className={`rounded-md border px-2.5 py-1 transition-colors ${
             value === opt.value
-              ? 'border-blue-500 bg-blue-500/20 text-blue-200'
+              ? 'border-foreground bg-foreground/10 text-foreground'
               : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/40'
           }`}
         >

@@ -1,5 +1,6 @@
 import type { DualSymbolHeadlineRow } from '@/lib/queries';
 import { Sparkline } from '@/components/charts/sparkline';
+import { COMPANY_COLOR, NEUTRAL, STATUS } from '@/lib/chart-palette';
 import { STOCK_RANGE_LABEL } from '@/lib/stock-range';
 
 function fmtInt(n: number | null): string {
@@ -24,9 +25,18 @@ function fmtPct(n: number | null, digits = 2): string {
   return `${n >= 0 ? '+' : ''}${n.toFixed(digits)}%`;
 }
 
+/**
+ * Direction is carried by the ▲/▼ glyph (and the signed number) as well as the
+ * colour, so the up/down reading survives a red-green colour deficiency.
+ */
 function deltaColor(n: number | null): string {
-  if (n == null) return 'text-muted-foreground';
-  return n >= 0 ? 'text-emerald-400' : 'text-red-400';
+  if (n == null) return NEUTRAL;
+  return n >= 0 ? STATUS.good : STATUS.critical;
+}
+
+function deltaArrow(n: number | null): string {
+  if (n == null) return '';
+  return n >= 0 ? '▲ ' : '▼ ';
 }
 
 function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
@@ -44,7 +54,11 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
         <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
           {fmtPrice(row.close)}
         </p>
-        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.close_return)}`}>
+        <p
+          className="mt-1 text-xs tabular-nums"
+          style={{ color: deltaColor(row.close_return) }}
+        >
+          {deltaArrow(row.close_return)}
           {fmtLogPct(row.close_return)}{' '}
           <span className="text-muted-foreground">{rangeLabel} return (log)</span>
         </p>
@@ -57,7 +71,11 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
         <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
           {fmtInt(row.daily_views_latest)}
         </p>
-        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.views_delta_pct)}`}>
+        <p
+          className="mt-1 text-xs tabular-nums"
+          style={{ color: deltaColor(row.views_delta_pct) }}
+        >
+          {deltaArrow(row.views_delta_pct)}
           {fmtPct(row.views_delta_pct)} <span className="text-muted-foreground">{viewsHint}</span>
         </p>
       </div>
@@ -69,7 +87,11 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
         <p className="text-foreground mt-2 text-2xl font-semibold tabular-nums">
           {fmtInt(row.subscribers)}
         </p>
-        <p className={`mt-1 text-xs tabular-nums ${deltaColor(row.subs_delta)}`}>
+        <p
+          className="mt-1 text-xs tabular-nums"
+          style={{ color: deltaColor(row.subs_delta) }}
+        >
+          {deltaArrow(row.subs_delta)}
           {row.subs_delta != null
             ? `${row.subs_delta >= 0 ? '+' : ''}${fmtInt(row.subs_delta)}`
             : '—'}{' '}
@@ -86,7 +108,7 @@ function CompanyRow({ row }: { row: DualSymbolHeadlineRow }) {
             values={row.sparkline}
             width={200}
             height={48}
-            color={row.company === 'TIPSMUSIC' ? '#60a5fa' : '#a78bfa'}
+            color={COMPANY_COLOR[row.company] ?? NEUTRAL}
           />
         </div>
         <p className="text-muted-foreground mt-1 text-xs">

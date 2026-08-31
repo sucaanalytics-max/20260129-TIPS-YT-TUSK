@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ControlChartResult } from '@/lib/queries';
 import { METRIC_LABEL } from '@/lib/metrics';
+import { AXIS, BAND_FILL, INK, NEUTRAL, STATUS } from '@/lib/chart-palette';
 
 const W = 1160;
 const H = 300;
@@ -59,12 +60,14 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
       .filter(Boolean)
       .join(' ');
 
+  // ±2σ is the breach threshold, so it takes the warning colour; ±1σ and the
+  // centre line are reading furniture and stay recessive.
   const limitRows: Array<[string, number, string, boolean]> = [
-    ['+2σ', limits.ucl2, '#D97706', true],
-    ['+1σ', limits.ucl1, '#6B7684', false],
-    ['x̄', limits.mean, '#8B97A8', false],
-    ['−1σ', limits.lcl1, '#6B7684', false],
-    ['−2σ', limits.lcl2, '#D97706', true],
+    ['+2σ', limits.ucl2, STATUS.warning, true],
+    ['+1σ', limits.ucl1, AXIS, false],
+    ['x̄', limits.mean, NEUTRAL, false],
+    ['−1σ', limits.lcl1, AXIS, false],
+    ['−2σ', limits.lcl2, STATUS.warning, true],
   ];
   const violationIdx = new Set(violations.map((v) => v.date));
 
@@ -103,7 +106,7 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
                 y={scale.y(limits.ucl1)}
                 width={W}
                 height={Math.max(0, scale.y(limits.lcl1) - scale.y(limits.ucl1))}
-                fill="rgba(37,99,235,0.05)"
+                fill={BAND_FILL}
               />
               {limitRows.map(([label, v, color, dashed]) => (
                 <line
@@ -119,14 +122,16 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
               ))}
             </>
           ) : null}
-          <polyline fill="none" stroke="#4A5263" strokeWidth={1} points={line(points.map((p) => p.value))} />
+          {/* The daily trace is the raw material; the 30-day mean is the line
+              the caption tells you to read, so it carries the ink weight. */}
+          <polyline fill="none" stroke={NEUTRAL} strokeWidth={1.25} points={line(points.map((p) => p.value))} />
           {movingAverages[30] ? (
-            <polyline fill="none" stroke="#2563EB" strokeWidth={2.5} strokeLinejoin="round" points={line(movingAverages[30])} />
+            <polyline fill="none" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" points={line(movingAverages[30])} />
           ) : null}
           {showLimits
             ? points.map((p, i) =>
                 p.value != null && violationIdx.has(p.date) ? (
-                  <circle key={p.date} cx={scale.x(i)} cy={scale.y(p.value)} r={9} fill="none" stroke="#D97706" strokeWidth={3} />
+                  <circle key={p.date} cx={scale.x(i)} cy={scale.y(p.value)} r={9} fill="none" stroke={STATUS.warning} strokeWidth={3} />
                 ) : null,
               )
             : null}
@@ -151,10 +156,17 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
 
       <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px]">
         <span className="flex items-center gap-1.5">
-          <span className="h-px w-3.5 bg-[#4A5263]" />daily
+          <span className="h-px w-3.5" style={{ background: NEUTRAL }} />daily
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-0.5 w-3.5 bg-[#2563EB]" />30-day mean
+          <span className="h-0.5 w-3.5" style={{ background: INK }} />30-day mean
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-3 w-3 rounded-full"
+            style={{ border: `2px solid ${STATUS.warning}` }}
+          />
+          ringed = outside ±2σ
         </span>
         {([15, 45, 90] as const).map((w) =>
           movingAverages[w] ? (
@@ -170,7 +182,7 @@ export function ControlChart({ data }: { data: ControlChartResult }) {
       </div>
 
       {skew.oneSided ? (
-        <p className="mt-2 text-[11px] text-amber-300">
+        <p className="mt-2 text-[11px]" style={{ color: STATUS.warning }}>
           ⚠️ {skew.above} breaches above and {skew.below} below. A symmetric process splits
           them, so these limits are indicative, not valid — read the moving average, not the
           envelope.

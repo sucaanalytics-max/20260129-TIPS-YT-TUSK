@@ -13,17 +13,35 @@ import {
   Legend,
 } from 'recharts';
 import type { RollingCorrelationRow } from '@/lib/queries';
+import {
+  AXIS,
+  AXIS_TEXT,
+  GRID,
+  INK,
+  NEUTRAL,
+  SERIES,
+  seriesColor,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 interface Props {
   byWindow: Record<number, RollingCorrelationRow[]>;
 }
 
-const COLORS: Record<number, string> = {
-  7: '#fbbf24',
-  30: '#60a5fa',
-  60: '#a78bfa',
-  120: '#34d399',
-};
+/**
+ * Four windows overlaid on one axis, but only three categorical slots exist on
+ * a light surface — every four-hue set fails the all-pairs CVD check. The
+ * three shortest windows take the categorical slots in ascending order and the
+ * longest folds into NEUTRAL rather than inventing a fourth hue. This chart
+ * really wants faceting into four small multiples; until then the tail is
+ * deliberately the most recessive line.
+ */
+const WINDOW_ORDER = [7, 30, 60, 120] as const;
+
+function windowColor(win: number): string {
+  const i = WINDOW_ORDER.indexOf(win as (typeof WINDOW_ORDER)[number]);
+  return i >= 0 && i < SERIES.length ? seriesColor(i) : NEUTRAL;
+}
 
 export function RollingCorrelation({ byWindow }: Props) {
   const merged = mergeByDate(byWindow);
@@ -45,22 +63,28 @@ export function RollingCorrelation({ byWindow }: Props) {
       </p>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={merged} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="asof" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-          <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} domain={[-1, 1]} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="asof" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
+          <YAxis stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} domain={[-1, 1]} />
           <Tooltip
-            contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6 }}
+            contentStyle={{
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
+              borderRadius: 6,
+              color: INK,
+            }}
           />
-          <Legend wrapperStyle={{ fontSize: 11 }} />
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />
+          <Legend wrapperStyle={{ fontSize: 11, color: AXIS_TEXT }} />
+          {/* r = 0 is the null every window is read against. */}
+          <ReferenceLine y={0} stroke={INK} strokeWidth={1.5} />
           {Object.entries(byWindow).map(([win, rows]) => (
             <Line
               key={win}
               type="monotone"
               dataKey={`r_${win}`}
               name={`${win}d window`}
-              stroke={COLORS[Number(win)] ?? '#94a3b8'}
-              strokeWidth={1.5}
+              stroke={windowColor(Number(win))}
+              strokeWidth={2}
               dot={false}
               connectNulls
             />
@@ -73,8 +97,8 @@ export function RollingCorrelation({ byWindow }: Props) {
                   key={`sig-${win}-${r.asof}`}
                   x1={r.asof}
                   x2={r.asof}
-                  fill={COLORS[Number(win)] ?? '#94a3b8'}
-                  fillOpacity={0.08}
+                  fill={windowColor(Number(win))}
+                  fillOpacity={0.28}
                   ifOverflow="extendDomain"
                 />
               )),

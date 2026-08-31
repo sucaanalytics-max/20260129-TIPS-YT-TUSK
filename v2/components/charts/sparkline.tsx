@@ -1,15 +1,21 @@
+import { INK } from '@/lib/chart-palette';
+
 /**
  * Inline SVG sparkline — no Recharts, no tooltips, no axes. Cheap to render
  * 38+ of these per table without affecting React performance.
  *
  * Null values are skipped — the path connects across them so weekend gaps
  * don't visually break the trend. Returns null if every value is null.
+ *
+ * The default is INK because an unlabelled sparkline carries no series
+ * identity — it is a mark on paper. Callers that DO carry identity (a company
+ * trend) pass COMPANY_COLOR instead.
  */
 export function Sparkline({
   values,
   width = 120,
   height = 24,
-  color = '#60a5fa',
+  color = INK,
 }: {
   values: Array<number | null>;
   width?: number;
@@ -22,7 +28,7 @@ export function Sparkline({
   }>;
   if (valid.length === 0) {
     return (
-      <svg width={width} height={height} className="opacity-30">
+      <svg width={width} height={height} className="opacity-60">
         <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke={color} strokeWidth={1} strokeDasharray="2 3" />
       </svg>
     );
@@ -44,8 +50,8 @@ export function Sparkline({
 
   return (
     <svg width={width} height={height} role="img" aria-label="60-day daily views trend">
-      <path d={d} fill="none" stroke={color} strokeWidth={1.2} strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={lastX} cy={lastY} r={1.6} fill={color} />
+      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={lastX} cy={lastY} r={2.5} fill={color} />
     </svg>
   );
 }

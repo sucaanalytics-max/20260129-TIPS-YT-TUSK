@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { LagCorrelationSet } from '@/lib/queries';
 import { METRIC_LABEL } from '@/lib/metrics';
+import { INK, NEUTRAL, seriesColor } from '@/lib/chart-palette';
 
 const PW = 360;
 const PH = 150;
@@ -34,6 +35,10 @@ export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
           </h3>
           <p className="text-muted-foreground text-xs">
             each metric against daily log returns, lags −7 to +7 · metric leads ← · → price leads
+          </p>
+          <p className="text-muted-foreground/80 mt-0.5 text-[11px]">
+            bars above the baseline are positive r, below it negative · dashed rule = 5%
+            significance · faded bars fall short of it
           </p>
         </div>
         <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs select-none">
@@ -71,8 +76,8 @@ export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
                   <svg viewBox={`0 0 ${PW} ${PH}`} className="mt-2 block h-[150px] w-full">
                     {showSig ? (
                       <>
-                        <line x1={0} x2={PW} y1={ZERO - set.critical * SCALE} y2={ZERO - set.critical * SCALE} stroke="#3A4150" strokeDasharray="4 3" />
-                        <line x1={0} x2={PW} y1={ZERO + set.critical * SCALE} y2={ZERO + set.critical * SCALE} stroke="#3A4150" strokeDasharray="4 3" />
+                        <line x1={0} x2={PW} y1={ZERO - set.critical * SCALE} y2={ZERO - set.critical * SCALE} stroke={NEUTRAL} strokeDasharray="4 3" />
+                        <line x1={0} x2={PW} y1={ZERO + set.critical * SCALE} y2={ZERO + set.critical * SCALE} stroke={NEUTRAL} strokeDasharray="4 3" />
                       </>
                     ) : null}
                     {set.lags.map((l, i) => {
@@ -87,12 +92,12 @@ export function LagCorrelationGrid({ sets }: { sets: LagCorrelationSet[] }) {
                           width={PW / set.lags.length - 8}
                           height={h}
                           rx={2}
-                          fill={l.r > 0 ? '#2563EB' : '#D97706'}
-                          opacity={sig ? 0.85 : 0.4}
+                          fill={l.r > 0 ? seriesColor(0) : seriesColor(1)}
+                          opacity={sig ? 1 : 0.55}
                         />
                       );
                     })}
-                    <line x1={0} x2={PW} y1={ZERO} y2={ZERO} stroke="#4A5263" />
+                    <line x1={0} x2={PW} y1={ZERO} y2={ZERO} stroke={INK} />
                   </svg>
                   <div className="text-muted-foreground/60 mt-1 flex justify-between font-mono text-[9px]">
                     <span>−7</span><span>0</span><span>+7</span>

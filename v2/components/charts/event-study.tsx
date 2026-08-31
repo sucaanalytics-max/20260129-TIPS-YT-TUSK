@@ -12,6 +12,15 @@ import {
   YAxis,
 } from 'recharts';
 import type { EventStudyRow } from '@/lib/queries';
+import {
+  AXIS,
+  AXIS_TEXT,
+  BAND_FILL,
+  GRID,
+  INK,
+  seriesColor,
+  SURFACE,
+} from '@/lib/chart-palette';
 
 export function EventStudyChart({ rows, eventType }: { rows: EventStudyRow[]; eventType: string }) {
   if (!rows.length) {
@@ -43,25 +52,38 @@ export function EventStudyChart({ rows, eventType }: { rows: EventStudyRow[]; ev
       </p>
       <ResponsiveContainer width="100%" height={300}>
         <ComposedChart data={data} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.06)" />
-          <XAxis dataKey="day" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+          <CartesianGrid stroke={GRID} />
+          <XAxis dataKey="day" stroke={AXIS} tick={{ fontSize: 11, fill: AXIS_TEXT }} />
           <YAxis
-            stroke="#94a3b8"
-            tick={{ fontSize: 11 }}
+            stroke={AXIS}
+            tick={{ fontSize: 11, fill: AXIS_TEXT }}
             tickFormatter={(v) => `${v.toFixed(1)}%`}
           />
           <Tooltip
-            contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6 }}
+            contentStyle={{
+              background: SURFACE,
+              border: `1px solid ${AXIS}`,
+              borderRadius: 6,
+              color: INK,
+            }}
             formatter={(v: number) => `${v.toFixed(2)}%`}
           />
-          <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-          <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" strokeDasharray="2 2" label={{ value: 'event', fill: '#94a3b8', fontSize: 10 }} />
+          {/* Zero abnormal return and the event day are the two references the
+              CAR path is read against, so both are drawn in ink. */}
+          <ReferenceLine y={0} stroke={INK} strokeWidth={1.5} />
+          <ReferenceLine
+            x={0}
+            stroke={INK}
+            strokeWidth={1.5}
+            strokeDasharray="2 2"
+            label={{ value: 'event', fill: AXIS_TEXT, fontSize: 10 }}
+          />
           <Area
             type="monotone"
             dataKey="band"
             stroke="none"
-            fill="#60a5fa"
-            fillOpacity={0.15}
+            fill={BAND_FILL}
+            fillOpacity={1}
             isAnimationActive={false}
             name="95% CI"
           />
@@ -69,9 +91,9 @@ export function EventStudyChart({ rows, eventType }: { rows: EventStudyRow[]; ev
             type="monotone"
             dataKey="car_pct"
             name="Mean CAR"
-            stroke="#60a5fa"
+            stroke={seriesColor(0)}
             strokeWidth={2}
-            dot={{ r: 3, fill: '#60a5fa' }}
+            dot={{ r: 4, fill: seriesColor(0), stroke: SURFACE, strokeWidth: 1 }}
           />
         </ComposedChart>
       </ResponsiveContainer>

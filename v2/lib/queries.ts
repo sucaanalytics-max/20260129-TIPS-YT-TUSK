@@ -25,6 +25,7 @@ import {
   periodReturn,
   returnSinceDate,
 } from '@/lib/risk';
+import { buildCorrelationMatrix } from '@/lib/correlation-matrix';
 import { resolveStockRange, type StockRange } from '@/lib/stock-range';
 import {
   estimateConsolidatedYT,
@@ -818,6 +819,86 @@ export interface LagCorrelationSet {
  * anything. Callers should render `critical` as a threshold and report how many
  * lags clear it against how many chance alone predicts (lags × 0.05).
  */
+/**
+ * The full reach-against-price grid: every metric, for both companies, against
+ * BOTH share prices.
+ *
+ * The cross-company pairs are the point, not padding. They are the control: if
+ * Tips' views track Saregama's price about as well as they track Tips' own,
+ * whatever is there is a market factor rather than anything about the
+ * catalogue. Computing only the same-company cells would leave no way to tell
+ * those apart.
+ */
+export async function getCorrelationMatrix(opts: {
+  days?: number;
+  lags?: number[];
+  alpha?: number;
+} = {}): Promise<import('@/lib/correlation-matrix').MatrixResult & { windowDays: number; from: string }> {
+  const supabase = getServiceSupabase();
+  const days = opts.days ?? 365;
+  const lags = opts.lags ?? Array.from({ length: 15 }, (_, i) => i - 7);
+  // Pad the fetch so the earliest lag still has a partner to pair with.
+  const from = new Date(Date.now() - (days + 30) * 86_400_000).toISOString().slice(0, 10);
+
+  const [rows, { data: priceRows }] = await Promise.all([
+    getExplorerRows({ from }),
+    supabase
+      .from('fct_adjusted_price_daily')
+      .select('symbol, date, adjusted_close')
+      .gte('date', from)
+      .order('date', { ascending: true })
+      .limit(5000),
+  ]);
+
+  const prices = (priceRows ?? []) as Array<{
+    symbol: Company;
+    date: string;
+    adjusted_close: number | null;
+  }>;
+
+  /*
+   * Both reads are capped (5000 explorer rows, 5000 price rows). At today's
+   * window that is ~790 and ~800, but a silently truncated series would shorten
+   * one side of every pair and quietly bias every correlation in the grid —
+   * with no symptom on screen. Fail loudly instead.
+   */
+  if (prices.length >= 5000) {
+    throw new Error(
+      `getCorrelationMatrix: price read hit its 5000-row cap for a ${days}-day window. ` +
+        `Page the read rather than correlating a truncated series.`,
+    );
+  }
+  if (rows.length >= 5000) {
+    throw new Error(
+      `getCorrelationMatrix: explorer read hit its 5000-row cap for a ${days}-day window. ` +
+        `Page the read rather than correlating a truncated series.`,
+    );
+  }
+
+  const symbols = [...new Set(prices.map((p) => p.symbol))].sort();
+  const returns = symbols.map((symbol) => {
+    const px = prices.filter((p) => p.symbol === symbol);
+    const rets = alignedLogReturns(
+      px.map((p) => (p.adjusted_close == null ? null : Number(p.adjusted_close))),
+    );
+    return { symbol, points: px.map((p, i) => ({ date: p.date, value: rets[i] })) };
+  });
+
+  const companies = [...new Set(rows.map((r) => r.company))].sort();
+  const series = companies.flatMap((company) =>
+    (['views', 'subscribers', 'releases'] as ExplorerMetric[]).map((metric) => ({
+      company,
+      metric,
+      points: rows
+        .filter((r) => r.company === company)
+        .map((r) => ({ date: r.date, value: r[metric] })),
+    })),
+  );
+
+  const result = buildCorrelationMatrix({ series, returns, lags, alpha: opts.alpha });
+  return { ...result, windowDays: days, from };
+}
+
 export async function getLagCorrelations(opts: {
   days?: number;
   lags?: number[];

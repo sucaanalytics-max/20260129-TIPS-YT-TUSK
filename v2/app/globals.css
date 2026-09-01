@@ -36,6 +36,17 @@
     --tips:      76 155 216;    /* #4C9BD8 */
     --sare:     224 123 58;     /* #E07B3A */
 
+    /*
+     * Diverging ramp for correlation. A separate job from the categorical
+     * company colours, so it gets its own hues: reusing --tips/--sare would
+     * make a positive correlation look like "Tips" and a negative one like
+     * "Saregama". Blue/rose rather than blue/red keeps it clear of --bad.
+     * Validated on this surface: CVD dE 14.6 protan, normal 25.9, both >= 3:1.
+     */
+    --pos:       62 143 214;    /* #3E8FD6 */
+    --neg:      217 82 126;     /* #D9527E */
+    --neutral:  110 120 134;    /* the midpoint is GRAY, never a hue */
+
     --pad: 20px;
     --gap: 16px;
     --fs: 14px;
@@ -59,6 +70,9 @@
     --gridline: 235 235 230;    /* #EBEBE6 */
     --tips:       0 114 178;    /* #0072B2 */
     --sare:     194 84 0;       /* #C25400 */
+    --pos:        0 114 178;    /* #0072B2 */
+    --neg:      176 48 96;      /* #B03060 */
+    --neutral:  140 146 154;
 
     /*
      * The handoff leaves --accent at #3E8FD6 in light mode but writes

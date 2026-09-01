@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { cacheLife, cacheTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
+  getCorrelationMatrix,
   getDataQuality,
   getExplorerRows,
   getLagCorrelations,
@@ -12,6 +13,7 @@ import {
 import { CACHE_TAGS } from '@/lib/revalidate';
 import { Card, CardHead, Disclose, Section, Shell } from '@/components/shell/app-shell';
 import { ExplorerTable } from '@/components/explore/explorer-table';
+import { CorrelationMatrix } from '@/components/evidence/correlation-matrix';
 
 /**
  * Evidence — does the claim survive?
@@ -37,24 +39,36 @@ export default async function EvidencePage() {
             windows where it does not are shown too.
           </p>
         </Card>
+        <Card className="overflow-hidden">
+          <CardHead
+            title="Reach vs price — every pair"
+            note="Each metric against BOTH share prices. Same-company cells are the claim; cross-company cells are the control."
+          />
+          <Suspense fallback={<Block h={520} bare />}>
+            <Matrix />
+          </Suspense>
+        </Card>
         <Suspense fallback={<Block h={300} />}>
           <Windows />
         </Suspense>
+      </Section>
+
+      <Section id="data">
+        <Card className="overflow-hidden">
+          <CardHead
+            title="Raw series"
+            note="The daily grain everything above is computed from — slice, aggregate, compare and export it"
+          />
+          <Suspense fallback={<Block h={420} bare />}>
+            <RawSeries />
+          </Suspense>
+        </Card>
       </Section>
 
       <Section id="coverage" className="flex flex-col gap-gap">
         <Suspense fallback={<Block h={140} />}>
           <Coverage />
         </Suspense>
-        <Card className="overflow-hidden">
-          <CardHead
-            title="Raw series"
-            note="The daily grain everything above is computed from — filter, aggregate and export it yourself"
-          />
-          <Suspense fallback={<Block h={420} bare />}>
-            <RawSeries />
-          </Suspense>
-        </Card>
       </Section>
 
       <Section id="method">
@@ -87,6 +101,15 @@ export default async function EvidencePage() {
       </Section>
     </Shell>
   );
+}
+
+async function Matrix() {
+  'use cache';
+  cacheLife('hours');
+  cacheTag(CACHE_TAGS.correlation, CACHE_TAGS.stock, CACHE_TAGS.channels);
+
+  const result = await getCorrelationMatrix({ days: 365 });
+  return <CorrelationMatrix result={result} />;
 }
 
 async function Windows() {

@@ -132,11 +132,21 @@ function betai(a: number, b: number, x: number): number {
   return x < (a + 1) / (a + b + 2) ? (bt * betacf(a, b, x)) / a : 1 - (bt * betacf(b, a, 1 - x)) / b;
 }
 
-/** Two-tailed p for a correlation of |r| on n pairs. */
+/**
+ * Two-tailed p for a correlation of |r| on n pairs.
+ *
+ * |r| is clamped just below 1 before the t transform. Floating-point pearson
+ * can return 1.0000000000000002 on a perfect fit, which makes (1 - r*r)
+ * negative and the sqrt NaN — and a NaN p is worse than a wrong one, because it
+ * silently drops the test out of any multiple-comparison correction rather than
+ * failing loudly. A perfect correlation is p = 0, so clamping reports that.
+ */
 export function pValue(r: number, n: number): number {
   const df = n - 2;
   if (df <= 0) return 1;
-  const t = Math.abs(r) * Math.sqrt(df / (1 - r * r));
+  if (!Number.isFinite(r)) return 1;
+  const capped = Math.min(Math.abs(r), 1 - 1e-12);
+  const t = capped * Math.sqrt(df / (1 - capped * capped));
   return betai(df / 2, 0.5, df / (df + t * t));
 }
 

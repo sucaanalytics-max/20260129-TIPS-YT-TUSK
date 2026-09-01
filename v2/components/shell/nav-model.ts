@@ -69,6 +69,9 @@ export const TABS: Tab[] = [
     label: 'Evidence',
     sub: [
       { label: 'Correlation', anchor: 'correlation' },
+      // /explore and /data fold in here; the design's Evidence tab had no grid,
+      // and silently dropping the sliceable table and its CSV was not an option.
+      { label: 'Data', anchor: 'data' },
       { label: 'Coverage', anchor: 'coverage' },
       { label: 'Method', anchor: 'method' },
     ],

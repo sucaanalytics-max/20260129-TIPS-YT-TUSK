@@ -83,3 +83,31 @@ export function seriesColor(i: number): string {
   }
   return SERIES[i];
 }
+
+
+/* ---- diverging: correlation ------------------------------------------------
+ *
+ * A correlation matrix encodes POLARITY, which is a different job from series
+ * identity, so it draws from its own ramp rather than the categorical slots.
+ * Two hues with a NEUTRAL GRAY midpoint — a hue at zero would make "no
+ * relationship" look like a finding.
+ *
+ * Validated on both surfaces (dark #0C0E13, light #F6F6F3): poles separate at
+ * CVD dE 14.6 / 14.9 and normal-vision 25.9 / 25.8, both clearing 3:1 contrast.
+ */
+
+/** Fill for a correlation of `r`, or the empty treatment when it is unknown. */
+export function divergingFill(r: number | null): string {
+  if (r == null || !Number.isFinite(r)) return 'transparent';
+  const m = Math.min(1, Math.abs(r));
+  // Alpha carries magnitude so the midpoint fades to the card surface rather
+  // than to a grey block — an unfilled cell reads as "near zero" naturally.
+  const alpha = 0.10 + m * 0.75;
+  return r >= 0 ? `rgb(var(--pos) / ${alpha})` : `rgb(var(--neg) / ${alpha})`;
+}
+
+/** Ink for a value sitting on `divergingFill`, kept readable at every step. */
+export function divergingInk(r: number | null): string {
+  if (r == null || !Number.isFinite(r)) return 'rgb(var(--muted))';
+  return Math.abs(r) > 0.55 ? '#FFFFFF' : 'rgb(var(--ink))';
+}

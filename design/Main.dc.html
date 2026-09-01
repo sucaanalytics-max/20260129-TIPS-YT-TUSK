@@ -1,181 +1,371 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <script src="./support.js"></script>
-</head>
-<body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
   <style>
-    body { margin: 0; background: #FBF9F4; color: #16150F; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
-    a { color: #8C2F27; text-decoration: none; } a:hover { color: #B03A30; }
-    .serif { font-family: 'Source Serif 4', Georgia, serif; }
-    .tnum { font-variant-numeric: tabular-nums; }
+    .dc *, .dc *::before, .dc *::after { box-sizing: border-box; }
+    .dc { font-family: Inter, -apple-system, "Segoe UI", sans-serif; color: #F1F5F9;
+           -webkit-font-smoothing: antialiased; }
+    .dc .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+    /* sidebar */
+    .sb { width:290px; height:3400px; background:#0A0C11; border-right:1px solid #232A33;
+           flex:0 0 290px; display:flex; flex-direction:column; }
+    .brand { padding:18px 18px 12px; }
+    .brandtop { font-size:11px; font-weight:600; letter-spacing:.14em; color:#64748B; text-transform:uppercase; }
+    .brandsub { font-size:10.5px; color:#64748B; margin-top:3px; letter-spacing:.02em; }
+    .csw { padding:6px 12px 12px; display:flex; flex-direction:column; gap:6px; }
+    .co { height:44px; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px;
+           font-size:13px; font-weight:500; color:#94A3B8; }
+    .co.on { background:linear-gradient(90deg,#3B82F6,#8B5CF6); color:#fff; font-weight:600; }
+    .co .tick { font-size:12px; opacity:.85; }
+    .co .ex { margin-left:auto; font-size:10.5px; opacity:.8; font-family:"JetBrains Mono",monospace; }
+    .div { height:1px; background:#232A33; margin:6px 16px; }
+    .nav { padding:8px 12px; display:flex; flex-direction:column; gap:2px; }
+    .ni { height:40px; display:flex; align-items:center; gap:10px; padding:0 12px; border-radius:6px;
+           font-size:13px; color:#94A3B8; }
+    .ni.on { background:rgba(59,130,246,.12); color:#60A5FA; font-weight:500; }
+    .ni .g { font-size:13px; width:18px; text-align:center; }
+    .ni .ct { margin-left:auto; font-size:10.5px; color:#64748B; font-family:"JetBrains Mono",monospace; }
+    .sbfoot { margin-top:auto; padding:14px 18px 18px; display:flex; align-items:center; gap:12px;
+               border-top:1px solid #232A33; }
+    .sbfoot .b { width:30px; height:30px; border:1px solid #232A33; border-radius:6px; background:#121620;
+                  display:flex; align-items:center; justify-content:center; font-size:13px; color:#94A3B8; }
+    .sbnote { font-size:10px; color:#64748B; line-height:1.45; }
+
+    /* header */
+    .hd { padding:20px 24px; border-bottom:1px solid #232A33; display:flex; align-items:flex-end; gap:16px; }
+    .h1 { font-size:28px; font-weight:600; letter-spacing:-.01em; line-height:1.1; }
+    .hsub { font-size:12px; color:#64748B; margin-top:6px; }
+    .hr { margin-left:auto; display:flex; align-items:center; gap:10px; }
+    .plab { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8; }
+    .sel { height:32px; border:1px solid #232A33; background:#121620; border-radius:6px; color:#CBD5E1;
+            font-size:12px; padding:0 26px 0 10px; display:flex; align-items:center; position:relative; }
+    .sel::after { content:"\25BE"; position:absolute; right:9px; color:#64748B; font-size:9px; }
+    .btn { height:32px; border-radius:6px; font-size:12px; font-weight:500; padding:0 12px;
+            display:flex; align-items:center; gap:6px; }
+    .btn.p { background:#3B82F6; color:#fff; }
+    .btn.o { border:1px solid #232A33; color:#CBD5E1; background:#121620; }
+
+    /* body */
+    .body { padding:18px 24px 22px; display:flex; flex-direction:column; gap:14px; }
+    .strip { height:34px; background:#121620; border:1px solid #1B222C; border-radius:6px;
+              display:flex; align-items:center; gap:8px; padding:0 14px; font-size:12px; color:#94A3B8; }
+    .strip b { color:#CBD5E1; font-weight:500; font-family:"JetBrains Mono",monospace; }
+    .dot { width:5px; height:5px; border-radius:50%; display:inline-block; }
+    .sep { color:#232A33; }
+
+    .sect { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8; }
+
+    /* kpi */
+    .krow { display:flex; gap:10px; }
+    .kpi { flex:1 1 0; background:#121620; border:1px solid #232A33; border-radius:8px;
+            padding:13px 14px 0; height:130px; display:flex; flex-direction:column; overflow:hidden; }
+    .kl { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8; }
+    .kv { font-size:30px; font-weight:600; font-family:"JetBrains Mono",monospace; color:#F1F5F9;
+           line-height:1.15; margin-top:4px; letter-spacing:-.02em; }
+    .kd { font-size:12px; font-weight:500; margin-top:3px; white-space:nowrap; }
+    .kq { color:#94A3B8; font-weight:400; }
+    .ksp { margin:auto -14px 0; height:40px; }
+
+    /* card */
+    .card { background:#121620; border:1px solid #232A33; border-radius:8px; overflow:hidden; }
+    .ct { font-size:14px; font-weight:600; }
+    .cs { font-size:12px; color:#94A3B8; margin-top:2px; }
+    .chead { padding:12px 16px 0; display:flex; align-items:flex-start; }
+    .tg { margin-left:auto; display:flex; gap:4px; }
+    .tg span { font-size:11px; padding:3px 8px; border-radius:4px; color:#64748B; }
+    .tg span.on { background:#1B2027; color:#F1F5F9; }
+    .ro { font-size:12px; color:#94A3B8; padding:0 16px 12px; line-height:1.4; }
+
+    /* period */
+    .pgrid { display:flex; }
+    .pstat { flex:1 1 0; padding:14px 16px; border-right:1px solid #1B222C; }
+    .pstat:last-child { border-right:none; }
+    .pl { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8; }
+    .pv { font-size:22px; font-weight:600; font-family:"JetBrains Mono",monospace; margin-top:5px; letter-spacing:-.01em; }
+    .pv.amb { color:#FCD34D; }
+    .ps { font-size:11px; color:#64748B; margin-top:3px; }
+
+    /* tables */
+    table { width:100%; border-collapse:collapse; }
+    thead th { height:38px; background:#161B27; font-size:11px; font-weight:500; text-transform:uppercase;
+                letter-spacing:.06em; color:#94A3B8; text-align:left; padding:0 10px; border-bottom:1px solid #232A33;
+                white-space:nowrap; }
+    thead th.r { text-align:right; }
+    tbody td { height:38px; font-size:13px; color:#CBD5E1; padding:0 10px; border-bottom:1px solid #1B222C;
+                white-space:nowrap; }
+    tbody td.n { text-align:right; font-family:"JetBrains Mono",monospace; font-variant-numeric:tabular-nums; }
+    tbody td.ch { color:#F1F5F9; }
+    tbody tr:hover { background:rgba(255,255,255,.02); }
+    tbody tr.frz { background:rgba(252,211,77,.055); }
+    .amb { color:#FCD34D; }
+    .tfoot { height:40px; display:flex; align-items:center; padding:0 14px; font-size:12px; color:#94A3B8;
+              background:#161B27; }
+    .pg { margin-left:auto; display:flex; gap:6px; }
+    .pg span { border:1px solid #232A33; border-radius:5px; padding:3px 9px; font-size:11.5px; color:#CBD5E1; }
+    .pg span.dis { color:#64748B; }
+    .note { padding:9px 14px 10px; font-size:11px; line-height:1.5; color:#64748B;
+             background:#161B27; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .lg { display:flex; gap:14px; align-items:center; font-size:11px; color:#94A3B8; }
+    .sw { width:16px; height:2.5px; border-radius:2px; display:inline-block; margin-right:6px; vertical-align:2px; }
+    .foot { font-size:11px; color:#64748B; padding-top:2px; }
   </style>
 </helmet>
+<div class="dc" style="width:1440px; height:3400px; background:#0C0E13; display:flex; overflow:hidden;">
 
-<div style="width: 1440px; background: #FBF9F4; padding: 0 0 48px; box-sizing: border-box;">
-
-  <!-- masthead -->
-  <div style="border-bottom: 3px double #16150F; padding: 20px 48px 14px; display: flex; align-items: baseline; justify-content: space-between;">
-    <div class="serif" style="font-size: 25px; font-weight: 700; letter-spacing: -0.01em;">Tusk <span style="font-weight: 400; font-style: italic; color: #6E6A5C;">catalogue fundamentals</span></div>
-    <div style="display: flex; gap: 26px; font-size: 12.5px; color: #6E6A5C;">
-      <span style="color: #16150F; border-bottom: 2px solid #8C2F27; padding-bottom: 3px;">Nowcast</span>
-      <span>Drivers</span><span>Evidence</span><span>Ops</span>
+  <!-- ============ SIDEBAR ============ -->
+  <div class="sb">
+    <div class="brand">
+      <div class="brandtop">Tusk Invest &#183; Catalogue Terminal</div>
+      <div class="brandsub">YouTube reach &#8594; quarterly revenue</div>
+    </div>
+    <div class="csw">
+      <div class="co on"><span class="tick">&#9834;</span> TIPS Music <span class="ex">TIPSMUSIC</span></div>
+      <div class="co"><span class="tick">&#9834;</span> Saregama <span class="ex">SAREGAMA</span></div>
+    </div>
+    <div class="div"></div>
+    <div class="nav">
+      <div class="ni on"><span class="g">&#128202;</span> Overview</div>
+      <div class="ni"><span class="g">&#128185;</span> Nowcast <span class="ct">unscored</span></div>
+      <div class="ni"><span class="g">&#128250;</span> Content Analytics</div>
+      <div class="ni"><span class="g">&#128680;</span> Anomalies <span class="ct">3</span></div>
+      <div class="ni"><span class="g">&#128203;</span> Data Table</div>
+    </div>
+    <div class="div"></div>
+    <div class="nav" style="padding-top:2px;">
+      <div class="ni"><span class="g">&#8644;</span> Compare</div>
+    </div>
+    <div class="sbfoot">
+      <div class="b">&#9789;</div>
+      <div class="b">&#8249;</div>
+      <div class="sbnote">16 owned channels tracked<br>1,287 channel-days &#183; 909 sessions</div>
     </div>
   </div>
 
-  <div style="padding: 0 48px;">
-
-    <!-- dateline -->
-    <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 26px; font-size: 12px; color: #6E6A5C;" class="tnum">
-      <span>QUARTER 2 · FY27 &nbsp;·&nbsp; 1 JUL – 30 SEP 2026</span>
-      <span>65% elapsed &nbsp;·&nbsp; 32 days to the print</span>
-    </div>
-
-    <!-- the two estimates -->
-    <div style="display: grid; grid-template-columns: 1fr 1px 1fr; gap: 36px; align-items: start;">
-
+  <!-- ============ CONTENT ============ -->
+  <div style="width:1150px;">
+    <div class="hd">
       <div>
-        <div class="serif" style="font-size: 15px; font-weight: 600; letter-spacing: 0.02em;">TIPS MUSIC</div>
-        <div style="font-size: 11.5px; color: #6E6A5C; margin-top: 2px;">total revenue from operations · single segment</div>
-        <div class="serif tnum" style="font-size: 60px; font-weight: 600; line-height: 1.05; margin-top: 16px; letter-spacing: -0.025em;">
-          ₹112–128<span style="font-size: 26px; font-weight: 400; color: #6E6A5C;">cr</span>
-        </div>
-        <div style="display: inline-block; font-size: 10.5px; letter-spacing: 0.06em; color: #8C2F27; border: 1px solid #8C2F27; padding: 3px 7px; margin-top: 10px;">ILLUSTRATIVE — MODEL NOT YET BUILT</div>
-
-        <div style="height: 5px; background: #E7E2D6; margin-top: 20px; position: relative;">
-          <div style="position: absolute; left: 0; top: 0; height: 5px; width: 65%; background: #16150F;"></div>
-        </div>
-
-        <div style="display: flex; gap: 34px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #D6D1C4;">
-          <div>
-            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">LAST PRINTED · Q1 FY27</div>
-            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹106.51cr</div>
-          </div>
-          <div>
-            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">YEAR ON YEAR</div>
-            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px; color: #2E6B3E;">+20.9%</div>
-          </div>
-          <div>
-            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">FY26 FULL YEAR</div>
-            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹375.5cr</div>
-          </div>
-        </div>
+        <div class="h1">Overview</div>
+        <div class="hsub">Updated Aug 31, 2026 at 03:09 PM</div>
       </div>
-
-      <div style="background: #D6D1C4; width: 1px; height: 300px;"></div>
-
-      <div>
-        <div class="serif" style="font-size: 15px; font-weight: 600; letter-spacing: 0.02em;">SAREGAMA · MUSIC SEGMENT</div>
-        <div style="font-size: 11.5px; color: #6E6A5C; margin-top: 2px;">music only — excludes artist mgmt, video, events</div>
-        <div class="serif tnum" style="font-size: 60px; font-weight: 600; line-height: 1.05; margin-top: 16px; letter-spacing: -0.025em;">
-          ₹196–224<span style="font-size: 26px; font-weight: 400; color: #6E6A5C;">cr</span>
-        </div>
-        <div style="display: inline-block; font-size: 10.5px; letter-spacing: 0.06em; color: #8C2F27; border: 1px solid #8C2F27; padding: 3px 7px; margin-top: 10px;">ILLUSTRATIVE — MODEL NOT YET BUILT</div>
-
-        <div style="height: 5px; background: #E7E2D6; margin-top: 20px; position: relative;">
-          <div style="position: absolute; left: 0; top: 0; height: 5px; width: 65%; background: #16150F;"></div>
-        </div>
-
-        <div style="display: flex; gap: 34px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #D6D1C4;">
-          <div>
-            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">LAST PRINTED · Q1 FY27</div>
-            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹184.6cr</div>
-          </div>
-          <div>
-            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">YEAR ON YEAR</div>
-            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px; color: #2E6B3E;">+28.8%</div>
-          </div>
-          <div>
-            <div style="font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">FY26 SEGMENT</div>
-            <div class="serif tnum" style="font-size: 24px; font-weight: 600; margin-top: 3px;">₹683.5cr</div>
-          </div>
-        </div>
+      <div class="hr">
+        <span class="plab">Period:</span>
+        <div class="sel">Last 30 Days</div>
+        <div class="btn p">&#10227; Refresh</div>
+        <div class="btn o">&#11015; Export</div>
       </div>
     </div>
 
-    <!-- track record -->
-    <div style="margin-top: 40px; border-top: 3px double #16150F; padding-top: 22px;">
-      <div style="display: flex; align-items: baseline; justify-content: space-between;">
-        <div class="serif" style="font-size: 21px; font-weight: 600;">Track record</div>
-        <div style="font-size: 12px; color: #6E6A5C; font-style: italic;" class="serif">the only reason to believe the figures above</div>
+    <div class="body">
+
+      <!-- 1. status strip -->
+      <div class="strip">
+        <span class="dot" style="background:#34D399"></span> YouTube: <b>1,287</b> records
+        <span class="sep">&#183;</span>
+        <span class="dot" style="background:#34D399"></span> Stock: <b>909</b> records
+        <span class="sep">&#183;</span>
+        <span class="dot" style="background:#34D399"></span> Latest YT: <b>2026-08-31</b>
+        <span class="sep">&#183;</span>
+        <span class="dot" style="background:#FCD34D"></span> Latest Stock: <b>2026-08-28</b>
+        <span class="sep">&#183;</span>
+        <span class="dot" style="background:#60A5FA"></span> Correlation Days: <b>888</b>
       </div>
 
-      <div style="margin-top: 18px; border: 1px solid #C9A227; background: #FDF8E8; padding: 18px 20px;">
-        <div class="serif" style="font-size: 17px; font-weight: 600;">No estimate has been scored yet.</div>
-        <div style="font-size: 13.5px; color: #4A463A; line-height: 1.6; margin-top: 7px; max-width: 96ch;">
-          The nowcast has never been checked against a printed result, so it carries no accuracy record and
-          should not be relied on. From the first scored quarter this panel shows every past estimate, its
-          error, and whether the actual landed inside the band. Until then the honest reading is that
-          this is a hypothesis with a number attached.
+      <!-- 2. KPI row -->
+      <div class="krow"><div class="kpi"><div class="kl">Stock Price</div><div class="kv">&#8377;648.05</div><div class="kd"><span style="color:#F4576B">&#9660; 11.05</span> <span class="kq">&#8722;1.85% on the day</span></div><div class="ksp"><svg width="100%" height="40" viewBox="0 0 176 40" preserveAspectRatio="none"><polygon points="0.0,6.9 9.3,10.9 18.5,5.0 27.8,13.2 37.1,16.4 46.3,9.6 55.6,18.8 64.8,24.3 74.1,20.0 83.4,27.1 92.6,22.7 101.9,30.7 111.2,33.7 120.4,27.8 129.7,23.8 138.9,18.5 148.2,25.6 157.5,23.3 166.7,22.2 176.0,36.0 176.0,40 0,40" fill="#0072B2" opacity=".14"/><polyline points="0.0,6.9 9.3,10.9 18.5,5.0 27.8,13.2 37.1,16.4 46.3,9.6 55.6,18.8 64.8,24.3 74.1,20.0 83.4,27.1 92.6,22.7 101.9,30.7 111.2,33.7 120.4,27.8 129.7,23.8 138.9,18.5 148.2,25.6 157.5,23.3 166.7,22.2 176.0,36.0" fill="none" stroke="#0072B2" stroke-width="1.6" opacity=".6" stroke-linejoin="round"/></svg></div></div><div class="kpi"><div class="kl">Daily Views</div><div class="kv">45.91M</div><div class="kd"><span style="color:#34D399">&#9650; 3.09M</span> <span class="kq">+7.2% day on day</span></div><div class="ksp"><svg width="100%" height="40" viewBox="0 0 176 40" preserveAspectRatio="none"><polygon points="0.0,36.0 6.5,32.7 13.0,31.9 19.6,34.2 26.1,28.7 32.6,23.8 39.1,26.5 45.6,34.5 52.1,31.2 58.7,30.1 65.2,32.4 71.7,27.1 78.2,22.4 84.7,25.5 91.3,30.5 97.8,29.7 104.3,24.9 110.8,20.4 117.3,23.5 123.9,32.2 130.4,28.8 136.9,26.0 143.4,21.3 149.9,16.6 156.4,5.0 163.0,14.5 169.5,12.7 176.0,6.8 176.0,40 0,40" fill="#0072B2" opacity=".14"/><polyline points="0.0,36.0 6.5,32.7 13.0,31.9 19.6,34.2 26.1,28.7 32.6,23.8 39.1,26.5 45.6,34.5 52.1,31.2 58.7,30.1 65.2,32.4 71.7,27.1 78.2,22.4 84.7,25.5 91.3,30.5 97.8,29.7 104.3,24.9 110.8,20.4 117.3,23.5 123.9,32.2 130.4,28.8 136.9,26.0 143.4,21.3 149.9,16.6 156.4,5.0 163.0,14.5 169.5,12.7 176.0,6.8" fill="none" stroke="#0072B2" stroke-width="1.6" opacity=".6" stroke-linejoin="round"/></svg></div></div><div class="kpi"><div class="kl">Subscribers</div><div class="kv">133.55M</div><div class="kd"><span style="color:#94A3B8">&#8212;</span> <span class="kq">no change today</span></div><div class="ksp"><svg width="100%" height="40" viewBox="0 0 176 40" preserveAspectRatio="none"><path d="M 0 36.0 H 6.3 V 34.4 H 12.6 V 33.6 H 18.9 V 33.6 H 25.1 V 32.4 H 31.4 V 30.4 H 37.7 V 30.4 H 44.0 V 29.2 H 50.3 V 27.3 H 56.6 V 26.5 H 62.9 V 26.5 H 69.1 V 24.9 H 75.4 V 22.1 H 81.7 V 22.1 H 88.0 V 20.9 H 94.3 V 18.9 H 100.6 V 18.9 H 106.9 V 16.5 H 113.1 V 14.9 H 119.4 V 14.9 H 125.7 V 13.7 H 132.0 V 11.8 H 138.3 V 11.0 H 144.6 V 11.0 H 150.9 V 9.4 H 157.1 V 7.0 H 163.4 V 7.0 H 169.7 V 5.0 H 176.0 V 5.0" fill="none" stroke="#0072B2" stroke-width="1.6" opacity=".6"/></svg></div></div><div class="kpi"><div class="kl">Returns Corr 30d</div><div class="kv">&#8722;0.07</div><div class="kd"><span style="color:#94A3B8">&#8212;</span> <span class="kq">not significant, n=29</span></div><div class="ksp"><svg width="100%" height="40" viewBox="0 0 176 40" preserveAspectRatio="none"><polyline points="0.0,15.5 4.5,12.6 9.0,11.1 13.5,10.8 18.1,11.5 22.6,12.9 27.1,14.2 31.6,15.2 36.1,15.4 40.6,14.6 45.1,13.0 49.6,10.7 54.2,8.3 58.7,6.2 63.2,5.0 67.7,5.1 72.2,6.7 76.7,9.7 81.2,13.9 85.7,18.8 90.3,23.9 94.8,28.5 99.3,32.2 103.8,34.5 108.3,35.4 112.8,35.0 117.3,33.7 121.8,31.9 126.4,30.1 130.9,28.9 135.4,28.5 139.9,29.1 144.4,30.4 148.9,32.3 153.4,34.2 157.9,35.6 162.5,36.0 167.0,35.1 171.5,32.8 176.0,22.7" fill="none" stroke="#0072B2" stroke-width="1.6" opacity=".6" stroke-linejoin="round"/></svg></div></div><div class="kpi"><div class="kl">View Velocity</div><div class="kv">+10.5%</div><div class="kd"><span style="color:#34D399">&#9650; 2.4pp</span> <span class="kq">per week trend</span></div><div class="ksp"><svg width="100%" height="40" viewBox="0 0 176 40" preserveAspectRatio="none"><polygon points="0.0,32.6 16.0,26.3 32.0,36.0 48.0,20.3 64.0,25.2 80.0,14.7 96.0,21.1 112.0,11.3 128.0,16.6 144.0,8.4 160.0,14.0 176.0,5.0 176.0,40 0,40" fill="#0072B2" opacity=".14"/><polyline points="0.0,32.6 16.0,26.3 32.0,36.0 48.0,20.3 64.0,25.2 80.0,14.7 96.0,21.1 112.0,11.3 128.0,16.6 144.0,8.4 160.0,14.0 176.0,5.0" fill="none" stroke="#0072B2" stroke-width="1.6" opacity=".6" stroke-linejoin="round"/></svg></div></div><div class="kpi"><div class="kl">Stock ATR 14d</div><div class="kv">&#8377;14.75</div><div class="kd"><span style="color:#34D399">&#9660; 1.35</span> <span class="kq">2.28% of price</span></div><div class="ksp"><svg width="100%" height="40" viewBox="0 0 176 40" preserveAspectRatio="none"><polygon points="0.0,36.0 16.0,27.0 32.0,31.2 48.0,14.6 64.0,22.2 80.0,5.0 96.0,14.0 112.0,23.6 128.0,17.4 144.0,8.4 160.0,16.0 176.0,17.7 176.0,40 0,40" fill="#0072B2" opacity=".14"/><polyline points="0.0,36.0 16.0,27.0 32.0,31.2 48.0,14.6 64.0,22.2 80.0,5.0 96.0,14.0 112.0,23.6 128.0,17.4 144.0,8.4 160.0,16.0 176.0,17.7" fill="none" stroke="#0072B2" stroke-width="1.6" opacity=".6" stroke-linejoin="round"/></svg></div></div></div>
+
+      <!-- 3. period summary -->
+      <div class="card">
+        <div class="pgrid"><div class="pstat"><div class="pl">Total Views in Period</div><div class="pv">1.05B</div><div class="ps">28 measured + 1 imputed</div></div><div class="pstat"><div class="pl">Avg Daily</div><div class="pv">36.26M</div><div class="ps">over 28 measured days</div></div><div class="pstat"><div class="pl">Peak Daily</div><div class="pv">46.85M</div><div class="ps">Aug 28</div></div><div class="pstat"><div class="pl">Lowest Daily</div><div class="pv amb">&#8212;</div><div class="ps">frozen reading, Aug 17</div></div><div class="pstat"><div class="pl">Subscriber Growth</div><div class="pv">+390.0K</div><div class="ps">+0.29%</div></div><div class="pstat"><div class="pl">Days of Data</div><div class="pv">29</div><div class="ps">1 unusable</div></div></div>
+      </div>
+
+      <!-- 4. channel breakdown -->
+      <div class="card">
+        <div class="chead" style="padding-bottom:12px;">
+          <div>
+            <div class="ct">Channel Breakdown</div>
+            <div class="cs">Owned channels, latest complete channel-day, sorted by daily views</div>
+          </div>
+          <div class="tg"><span class="on">Daily views</span><span>Subscribers</span><span>Total views</span></div>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:340px">Channel</th>
+            <th class="r" style="width:190px">Subscribers &#8645;</th>
+            <th class="r" style="width:190px">Total Views &#8645;</th>
+            <th class="r" style="width:190px">Daily Views &#8645;</th>
+            <th class="r" style="width:190px">Daily Subs</th>
+          </tr></thead>
+          <tbody><tr><td class="ch">Tips Official</td><td class="n">82.20M</td><td class="n">31.86B</td><td class="n" style="color:#F1F5F9">32.02M</td><td class="n">+18.4K</td></tr><tr><td class="ch">90's Gaane</td><td class="n">14.62M</td><td class="n">9.41B</td><td class="n" style="color:#F1F5F9">8.16M</td><td class="n">+9.1K</td></tr><tr><td class="ch">Tips Punjabi</td><td class="n">9.84M</td><td class="n">6.72B</td><td class="n" style="color:#F1F5F9">2.82M</td><td class="n">+4.6K</td></tr><tr><td class="ch">Tips Telugu</td><td class="n">6.31M</td><td class="n">3.88B</td><td class="n" style="color:#F1F5F9">1.50M</td><td class="n">+2.2K</td></tr><tr><td class="ch">Tips Bhakti Prem</td><td class="n">4.07M</td><td class="n">1.94B</td><td class="n" style="color:#F1F5F9">705.8K</td><td class="n">+1.1K</td></tr><tr><td class="ch">Bollywood Sadabahar</td><td class="n">3.55M</td><td class="n">1.61B</td><td class="n" style="color:#F1F5F9">609.2K</td><td class="n">+0.8K</td></tr><tr><td class="ch">Tips Films</td><td class="n">3.12M</td><td class="n">1.42B</td><td class="n" style="color:#F1F5F9">552.2K</td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr><tr><td class="ch">Evergreen Bollywood Hits</td><td class="n">2.88M</td><td class="n">1.30B</td><td class="n" style="color:#F1F5F9">533.8K</td><td class="n">+0.6K</td></tr><tr><td class="ch">Tips Bhojpuri</td><td class="n">2.41M</td><td class="n">0.98B</td><td class="n" style="color:#F1F5F9">421.5K</td><td class="n">+0.5K</td></tr><tr><td class="ch">Tips Tamil</td><td class="n">1.96M</td><td class="n">0.74B</td><td class="n" style="color:#F1F5F9">318.7K</td><td class="n">+0.3K</td></tr><tr><td class="ch">Tips Marathi</td><td class="n">1.44M</td><td class="n">0.51B</td><td class="n" style="color:#F1F5F9">264.1K</td><td class="n">+0.2K</td></tr><tr><td class="ch">Tips Gujarati</td><td class="n">1.15M</td><td class="n">0.36B</td><td class="n" style="color:#F1F5F9">187.9K</td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr></tbody>
+        </table>
+        <div class="note">
+          Top 12 of 16 owned channels &#183; shown channels sum to <span class="mono" style="color:#CBD5E1">48.09M</span> against the
+          <span class="mono" style="color:#CBD5E1">45.91M</span> network snapshot &#8212; channels are polled across a ~90&#8239;min window, so the
+          gap is capture timing, not a discrepancy. Four channels below 150K daily views are folded out.
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin-top: 22px; border-top: 1px solid #D6D1C4;">
-        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C;">QUARTER</div>
-        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">TIPS ACTUAL</div>
-        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">SAREGAMA MUSIC</div>
-        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">ESTIMATE</div>
-        <div style="padding: 12px 0; border-bottom: 1px solid #D6D1C4; font-size: 10.5px; letter-spacing: 0.06em; color: #6E6A5C; text-align: right;">ERROR</div>
-
-        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px;">Q1 FY27</div>
-        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹106.51cr</div>
-        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹184.6cr</div>
-        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">not run</div>
-        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">—</div>
-
-        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px;">Q4 FY26</div>
-        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹103.93cr</div>
-        <div class="tnum serif" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 15px; text-align: right;">₹200.4cr</div>
-        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">not run</div>
-        <div class="tnum" style="padding: 11px 0; border-bottom: 1px solid #E7E2D6; font-size: 14px; text-align: right; color: #A9A493;">—</div>
+      <!-- 5. chart pair A -->
+      <div class="grid2">
+        <div class="card">
+          <div class="chead"><div><div class="ct">Daily Views Overview</div>
+            <div class="cs">Is catalogue attention trending, or just noisy?</div></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="46" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="110.3" x2="505" y2="110.3" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="81.7" x2="505" y2="81.7" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="53.0" x2="505" y2="53.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="24.3" x2="505" y2="24.3" stroke="#1B2027" stroke-width="1"/><text x="38" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">30M</text><text x="38" y="113.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">34M</text><text x="38" y="85.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">38M</text><text x="38" y="56.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">42M</text><text x="38" y="27.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">46M</text><line x1="46" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="46" y1="10" x2="46" y2="139" stroke="#232A33" stroke-width="1"/><polyline points="46.0,133.8 62.4,121.5 78.8,118.7 95.2,127.0 111.6,106.6 128.0,88.4 144.4,98.6 160.8,128.3 177.1,115.9 193.5,112.0 209.9,120.4 226.3,100.7 242.7,83.2 259.1,94.8" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round"/><polyline points="291.9,113.4 308.3,110.2 324.7,92.3 341.1,75.8 357.5,87.3 373.9,119.5 390.2,107.0 406.6,96.6 423.0,79.0 439.4,61.5 455.8,18.2 472.2,53.6 488.6,47.1 505.0,25.0" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round"/><line x1="259.1" y1="94.8" x2="291.9" y2="113.4" stroke="#FCD34D" stroke-width="1.5" stroke-dasharray="3 3"/><line x1="275.5" y1="10" x2="275.5" y2="139" stroke="#FCD34D" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/><circle cx="275.5" cy="104.1" r="2.6" fill="#FCD34D"/><polyline points="46.0,133.8 62.4,127.7 78.8,124.7 95.2,125.3 111.6,121.5 128.0,116.0 144.4,113.5 160.8,112.7 177.1,111.9 193.5,111.0 209.9,110.0 226.3,109.2 242.7,108.4 259.1,107.9 275.5,104.5 291.9,104.1 308.3,103.8 324.7,99.1 341.1,94.9 357.5,95.6 373.9,99.7 390.2,100.8 406.6,98.4 423.0,93.9 439.4,89.5 455.8,81.3 472.2,76.5 488.6,66.1 505.0,54.4" fill="none" stroke="#009E73" stroke-width="2" stroke-dasharray="5 3"/><text x="46.0" y="155" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 3</text><text x="144.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 9</text><text x="242.7" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 15</text><text x="341.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 21</text><text x="439.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 27</text><text x="505.0" y="155" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#0072B2"></span>Daily views</span>
+            <span><span class="sw" style="background:#009E73"></span>7d moving average</span>
+            <span><span class="sw" style="background:#FCD34D"></span>Frozen reading</span>
+          </div>
+          <div class="ro">Rising: the last 7 days average 41.80M against 33.55M for the first 7, +24.6%.
+            Aug 17 is amber &#8212; YouTube froze the cumulative counter that day and the value is unknown, not zero.</div>
+        </div>
+        <div class="card">
+          <div class="chead"><div><div class="ct">Rolling 30-Day Returns Correlation</div>
+            <div class="cs">Does view growth track share-price returns over time?</div></div>
+            <div class="tg"><span class="on">30d</span><span>60d</span><span>90d</span></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><rect x="46" y="26.8" width="459" height="95.5" fill="#1B2027" opacity=".55"/><line x1="46" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="106.8" x2="505" y2="106.8" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="74.5" x2="505" y2="74.5" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="42.2" x2="505" y2="42.2" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="10.0" x2="505" y2="10.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="26.8" x2="505" y2="26.8" stroke="#64748B" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/><line x1="46" y1="122.2" x2="505" y2="122.2" stroke="#64748B" stroke-width="1" stroke-dasharray="4 3" opacity=".5"/><text x="38" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">-0.50</text><text x="38" y="110.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">-0.25</text><text x="38" y="78.0" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0.00</text><text x="38" y="45.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">+0.25</text><text x="38" y="13.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">+0.50</text><line x1="46" y1="74.5" x2="505" y2="74.5" stroke="#E8EDF4" stroke-width="1.5"/><line x1="46" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="46" y1="10" x2="46" y2="139" stroke="#232A33" stroke-width="1"/><polyline points="46.0,66.0 53.8,59.0 61.6,55.2 69.3,54.5 77.1,56.3 84.9,59.5 92.7,62.9 100.5,65.3 108.2,65.7 116.0,63.9 123.8,59.8 131.6,54.3 139.4,48.4 147.1,43.3 154.9,40.4 162.7,40.6 170.5,44.5 178.3,51.8 186.0,62.1 193.8,74.1 201.6,86.5 209.4,97.7 217.2,106.6 224.9,112.3 232.7,114.5 240.5,113.6 248.3,110.4 256.1,106.0 263.8,101.7 271.6,98.7 279.4,97.7 287.2,99.0 294.9,102.4 302.7,106.9 310.5,111.5 318.3,114.9 326.1,116.0 333.8,113.8 341.6,108.1 349.4,99.2 357.2,87.9 365.0,75.6 372.7,63.5 380.5,53.2 388.3,45.8 396.1,41.9 403.9,41.5 411.6,44.3 419.4,49.1 427.2,54.8 435.0,60.0 442.8,63.7 450.5,65.2 458.3,64.4 466.1,61.8 473.9,58.2 481.7,54.8 489.4,52.9 497.2,53.5 505.0,83.5" fill="none" stroke="#D55E00" stroke-width="2" stroke-linejoin="round"/><circle cx="505.0" cy="83.5" r="3" fill="#D55E00"/><text x="503" y="21" text-anchor="end" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">latest r = &#8722;0.07</text><text x="52" y="21.8" fill="#64748B" font-size="9" font-family="Inter, sans-serif">NOT SIGNIFICANT BAND  |r| &lt; 0.37</text><text x="46.0" y="155" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Jun 3</text><text x="162.7" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Jun 18</text><text x="279.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Jul 3</text><text x="396.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Jul 18</text><text x="505.0" y="155" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#D55E00"></span>Pearson r, 30d window</span>
+            <span><span class="sw" style="background:#1B2027;height:8px"></span>Not significant at p&lt;0.05</span>
+          </div>
+          <div class="ro">The line has not once left the non-significant band across all 60 windows drawn here.
+            It currently reads r = &#8722;0.07 &#8212; indistinguishable from no relationship.</div>
+        </div>
       </div>
+
+      <!-- 6. chart pair B -->
+      <div class="grid2">
+        <div class="card">
+          <div class="chead"><div><div class="ct">Daily Views</div>
+            <div class="cs">Raw daily series with the frozen day held out</div></div>
+            <div class="tg"><span class="on">Linear</span><span>Log</span><span>MA</span></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="46" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="110.3" x2="505" y2="110.3" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="81.7" x2="505" y2="81.7" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="53.0" x2="505" y2="53.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="24.3" x2="505" y2="24.3" stroke="#1B2027" stroke-width="1"/><text x="38" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">30M</text><text x="38" y="113.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">34M</text><text x="38" y="85.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">38M</text><text x="38" y="56.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">42M</text><text x="38" y="27.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">46M</text><line x1="46" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="46" y1="10" x2="46" y2="139" stroke="#232A33" stroke-width="1"/><polyline points="46.0,133.8 62.4,121.5 78.8,118.7 95.2,127.0 111.6,106.6 128.0,88.4 144.4,98.6 160.8,128.3 177.1,115.9 193.5,112.0 209.9,120.4 226.3,100.7 242.7,83.2 259.1,94.8" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round"/><polyline points="291.9,113.4 308.3,110.2 324.7,92.3 341.1,75.8 357.5,87.3 373.9,119.5 390.2,107.0 406.6,96.6 423.0,79.0 439.4,61.5 455.8,18.2 472.2,53.6 488.6,47.1 505.0,25.0" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round"/><line x1="259.1" y1="94.8" x2="291.9" y2="113.4" stroke="#FCD34D" stroke-width="1.5" stroke-dasharray="3 3"/><line x1="275.5" y1="10" x2="275.5" y2="139" stroke="#FCD34D" stroke-width="1" stroke-dasharray="2 3" opacity=".55"/><circle cx="275.5" cy="104.1" r="2.6" fill="#FCD34D"/><line x1="46" y1="94.2" x2="505" y2="94.2" stroke="#E8EDF4" stroke-width="1.5" stroke-dasharray="6 4"/><text x="503" y="89.2" text-anchor="end" fill="#64748B" font-size="9.5" font-family="Inter, sans-serif" letter-spacing=".05em">MEAN 36.26M</text><text x="46.0" y="155" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 3</text><text x="144.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 9</text><text x="242.7" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 15</text><text x="341.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 21</text><text x="439.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 27</text><text x="505.0" y="155" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#0072B2"></span>Daily views</span>
+            <span><span class="sw" style="background:#E8EDF4"></span>Period mean 36.26M</span>
+            <span><span class="sw" style="background:#FCD34D"></span>Frozen reading</span>
+          </div>
+          <div class="ro">Range 30.72M to 46.85M over 28 usable days; the spread is 44.5% of the mean,
+            so single-day readings should not be extrapolated.</div>
+        </div>
+        <div class="card">
+          <div class="chead"><div><div class="ct">Share Price &#8212; NSE: TIPSMUSIC</div>
+            <div class="cs">Daily close with the intraday high&#8211;low band</div></div>
+            <div class="tg"><span class="on">Close</span><span>High</span><span>Low</span></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="46" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="106.8" x2="505" y2="106.8" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="74.5" x2="505" y2="74.5" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="42.2" x2="505" y2="42.2" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="10.0" x2="505" y2="10.0" stroke="#1B2027" stroke-width="1"/><text x="38" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">640</text><text x="38" y="110.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">650</text><text x="38" y="78.0" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">660</text><text x="38" y="45.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">670</text><text x="38" y="13.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">680</text><line x1="46" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="46" y1="10" x2="46" y2="139" stroke="#232A33" stroke-width="1"/><polygon points="46.0,24.2 62.4,34.7 78.8,19.4 95.2,40.6 111.6,48.9 160.8,31.3 177.1,55.0 193.5,69.3 209.9,58.1 226.3,76.4 275.5,65.0 291.9,85.8 308.3,93.5 324.7,78.4 341.1,67.9 390.2,54.2 406.6,72.6 423.0,66.6 439.4,63.9 455.8,99.5 455.8,127.9 439.4,92.2 423.0,95.0 406.6,100.9 390.2,82.6 341.1,96.3 324.7,106.8 308.3,121.9 291.9,114.2 275.5,93.4 226.3,104.8 209.9,86.4 193.5,97.7 177.1,83.4 160.8,59.7 111.6,77.2 95.2,69.0 78.8,47.7 62.4,63.1 46.0,52.6" fill="#0072B2" opacity=".14"/><polyline points="46.0,37.7 62.4,48.2 78.8,32.9 95.2,54.2 111.6,62.4 160.8,44.8 177.1,68.5 193.5,82.9 209.9,71.6 226.3,90.0 275.5,78.5 291.9,99.3 308.3,107.1 324.7,91.9 341.1,81.4 390.2,67.7 406.6,86.1 423.0,80.1 439.4,77.4 455.8,113.0" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round"/><circle cx="455.8" cy="113.0" r="3" fill="#0072B2"/><text x="449.8" y="126.0" text-anchor="end" fill="#CBD5E1" font-size="10" font-family="JetBrains Mono, monospace">648.05</text><text x="46.0" y="155" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 3</text><text x="144.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 9</text><text x="242.7" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 15</text><text x="341.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 21</text><text x="439.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 27</text><text x="505.0" y="155" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#0072B2"></span>Close (&#8377;)</span>
+            <span><span class="sw" style="background:#0072B2;opacity:.3;height:8px"></span>High&#8211;low band</span>
+          </div>
+          <div class="ro">&#8722;3.48% across the window, ending at &#8377;648.05 on the Aug 28 print.
+            The last three calendar days carry no session &#8212; they render as &#8212;, not as a flat line.</div>
+        </div>
+      </div>
+
+      <!-- 7. chart pair C -->
+      <div class="grid2">
+        <div class="card">
+          <div class="chead"><div><div class="ct">Subscriber Growth</div>
+            <div class="cs">Counts are quantised by YouTube to 1,000 &#8212; steps are real, not artefacts</div></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="58" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="58" y1="106.8" x2="505" y2="106.8" stroke="#1B2027" stroke-width="1"/><line x1="58" y1="74.5" x2="505" y2="74.5" stroke="#1B2027" stroke-width="1"/><line x1="58" y1="42.2" x2="505" y2="42.2" stroke="#1B2027" stroke-width="1"/><line x1="58" y1="10.0" x2="505" y2="10.0" stroke="#1B2027" stroke-width="1"/><text x="50" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">133.10M</text><text x="50" y="110.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">133.23M</text><text x="50" y="78.0" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">133.35M</text><text x="50" y="45.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">133.48M</text><text x="50" y="13.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">133.60M</text><line x1="58" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="58" y1="10" x2="58" y2="139" stroke="#232A33" stroke-width="1"/><path d="M 58.0 123.5 H 74.0 V 118.4 H 89.9 V 115.8 H 105.9 V 115.8 H 121.9 V 111.9 H 137.8 V 105.5 H 153.8 V 105.5 H 169.8 V 101.6 H 185.7 V 95.1 H 201.7 V 92.6 H 217.6 V 92.6 H 233.6 V 87.4 H 249.6 V 78.4 H 265.5 V 78.4 H 281.5 V 74.5 H 297.5 V 68.0 H 313.4 V 68.0 H 329.4 V 60.3 H 345.4 V 55.2 H 361.3 V 55.2 H 377.3 V 51.3 H 393.2 V 44.8 H 409.2 V 42.2 H 425.2 V 42.2 H 441.1 V 37.1 H 457.1 V 29.3 H 473.1 V 29.3 H 489.0 V 22.9 H 505.0 V 22.9" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="miter"/><circle cx="58.0" cy="123.5" r="1.8" fill="#0072B2"/><circle cx="74.0" cy="118.4" r="1.8" fill="#0072B2"/><circle cx="89.9" cy="115.8" r="1.8" fill="#0072B2"/><circle cx="121.9" cy="111.9" r="1.8" fill="#0072B2"/><circle cx="137.8" cy="105.5" r="1.8" fill="#0072B2"/><circle cx="169.8" cy="101.6" r="1.8" fill="#0072B2"/><circle cx="185.7" cy="95.1" r="1.8" fill="#0072B2"/><circle cx="201.7" cy="92.6" r="1.8" fill="#0072B2"/><circle cx="233.6" cy="87.4" r="1.8" fill="#0072B2"/><circle cx="249.6" cy="78.4" r="1.8" fill="#0072B2"/><circle cx="281.5" cy="74.5" r="1.8" fill="#0072B2"/><circle cx="297.5" cy="68.0" r="1.8" fill="#0072B2"/><circle cx="329.4" cy="60.3" r="1.8" fill="#0072B2"/><circle cx="345.4" cy="55.2" r="1.8" fill="#0072B2"/><circle cx="377.3" cy="51.3" r="1.8" fill="#0072B2"/><circle cx="393.2" cy="44.8" r="1.8" fill="#0072B2"/><circle cx="409.2" cy="42.2" r="1.8" fill="#0072B2"/><circle cx="441.1" cy="37.1" r="1.8" fill="#0072B2"/><circle cx="457.1" cy="29.3" r="1.8" fill="#0072B2"/><circle cx="489.0" cy="22.9" r="1.8" fill="#0072B2"/><text x="58.0" y="155" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 3</text><text x="153.8" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 9</text><text x="249.6" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 15</text><text x="345.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 21</text><text x="441.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 27</text><text x="505.0" y="155" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#0072B2"></span>Network subscribers</span>
+            <span style="color:#64748B">Flat segments are reporting granularity, not stalled growth</span>
+          </div>
+          <div class="ro">+390.0K over 29 days, +0.29%. 19 of 28 day-on-day moves show a step; the 9 flat days
+            sit below the 1,000-unit reporting floor.</div>
+        </div>
+        <div class="card">
+          <div class="chead"><div><div class="ct">Monthly Views Aggregation</div>
+            <div class="cs">Trailing twelve months of network views</div></div>
+            <div class="tg"><span class="on">Views</span><span>YoY</span></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="46" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="106.8" x2="505" y2="106.8" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="74.5" x2="505" y2="74.5" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="42.2" x2="505" y2="42.2" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="10.0" x2="505" y2="10.0" stroke="#1B2027" stroke-width="1"/><text x="38" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0.0B</text><text x="38" y="110.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0.3B</text><text x="38" y="78.0" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0.6B</text><text x="38" y="45.7" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0.9B</text><text x="38" y="13.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">1.2B</text><line x1="46" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="46" y1="10" x2="46" y2="139" stroke="#232A33" stroke-width="1"/><rect x="54.0" y="41.0" width="22.2" height="98.0" fill="#0072B2" opacity="1" rx="1"/><text x="65.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Sep</text><rect x="92.3" y="34.9" width="22.2" height="104.1" fill="#0072B2" opacity="1" rx="1"/><text x="103.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Oct</text><rect x="130.5" y="37.4" width="22.2" height="101.6" fill="#0072B2" opacity="1" rx="1"/><text x="141.6" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Nov</text><rect x="168.8" y="27.1" width="22.2" height="111.9" fill="#0072B2" opacity="1" rx="1"/><text x="179.9" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Dec</text><rect x="207.0" y="30.6" width="22.2" height="108.4" fill="#0072B2" opacity="1" rx="1"/><text x="218.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Jan</text><rect x="245.3" y="44.0" width="22.2" height="95.0" fill="#0072B2" opacity="1" rx="1"/><text x="256.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Feb</text><rect x="283.5" y="31.9" width="22.2" height="107.1" fill="#0072B2" opacity="1" rx="1"/><text x="294.6" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Mar</text><rect x="321.8" y="36.7" width="22.2" height="102.3" fill="#0072B2" opacity="1" rx="1"/><text x="332.9" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Apr</text><rect x="360.0" y="28.9" width="22.2" height="110.1" fill="#0072B2" opacity="1" rx="1"/><text x="371.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">May</text><rect x="398.3" y="33.5" width="22.2" height="105.5" fill="#0072B2" opacity="1" rx="1"/><text x="409.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Jun</text><rect x="436.5" y="21.5" width="22.2" height="117.5" fill="#0072B2" opacity="1" rx="1"/><text x="447.6" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Jul</text><rect x="474.8" y="26.0" width="22.2" height="113.0" fill="#0072B2" opacity=".45" rx="1"/><rect x="474.8" y="26.0" width="22.2" height="113.0" fill="none" stroke="#FCD34D" stroke-width="1" stroke-dasharray="3 2" rx="1"/><text x="485.9" y="155" text-anchor="middle" fill="#94A3B8" font-size="9" font-family="Inter, sans-serif">Aug</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#0072B2"></span>Monthly views</span>
+            <span><span class="sw" style="background:#0072B2;opacity:.45"></span>Aug 26 &#8212; partial month</span>
+          </div>
+          <div class="ro">Jul 2026 is the record month at 1.09B. August is drawn at 29 of 31 days and is not
+            comparable to the closed months beside it.</div>
+        </div>
+      </div>
+
+      <!-- 8. indexed full width -->
+      <div class="card">
+        <div class="chead">
+          <div><div class="ct">Views vs Share Price &#8212; indexed to 100</div>
+            <div class="cs">Both series rebased to 100 at the window start and drawn on one axis. Two y-scales could be slid to imply any correlation; this cannot.</div></div>
+          <div class="tg"><span class="on">Raw</span><span>7d MA</span><span>30d MA</span><span>45d MA</span></div>
+        </div>
+        <div style="padding:8px 16px 4px;"><svg width="1070" height="218" viewBox="0 0 1070 218"><line x1="52" y1="175.1" x2="1062" y2="175.1" stroke="#1B2027" stroke-width="1"/><line x1="52" y1="138.0" x2="1062" y2="138.0" stroke="#1B2027" stroke-width="1"/><line x1="52" y1="101.0" x2="1062" y2="101.0" stroke="#1B2027" stroke-width="1"/><line x1="52" y1="63.9" x2="1062" y2="63.9" stroke="#1B2027" stroke-width="1"/><line x1="52" y1="26.8" x2="1062" y2="26.8" stroke="#1B2027" stroke-width="1"/><text x="44" y="178.6" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">90</text><text x="44" y="141.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">105</text><text x="44" y="104.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">120</text><text x="44" y="67.4" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">135</text><text x="44" y="30.3" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">150</text><line x1="52" y1="150.4" x2="1062" y2="150.4" stroke="#E8EDF4" stroke-width="1.5"/><text x="1056" y="142.4" text-anchor="end" fill="#64748B" font-size="9.5" font-family="Inter, sans-serif" letter-spacing=".05em">REBASED TO 100 AT AUG 3</text><line x1="52" y1="185" x2="1062" y2="185" stroke="#232A33" stroke-width="1"/><line x1="52" y1="12" x2="52" y2="185" stroke="#232A33" stroke-width="1"/><line x1="557.0" y1="12" x2="557.0" y2="185" stroke="#FCD34D" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/><text x="557.0" y="21" text-anchor="middle" fill="#FCD34D" font-size="9" font-family="Inter, sans-serif">FROZEN</text><polyline points="52.0,150.4 88.1,136.6 124.1,133.4 160.2,142.8 196.3,119.8 232.4,99.4 268.4,110.8 304.5,144.2 340.6,130.3 376.6,125.9 412.7,135.3 448.8,113.2 484.9,93.6 520.9,106.6 557.0,106.6 593.1,127.5 629.1,123.9 665.2,103.7 701.3,85.2 737.4,98.1 773.4,134.3 809.5,120.2 845.6,108.6 881.6,88.9 917.7,69.1 953.8,20.6 989.9,60.3 1025.9,53.1 1062.0,28.2" fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round"/><polyline points="52.0,150.4 88.1,151.6 124.1,149.8 160.2,152.3 196.3,153.2 232.4,153.2 268.4,153.2 304.5,151.2 340.6,153.9 376.6,155.6 412.7,154.3 448.8,156.4 484.9,156.4 520.9,156.4 557.0,155.1 593.1,157.4 629.1,158.3 665.2,156.6 701.3,155.4 737.4,155.4 773.4,155.4 809.5,153.8 845.6,155.9 881.6,155.2 917.7,154.9 953.8,159.0 989.9,159.0 1025.9,159.0 1062.0,159.0" fill="none" stroke="#D55E00" stroke-width="2" stroke-linejoin="round"/><circle cx="1062.0" cy="28.2" r="3.2" fill="#0072B2"/><circle cx="1062.0" cy="159.0" r="3.2" fill="#D55E00"/><text x="1054.0" y="20.2" text-anchor="end" fill="#0072B2" font-size="11" font-family="JetBrains Mono, monospace">Views 149.4</text><text x="1054.0" y="175.0" text-anchor="end" fill="#D55E00" font-size="11" font-family="JetBrains Mono, monospace">Price 96.5</text><text x="52.0" y="201" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 3</text><text x="196.3" y="201" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 7</text><text x="340.6" y="201" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 11</text><text x="484.9" y="201" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 15</text><text x="629.1" y="201" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 19</text><text x="773.4" y="201" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 23</text><text x="917.7" y="201" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 27</text><text x="1062.0" y="201" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+        <div class="lg" style="padding:0 16px 8px;">
+          <span><span class="sw" style="background:#0072B2"></span>Daily views, rebased</span>
+          <span><span class="sw" style="background:#D55E00"></span>Share price, rebased</span>
+          <span><span class="sw" style="background:#E8EDF4"></span>Index = 100</span>
+          <span style="color:#64748B">Price carried forward across non-trading days</span>
+        </div>
+        <div class="ro">r = &#8722;0.07 over 29 paired days &#8212; not significant (critical r = 0.37 at p&lt;0.05).
+          Attention and price are not related in this window.</div>
+      </div>
+
+      <!-- 9. chart pair D -->
+      <div class="grid2">
+        <div class="card">
+          <div class="chead"><div><div class="ct">Trading Volume</div>
+            <div class="cs">Shares traded per session; non-trading days are blank</div></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="46" y1="139.0" x2="505" y2="139.0" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="106.8" x2="505" y2="106.8" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="74.5" x2="505" y2="74.5" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="42.2" x2="505" y2="42.2" stroke="#1B2027" stroke-width="1"/><line x1="46" y1="10.0" x2="505" y2="10.0" stroke="#1B2027" stroke-width="1"/><text x="38" y="142.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0K</text><text x="38" y="110.2" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">175K</text><text x="38" y="78.0" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">350K</text><text x="38" y="45.8" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">525K</text><text x="38" y="13.5" text-anchor="end" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">700K</text><line x1="46" y1="139" x2="505" y2="139" stroke="#232A33" stroke-width="1"/><line x1="46" y1="10" x2="46" y2="139" stroke="#232A33" stroke-width="1"/><rect x="49.5" y="63.0" width="8.9" height="76.0" fill="#0072B2" rx="1"/><rect x="65.3" y="67.4" width="8.9" height="71.6" fill="#0072B2" rx="1"/><rect x="81.1" y="55.1" width="8.9" height="83.9" fill="#0072B2" rx="1"/><rect x="97.0" y="46.4" width="8.9" height="92.6" fill="#0072B2" rx="1"/><rect x="112.8" y="71.3" width="8.9" height="67.7" fill="#0072B2" rx="1"/><text x="133.1" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><text x="148.9" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><rect x="160.3" y="57.6" width="8.9" height="81.4" fill="#0072B2" rx="1"/><rect x="176.1" y="41.6" width="8.9" height="97.4" fill="#0072B2" rx="1"/><rect x="191.9" y="49.4" width="8.9" height="89.6" fill="#0072B2" rx="1"/><rect x="207.8" y="70.3" width="8.9" height="68.7" fill="#0072B2" rx="1"/><rect x="223.6" y="43.3" width="8.9" height="95.7" fill="#0072B2" rx="1"/><text x="243.8" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><text x="259.7" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><rect x="271.1" y="65.6" width="8.9" height="73.4" fill="#0072B2" rx="1"/><rect x="286.9" y="53.7" width="8.9" height="85.3" fill="#0072B2" rx="1"/><rect x="302.7" y="57.7" width="8.9" height="81.3" fill="#0072B2" rx="1"/><rect x="318.6" y="73.2" width="8.9" height="65.8" fill="#0072B2" rx="1"/><rect x="334.4" y="64.5" width="8.9" height="74.5" fill="#0072B2" rx="1"/><text x="354.6" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><text x="370.5" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><rect x="381.9" y="69.3" width="8.9" height="69.7" fill="#0072B2" rx="1"/><rect x="397.7" y="48.5" width="8.9" height="90.5" fill="#0072B2" rx="1"/><rect x="413.5" y="59.1" width="8.9" height="79.9" fill="#0072B2" rx="1"/><rect x="429.3" y="55.6" width="8.9" height="83.4" fill="#D55E00" rx="1"/><rect x="445.2" y="25.1" width="8.9" height="113.9" fill="#0072B2" rx="1"/><text x="465.4" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><text x="481.3" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><text x="497.1" y="135.0" text-anchor="middle" fill="#64748B" font-size="10">&#8212;</text><text x="46.0" y="155" text-anchor="start" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 3</text><text x="144.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 9</text><text x="242.7" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 15</text><text x="341.1" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 21</text><text x="439.4" y="155" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 27</text><text x="505.0" y="155" text-anchor="end" fill="#94A3B8" font-size="10" font-family="Inter, sans-serif">Aug 31</text></svg></div>
+          <div class="lg" style="padding:0 16px 8px;">
+            <span><span class="sw" style="background:#0072B2"></span>Session volume</span>
+            <span><span class="sw" style="background:#D55E00"></span>Aug 28 &#8212; 617.9K, 1.4&#215; the session median</span>
+          </div>
+          <div class="ro">The heaviest session of the window is also the largest down day, &#8722;1.85%.
+            Volume expanded into weakness rather than into the view uptrend.</div>
+        </div>
+        <div class="card">
+          <div class="chead"><div><div class="ct">Daily Views by Weekday</div>
+            <div class="cs">Mean daily views by day of week, 29-day window</div></div></div>
+          <div style="padding:6px 16px 4px;"><svg width="511" height="168" viewBox="0 0 511 168"><line x1="88.0" y1="5" x2="88.0" y2="133.6" stroke="#1B2027" stroke-width="1"/><text x="88.0" y="148.6" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">0M</text><line x1="179.0" y1="5" x2="179.0" y2="133.6" stroke="#1B2027" stroke-width="1"/><text x="179.0" y="148.6" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">11M</text><line x1="270.0" y1="5" x2="270.0" y2="133.6" stroke="#1B2027" stroke-width="1"/><text x="270.0" y="148.6" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">22M</text><line x1="361.0" y1="5" x2="361.0" y2="133.6" stroke="#1B2027" stroke-width="1"/><text x="361.0" y="148.6" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">33M</text><line x1="452.0" y1="5" x2="452.0" y2="133.6" stroke="#1B2027" stroke-width="1"/><text x="452.0" y="148.6" text-anchor="middle" fill="#94A3B8" font-size="10" font-family="JetBrains Mono, monospace">44M</text><text x="80" y="22.0" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Sunday</text><rect x="88" y="13.0" width="341.2" height="12" fill="#0072B2" opacity="1" rx="1"/><text x="436.2" y="23.0" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">41.24M</text><text x="80" y="39.8" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Monday</text><rect x="88" y="30.8" width="319.4" height="12" fill="#0072B2" opacity="0.85" rx="1"/><text x="414.4" y="40.8" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">38.61M</text><text x="80" y="57.6" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Tuesday</text><rect x="88" y="48.6" width="309.6" height="12" fill="#0072B2" opacity="0.78" rx="1"/><text x="404.6" y="58.6" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">37.42M</text><text x="80" y="75.4" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Wednesday</text><rect x="88" y="66.4" width="305.3" height="12" fill="#0072B2" opacity="0.71" rx="1"/><text x="400.3" y="76.4" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">36.90M</text><text x="80" y="93.2" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Thursday</text><rect x="88" y="84.2" width="296.4" height="12" fill="#0072B2" opacity="0.64" rx="1"/><text x="391.4" y="94.2" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">35.83M</text><text x="80" y="111.0" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Friday</text><rect x="88" y="102.0" width="285.6" height="12" fill="#0072B2" opacity="0.57" rx="1"/><text x="380.6" y="112.0" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">34.52M</text><text x="80" y="128.8" text-anchor="end" fill="#CBD5E1" font-size="11" font-family="Inter, sans-serif">Saturday</text><rect x="88" y="119.8" width="273.9" height="12" fill="#0072B2" opacity="0.50" rx="1"/><text x="368.9" y="129.8" fill="#CBD5E1" font-size="10.5" font-family="JetBrains Mono, monospace">33.11M</text><line x1="88" y1="5" x2="88" y2="133.6" stroke="#232A33" stroke-width="1"/></svg></div>
+          <div class="ro" style="padding-top:6px;">Sunday runs 24.6% above Saturday, the weakest day.
+            Any week-on-week read must be taken on whole weeks or this pattern dominates it.</div>
+        </div>
+      </div>
+
+      <!-- 10. daily metrics -->
+      <div class="card">
+        <div class="chead" style="padding-bottom:12px;">
+          <div><div class="ct">Daily Metrics</div>
+            <div class="cs">Joined YouTube and market series, most recent first</div></div>
+          <div class="tg"><span class="on">All columns</span><span>YouTube only</span><span>Market only</span></div>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:116px">Date &#8645;</th>
+            <th class="r" style="width:100px">Daily Views</th>
+            <th class="r" style="width:100px">Views Chg</th>
+            <th class="r" style="width:82px">% Chg</th>
+            <th class="r" style="width:96px">Subscribers</th>
+            <th class="r" style="width:88px">Sub Chg</th>
+            <th class="r" style="width:96px">Total Views</th>
+            <th class="r" style="width:82px">Close</th>
+            <th class="r" style="width:82px">Open</th>
+            <th class="r" style="width:82px">High</th>
+            <th class="r" style="width:82px">Low</th>
+            <th class="r" style="width:96px">Volume</th>
+          </tr></thead>
+          <tbody><tr><td class="dt">Aug 31, 2026</td><td class="n">45.91M</td><td class="n"><span style="color:#34D399">&#9650; 3.09M</span></td><td class="n"><span style="color:#34D399">&#9650; 7.22%</span></td><td class="n">133.550M</td><td class="n"><span style="color:#94A3B8">&#8212;</span></td><td class="n">84.35B</td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr><tr><td class="dt">Aug 30, 2026</td><td class="n">42.82M</td><td class="n"><span style="color:#34D399">&#9650; 0.90M</span></td><td class="n"><span style="color:#34D399">&#9650; 2.15%</span></td><td class="n">133.550M</td><td class="n"><span style="color:#34D399">&#9650; 25.0K</span></td><td class="n">84.31B</td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr><tr><td class="dt">Aug 29, 2026</td><td class="n">41.92M</td><td class="n"><span style="color:#F4576B">&#9660; 4.93M</span></td><td class="n"><span style="color:#F4576B">&#9660; 10.52%</span></td><td class="n">133.525M</td><td class="n"><span style="color:#94A3B8">&#8212;</span></td><td class="n">84.26B</td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr><tr><td class="dt">Aug 28, 2026</td><td class="n">46.85M</td><td class="n"><span style="color:#34D399">&#9650; 6.03M</span></td><td class="n"><span style="color:#34D399">&#9650; 14.77%</span></td><td class="n">133.525M</td><td class="n"><span style="color:#34D399">&#9650; 30.0K</span></td><td class="n">84.22B</td><td class="n"><span style="color:#F1F5F9">648.05</span></td><td class="n">656.70</td><td class="n">659.80</td><td class="n">643.45</td><td class="n">617.9K</td></tr><tr><td class="dt">Aug 27, 2026</td><td class="n">40.82M</td><td class="n"><span style="color:#34D399">&#9650; 2.45M</span></td><td class="n"><span style="color:#34D399">&#9650; 6.39%</span></td><td class="n">133.495M</td><td class="n"><span style="color:#34D399">&#9650; 20.0K</span></td><td class="n">84.17B</td><td class="n"><span style="color:#F1F5F9">659.10</span></td><td class="n">658.80</td><td class="n">662.95</td><td class="n">654.70</td><td class="n">452.6K</td></tr><tr><td class="dt">Aug 26, 2026</td><td class="n">38.37M</td><td class="n"><span style="color:#34D399">&#9650; 2.45M</span></td><td class="n"><span style="color:#34D399">&#9650; 6.82%</span></td><td class="n">133.475M</td><td class="n"><span style="color:#94A3B8">&#8212;</span></td><td class="n">84.13B</td><td class="n"><span style="color:#F1F5F9">658.25</span></td><td class="n">654.65</td><td class="n">663.45</td><td class="n">651.40</td><td class="n">433.6K</td></tr><tr><td class="dt">Aug 25, 2026</td><td class="n">35.92M</td><td class="n"><span style="color:#34D399">&#9650; 1.45M</span></td><td class="n"><span style="color:#34D399">&#9650; 4.21%</span></td><td class="n">133.475M</td><td class="n"><span style="color:#34D399">&#9650; 10.0K</span></td><td class="n">84.09B</td><td class="n"><span style="color:#F1F5F9">656.40</span></td><td class="n">664.20</td><td class="n">666.60</td><td class="n">651.00</td><td class="n">491.2K</td></tr><tr><td class="dt">Aug 24, 2026</td><td class="n">34.47M</td><td class="n"><span style="color:#34D399">&#9650; 1.75M</span></td><td class="n"><span style="color:#34D399">&#9650; 5.35%</span></td><td class="n">133.465M</td><td class="n"><span style="color:#34D399">&#9650; 25.0K</span></td><td class="n">84.06B</td><td class="n"><span style="color:#F1F5F9">662.10</span></td><td class="n">656.95</td><td class="n">666.85</td><td class="n">654.00</td><td class="n">378.3K</td></tr><tr><td class="dt">Aug 23, 2026</td><td class="n">32.72M</td><td class="n"><span style="color:#F4576B">&#9660; 4.50M</span></td><td class="n"><span style="color:#F4576B">&#9660; 12.09%</span></td><td class="n">133.440M</td><td class="n"><span style="color:#34D399">&#9650; 15.0K</span></td><td class="n">84.02B</td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr><tr><td class="dt">Aug 22, 2026</td><td class="n">37.22M</td><td class="n"><span style="color:#F4576B">&#9660; 1.60M</span></td><td class="n"><span style="color:#F4576B">&#9660; 4.12%</span></td><td class="n">133.425M</td><td class="n"><span style="color:#94A3B8">&#8212;</span></td><td class="n">83.99B</td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td><td class="n"><span style="color:#64748B">&#8212;</span></td></tr><tr><td class="dt">Aug 21, 2026</td><td class="n">38.82M</td><td class="n"><span style="color:#34D399">&#9650; 2.30M</span></td><td class="n"><span style="color:#34D399">&#9650; 6.30%</span></td><td class="n">133.425M</td><td class="n"><span style="color:#34D399">&#9650; 20.0K</span></td><td class="n">83.95B</td><td class="n"><span style="color:#F1F5F9">657.85</span></td><td class="n">655.55</td><td class="n">663.05</td><td class="n">652.30</td><td class="n">404.5K</td></tr><tr><td class="dt">Aug 20, 2026</td><td class="n">36.52M</td><td class="n"><span style="color:#34D399">&#9650; 2.50M</span></td><td class="n"><span style="color:#34D399">&#9650; 7.35%</span></td><td class="n">133.405M</td><td class="n"><span style="color:#34D399">&#9650; 30.0K</span></td><td class="n">83.92B</td><td class="n"><span style="color:#F1F5F9">654.60</span></td><td class="n">648.75</td><td class="n">657.00</td><td class="n">643.35</td><td class="n">356.9K</td></tr></tbody>
+        </table>
+        <div class="tfoot">
+          Showing 1&#8211;28 of 29 records
+          <span style="color:#64748B; margin-left:10px;">&#8224; marks a frozen source reading &#8212; 1 in this window, Aug 17, on page 2 &#183; market columns blank on non-trading days</span>
+          <span class="pg"><span class="dis">&#8249; Prev</span><span>Next &#8250;</span></span>
+        </div>
+      </div>
+
+      <!-- 11. footer -->
+      <div class="foot">Last updated: Aug 31, 2026 at 03:09 PM &#183; Data: Supabase PostgreSQL &#183; Stock: NSE: TIPSMUSIC via Yahoo Finance</div>
+
     </div>
-
-    <!-- drivers -->
-    <div style="margin-top: 38px;">
-      <div class="serif" style="font-size: 21px; font-weight: 600; margin-bottom: 4px;">What moved it this week</div>
-      <div style="font-size: 12.5px; color: #6E6A5C; margin-bottom: 18px;">measured inputs · <a href="#">open the driver tree →</a></div>
-
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px;">
-        <div style="border-top: 2px solid #16150F; padding-top: 12px;">
-          <div style="font-size: 11px; letter-spacing: 0.05em; color: #6E6A5C;">OWNED REACH · 30D</div>
-          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">1.17bn</div>
-          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">38.9M/day · Tips</div>
-          <svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none" style="display:block;margin-top:10px;">
-            <polyline fill="none" stroke="#8C2F27" stroke-width="1.5" points="0,18 14,14 28,20 42,12 56,16 70,10 84,15 98,8 112,17 126,11 140,14 154,9 168,13 182,7 196,11"></polyline>
-          </svg>
-        </div>
-        <div style="border-top: 2px solid #16150F; padding-top: 12px;">
-          <div style="font-size: 11px; letter-spacing: 0.05em; color: #6E6A5C;">OWNED REACH · 30D</div>
-          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">1.26bn</div>
-          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">42.0M/day · Saregama</div>
-          <svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none" style="display:block;margin-top:10px;">
-            <polyline fill="none" stroke="#8C2F27" stroke-width="1.5" points="0,20 14,16 28,18 42,14 56,15 70,12 84,16 98,10 112,15 126,9 140,13 154,8 168,12 182,6 196,10"></polyline>
-          </svg>
-        </div>
-        <div style="border-top: 2px solid #16150F; padding-top: 12px;">
-          <div style="font-size: 11px; letter-spacing: 0.05em; color: #6E6A5C;">RELEASES · 30D</div>
-          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">618 / 1,468</div>
-          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">Tips / Saregama</div>
-          <svg width="100%" height="30" viewBox="0 0 200 30" preserveAspectRatio="none" style="display:block;margin-top:10px;">
-            <polyline fill="none" stroke="#6E6A5C" stroke-width="1.5" points="0,14 14,18 28,12 42,20 56,13 70,17 84,11 98,19 112,14 126,16 140,10 154,18 168,13 182,15 196,12"></polyline>
-          </svg>
-        </div>
-        <div style="border-top: 2px solid #C9A227; padding-top: 12px;">
-          <div style="font-size: 11px; letter-spacing: 0.05em; color: #9A7B10;">RATE ASSUMPTION</div>
-          <div class="serif tnum" style="font-size: 27px; font-weight: 600; margin-top: 5px;">₹94–142</div>
-          <div class="tnum" style="font-size: 12px; color: #6E6A5C; margin-top: 3px;">per 1k views · <span style="color:#9A7B10;">yours to set</span></div>
-          <div style="font-size: 11.5px; color: #6E6A5C; margin-top: 12px; line-height: 1.5;">the widest lever in the model</div>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 </x-dc>
-</body>
-</html>

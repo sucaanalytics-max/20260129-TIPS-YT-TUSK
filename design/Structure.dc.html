@@ -7,141 +7,306 @@
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
   <style>
-    body { margin: 0; background: #FAFAF8; color: #1A1A18; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
-    a { color: #1A1A18; } a:hover { color: #666; }
-    .hand { font-family: 'Architects Daughter', cursive; }
-    .mono { font-family: 'IBM Plex Mono', monospace; }
+    .st,.st *{box-sizing:border-box;margin:0;padding:0}
+    .st{width:1440px;background:#0C0E13;color:#F1F5F9;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+    .st .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+    .st h1{font-size:28px;font-weight:600;letter-spacing:-.01em}
+    .st .sec{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8}
+    .st .card{background:#121620;border:1px solid #232A33;border-radius:8px}
+    .st .ctit{font-size:14px;font-weight:600;color:#F1F5F9}
+    .st .csub{font-size:12px;font-weight:400;color:#94A3B8}
+    .st .fn{font-size:11px;color:#64748B;line-height:1.5}
+    .st .chip{height:22px;display:flex;align-items:center;gap:6px;padding:0 8px;background:#1B2027;border:1px solid #232A33;border-radius:4px;font-size:10.5px;color:#CBD5E1;white-space:nowrap;overflow:hidden}
+    .st .chip.add{background:transparent;border-style:dashed;color:#94A3B8}
+    .st table{border-collapse:collapse;width:100%}
+    .st th{background:#161B27;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8;text-align:left;padding:0 12px;height:30px;border-bottom:1px solid #232A33}
+    .st td{font-size:12.5px;padding:0 12px;height:25px;border-bottom:1px solid #1B222C;color:#F1F5F9;vertical-align:middle}
+    .st tr.grp td{background:#161B27;height:24px;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#94A3B8;border-bottom:1px solid #232A33}
+    .st td.loc{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:11px;color:#94A3B8}
+    .st td.stat{font-size:11px;font-weight:500;white-space:nowrap}
   </style>
 </helmet>
 
-<div style="width: 1440px; background: #FAFAF8; padding: 40px 44px 48px; box-sizing: border-box;">
+<div class="st" style="width:1440px;height:1300px;background:#0C0E13;padding:26px 28px">
 
-  <div style="border-bottom: 2px solid #1A1A18; padding-bottom: 14px; margin-bottom: 8px;">
-    <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.02em;">Product structure</div>
-  </div>
-  <div class="hand" style="font-size: 15px; color: #6B6B63; margin-bottom: 30px;">
-    one question on the front · everything else demoted to a driver of it
-  </div>
-
-  <!-- the spine -->
-  <div style="display: flex; gap: 20px; align-items: stretch;">
-
-    <!-- level 0 -->
-    <div style="flex: 0 0 330px;">
-      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 8px;">LEVEL 0 — THE ANSWER</div>
-      <div style="border: 2px solid #1A1A18; background: #FFF; padding: 18px; height: 244px; box-sizing: border-box;">
-        <div style="font-size: 15px; font-weight: 600;">Revenue nowcast</div>
-        <div class="hand" style="font-size: 14px; color: #6B6B63; margin-top: 6px; line-height: 1.5;">
-          What will the music line print this quarter — and how wrong have we been before?
-        </div>
-        <div style="border-top: 1px dashed #C9C9C0; margin: 14px 0; "></div>
-        <div style="font-size: 12px; line-height: 1.9; color: #3A3A35;">
-          · estimate + band<br>
-          · quarter elapsed<br>
-          · movement since last week<br>
-          · <strong>track record</strong> — scored vs actuals
-        </div>
-      </div>
-      <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 8px;">
-        if it can't be scored, it doesn't belong here
-      </div>
-    </div>
-
-    <div style="display: flex; align-items: center; padding-top: 60px;">
-      <div class="mono" style="font-size: 22px; color: #B5B5AA;">→</div>
-    </div>
-
-    <!-- level 1 -->
-    <div style="flex: 0 0 380px;">
-      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 8px;">LEVEL 1 — WHY IT MOVED</div>
-      <div style="border: 1.5px solid #1A1A18; background: #FFF; padding: 18px; height: 244px; box-sizing: border-box;">
-        <div style="font-size: 15px; font-weight: 600;">Driver tree</div>
-        <div class="hand" style="font-size: 14px; color: #6B6B63; margin-top: 6px;">reach → monetisation → revenue</div>
-        <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 7px;">
-          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between;">
-            <span>Owned reach</span><span class="mono" style="color: #6B6B63;">measured</span>
-          </div>
-          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between;">
-            <span>Topic / OAC attributed</span><span class="mono" style="color: #6B6B63;">measured</span>
-          </div>
-          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between;">
-            <span>UGC reach</span><span class="mono" style="color: #6B6B63;">sampled</span>
-          </div>
-          <div style="border: 1px solid #C9C9C0; padding: 7px 10px; font-size: 12px; display: flex; justify-content: space-between; background: #F2F2ED;">
-            <span>CPM / rate assumptions</span><span class="mono" style="color: #A06000;">yours to set</span>
-          </div>
-        </div>
-      </div>
-      <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 8px;">
-        assumptions become inputs you own, not buried constants
-      </div>
-    </div>
-
-    <div style="display: flex; align-items: center; padding-top: 60px;">
-      <div class="mono" style="font-size: 22px; color: #B5B5AA;">→</div>
-    </div>
-
-    <!-- level 2 -->
-    <div style="flex: 1;">
-      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 8px;">LEVEL 2 — THE RAW SERIES</div>
-      <div style="border: 1px solid #9A9A90; background: #FFF; padding: 18px; height: 244px; box-sizing: border-box;">
-        <div style="font-size: 15px; font-weight: 600;">Evidence</div>
-        <div class="hand" style="font-size: 14px; color: #6B6B63; margin-top: 6px;">where a driver's number came from</div>
-        <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; font-size: 12px;">
-          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Control charts</div>
-          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Explore / slicers</div>
-          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Period comparison</div>
-          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Data quality</div>
-          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Channels</div>
-          <div style="border: 1px dashed #C9C9C0; padding: 7px 9px;">Sector demand</div>
-        </div>
-        <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 12px;">
-          today's whole dashboard lives here — as evidence, not as the destination
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- what got cut -->
-  <div style="margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px;">
+  <!-- ============ HEADER ============ -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid #232A33">
     <div>
-      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 10px;">DEMOTED OR REMOVED</div>
-      <div style="border-top: 1px solid #1A1A18;">
-        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
-          <span>Lead–lag correlation</span>
-          <span class="mono" style="color: #A06000; font-size: 11px;">→ a footnote, not a page</span>
+      <h1>Structure — information architecture &amp; build inventory</h1>
+      <div style="font-size:12px;color:#64748B;margin-top:5px">Redesign proposal for the TIPS / Saregama YouTube terminal &nbsp;·&nbsp; prepared Aug 31, 2026 at 03:09 PM &nbsp;·&nbsp; this board is a system map, not a screen</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="border:1px solid #232A33;border-radius:6px;padding:6px 10px;background:#121620">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8">Routes today</div>
+        <div class="mono" style="font-size:18px;font-weight:600;color:#F1F5F9;line-height:1.15">13</div>
+      </div>
+      <div style="font-size:16px;color:#64748B;padding:0 2px">→</div>
+      <div style="border:1px solid #232A33;border-radius:6px;padding:6px 10px;background:#121620">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8">Sections after</div>
+        <div class="mono" style="font-size:18px;font-weight:600;color:#F1F5F9;line-height:1.15">5<span style="font-size:12px;color:#94A3B8"> + Compare</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1. IA MAP ============ -->
+  <div class="sec" style="margin:16px 0 8px">1 · Information architecture — what absorbs what</div>
+
+  <div class="card" style="padding:16px">
+
+    <!-- company scope bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#161B27;border:1px solid #232A33;border-radius:6px;padding:7px 12px;height:46px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8;width:96px;line-height:1.3">Company<br>switcher</div>
+        <div style="display:flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:14px;background:linear-gradient(90deg,#3B82F6,#8B5CF6);color:#FFFFFF;font-size:12.5px;font-weight:600">♪ TIPS MUSIC <span style="opacity:.75;font-weight:400;font-size:11px">NSE: TIPSMUSIC</span></div>
+        <div style="display:flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:14px;color:#94A3B8;font-size:12.5px;font-weight:500">♪ SAREGAMA</div>
+        <div style="width:1px;height:22px;background:#232A33;margin:0 4px"></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#94A3B8"><span style="width:9px;height:9px;border-radius:2px;background:#0072B2;display:inline-block"></span>#0072B2<span style="width:9px;height:9px;border-radius:2px;background:#D55E00;display:inline-block;margin-left:6px"></span>#D55E00</div>
+      </div>
+      <div style="font-size:11.5px;color:#64748B;text-align:right;line-height:1.4">Every section below is scoped to <span style="color:#CBD5E1">one company at a time</span>.<br>Two companies appear together only in Compare.</div>
+    </div>
+
+    <!-- bus -->
+    <svg width="1348" height="28" viewBox="0 0 1348 28" style="display:block;margin-top:6px">
+      <path d="M674 0 V12" stroke="#232A33" stroke-width="1.5" fill="none"/>
+      <path d="M107 12 H1241" stroke="#232A33" stroke-width="1.5" fill="none"/>
+      <g stroke="#232A33" stroke-width="1.5" fill="none">
+        <path d="M107 12 V21"/><path d="M333.8 12 V21"/><path d="M560.6 12 V21"/>
+        <path d="M787.4 12 V21"/><path d="M1014.2 12 V21"/><path d="M1241 12 V21"/>
+      </g>
+      <g fill="#3B82F6">
+        <path d="M103 21 h8 l-4 6 z"/><path d="M329.8 21 h8 l-4 6 z"/><path d="M556.6 21 h8 l-4 6 z"/>
+        <path d="M783.4 21 h8 l-4 6 z"/><path d="M1010.2 21 h8 l-4 6 z"/>
+      </g>
+      <path d="M1237 21 h8 l-4 6 z" fill="#8B5CF6"/>
+    </svg>
+
+    <!-- six columns -->
+    <div style="display:flex;gap:12.8px;width:1348px">
+
+      <!-- Overview -->
+      <div style="width:214px">
+        <div style="height:2px;background:#3B82F6;border-radius:2px 2px 0 0"></div>
+        <div style="height:38px;background:#161B27;border:1px solid #232A33;border-top:none;border-radius:0 0 5px 5px;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="font-size:13px">📊</span><span style="font-size:13px;font-weight:600;color:#F1F5F9">Overview</span>
         </div>
-        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
-          <span>Implied audio-DSP royalty</span>
-          <span class="mono" style="color: #A06000; font-size: 11px;">→ cut until inputs are fixed</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
-          <span>Event horizon</span>
-          <span class="mono" style="color: #A06000; font-size: 11px;">→ cut, no forward data exists</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #E2E2DA; font-size: 13px;">
-          <span>The IR "READ" verdict</span>
-          <span class="mono" style="color: #A06000; font-size: 11px;">→ replaced by a scored number</span>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin:8px 0 5px">absorbs</div>
+        <div style="display:flex;flex-direction:column;gap:5px;height:130px">
+          <div class="chip"><span class="mono">app/page.tsx</span></div>
+          <div class="chip">ops pulse · cron health</div>
+          <div class="chip">data freshness &amp; frozen days</div>
+          <div class="chip add"><span class="mono">/market</span> → demand strip</div>
+          <div class="chip add"><span class="mono">/stock</span> → price header</div>
         </div>
       </div>
-      <div class="hand" style="font-size: 13px; color: #8A8A80; margin-top: 10px;">
-        four panels removed. each was showing something we can't stand behind.
+
+      <!-- Nowcast -->
+      <div style="width:214px">
+        <div style="height:2px;background:#3B82F6;border-radius:2px 2px 0 0"></div>
+        <div style="height:38px;background:#161B27;border:1px solid #232A33;border-top:none;border-radius:0 0 5px 5px;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="font-size:13px">💹</span><span style="font-size:13px;font-weight:600;color:#F1F5F9">Nowcast</span>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin:8px 0 5px">absorbs</div>
+        <div style="display:flex;flex-direction:column;gap:5px;height:130px">
+          <div class="chip"><span class="mono">/nowcast</span> → Estimate tab</div>
+          <div class="chip"><span class="mono">/drivers</span> → Drivers tab</div>
+          <div class="chip">track record · never scored</div>
+          <div class="chip add">two tabs, one page</div>
+        </div>
+      </div>
+
+      <!-- Content Analytics -->
+      <div style="width:214px">
+        <div style="height:2px;background:#3B82F6;border-radius:2px 2px 0 0"></div>
+        <div style="height:38px;background:#161B27;border:1px solid #232A33;border-top:none;border-radius:0 0 5px 5px;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="font-size:13px">📺</span><span style="font-size:13px;font-weight:600;color:#F1F5F9">Content Analytics</span>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin:8px 0 5px">absorbs</div>
+        <div style="display:flex;flex-direction:column;gap:5px;height:130px">
+          <div class="chip"><span class="mono">/channels</span></div>
+          <div class="chip"><span class="mono">/growth</span></div>
+          <div class="chip">catalogue decay curves</div>
+          <div class="chip">release calendar</div>
+          <div class="chip">language mix</div>
+        </div>
+      </div>
+
+      <!-- Anomalies -->
+      <div style="width:214px">
+        <div style="height:2px;background:#3B82F6;border-radius:2px 2px 0 0"></div>
+        <div style="height:38px;background:#161B27;border:1px solid #232A33;border-top:none;border-radius:0 0 5px 5px;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="font-size:13px">🚨</span><span style="font-size:13px;font-weight:600;color:#F1F5F9">Anomalies</span>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin:8px 0 5px">absorbs</div>
+        <div style="display:flex;flex-direction:column;gap:5px;height:130px">
+          <div class="chip"><span class="mono">/analysis</span> control charts</div>
+          <div class="chip"><span class="mono">/correlation</span></div>
+          <div class="chip"><span class="mono">/events</span></div>
+          <div class="chip"><span class="mono">/signals</span></div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div style="width:214px">
+        <div style="height:2px;background:#3B82F6;border-radius:2px 2px 0 0"></div>
+        <div style="height:38px;background:#161B27;border:1px solid #232A33;border-top:none;border-radius:0 0 5px 5px;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="font-size:13px">📋</span><span style="font-size:13px;font-weight:600;color:#F1F5F9">Data Table</span>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin:8px 0 5px">absorbs</div>
+        <div style="display:flex;flex-direction:column;gap:5px;height:130px">
+          <div class="chip"><span class="mono">/explore</span></div>
+          <div class="chip"><span class="mono">/data</span> CSV export</div>
+          <div class="chip add">the audit surface</div>
+        </div>
+      </div>
+
+      <!-- Compare -->
+      <div style="width:214px">
+        <div style="height:2px;background:#8B5CF6;border-radius:2px 2px 0 0"></div>
+        <div style="height:38px;background:#161B27;border:1px dashed #3B4457;border-top:none;border-radius:0 0 5px 5px;display:flex;align-items:center;gap:7px;padding:0 10px">
+          <span style="font-size:13px">⇄</span><span style="font-size:13px;font-weight:600;color:#F1F5F9">Compare</span>
+          <span style="margin-left:auto;font-size:9px;font-weight:600;letter-spacing:.06em;color:#C4B5FD;background:rgba(139,92,246,.14);border-radius:3px;padding:2px 5px">NEW</span>
+        </div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin:8px 0 5px">contains</div>
+        <div style="display:flex;flex-direction:column;gap:5px;height:130px">
+          <div class="chip">peer view · TIPS vs SAREGAMA</div>
+          <div class="chip add"><span class="mono">/stock</span> → relative strength</div>
+          <div class="chip add"><span class="mono">/market</span> → DSP share split</div>
+          <div class="chip">the only two-company screen</div>
+        </div>
       </div>
     </div>
 
-    <div>
-      <div class="mono" style="font-size: 10px; letter-spacing: 0.1em; color: #6B6B63; margin-bottom: 10px;">THE RULE THAT DECIDES PLACEMENT</div>
-      <div style="border: 2px solid #1A1A18; background: #FFF; padding: 18px;">
-        <div style="font-size: 14px; line-height: 1.65;">
-          A figure sits at <strong>Level 0</strong> only if it can be scored against something that
-          actually gets reported.<br><br>
-          At <strong>Level 1</strong> if it feeds a Level 0 number and its assumptions are visible.<br><br>
-          At <strong>Level 2</strong> if it is measured but doesn't yet feed anything.<br><br>
-          <span style="color: #A06000;">Nowhere, if it can't be checked at all.</span>
+    <!-- fold-in diagram -->
+    <svg width="1348" height="58" viewBox="0 0 1348 58" style="display:block;margin-top:8px">
+      <path d="M490 38 C 340 38 130 36 107 10" stroke="#8B97A8" stroke-width="1.4" fill="none" stroke-dasharray="4 3"/>
+      <path d="M858 38 C 1010 38 1218 36 1241 10" stroke="#8B97A8" stroke-width="1.4" fill="none" stroke-dasharray="4 3"/>
+      <path d="M103 10 h8 l-4 -8 z" fill="#8B97A8"/>
+      <path d="M1237 10 h8 l-4 -8 z" fill="#8B97A8"/>
+      <rect x="490" y="18" width="368" height="38" rx="5" fill="#161B27" stroke="#3B4457" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="504" y="33" font-family="Inter" font-size="9.5" letter-spacing=".7" fill="#64748B">NO LONGER STANDALONE PAGES</text>
+      <text x="504" y="49" font-family="JetBrains Mono" font-size="11.5" fill="#CBD5E1">/market</text>
+      <text x="566" y="49" font-family="Inter" font-size="11.5" fill="#94A3B8">DSP demand</text>
+      <text x="660" y="49" font-family="JetBrains Mono" font-size="11.5" fill="#CBD5E1">/stock</text>
+      <text x="712" y="49" font-family="Inter" font-size="11.5" fill="#94A3B8">price, ATR, beta, drawdown</text>
+        </svg>
+
+    <div class="fn" style="margin-top:8px;border-top:1px solid #1B222C;padding-top:8px"><span style="color:#94A3B8">/market</span> and <span style="color:#94A3B8">/stock</span> fold in twice — as context inside Overview, and as the peer split inside Compare. Nothing else is deleted: every surface above survives as a panel, a tab or a strip inside its new home. Those two routes are the only ones that lose a URL.</div>
+  </div>
+
+  <!-- ============ 2 + 3 ============ -->
+  <div class="sec" style="margin:16px 0 8px">2 · Build inventory &nbsp;·&nbsp; 3 · Scope decisions</div>
+
+  <div style="display:flex;gap:20px;width:1384px;align-items:flex-start">
+
+    <!-- LEFT: inventory -->
+    <div class="card" style="width:856px;overflow:hidden">
+      <div style="padding:12px 14px 10px;border-bottom:1px solid #232A33;display:flex;align-items:baseline;justify-content:space-between">
+        <div>
+          <div class="ctit">Capability inventory</div>
+          <div class="csub" style="margin-top:2px">What the redesign can stand on today, and what it still costs to build</div>
+        </div>
+        <div class="mono" style="font-size:11px;color:#94A3B8">10 reused &nbsp;·&nbsp; 7 to build</div>
+      </div>
+      <table>
+        <thead><tr><th style="width:46%">Capability</th><th style="width:17%">Status</th><th style="width:37%">Where it lives</th></tr></thead>
+        <tbody>
+          <tr class="grp"><td colspan="3">Exists and reused — no rework required</td></tr>
+          <tr><td>Control charts — mean ±3σ, run rules</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/control-chart.ts</td></tr>
+          <tr><td>Pearson r, lag scan, p-values</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/correlation.ts</td></tr>
+          <tr><td>Moving averages / smoothing</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/smoothing.ts</td></tr>
+          <tr><td>Period bucketing and comparison</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/period-compare.ts</td></tr>
+          <tr><td>Nowcast model and scoring</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/nowcast.ts · lib/scoring.ts</td></tr>
+          <tr><td>Fiscal quarter arithmetic</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/fiscal.ts</td></tr>
+          <tr><td>Coverage imputation for frozen days</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/nowcast-coverage.ts</td></tr>
+          <tr><td>Risk — volatility, beta, drawdown, 52-week range</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/risk.ts</td></tr>
+          <tr><td>Validated colour-blind-safe chart palette</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/chart-palette.ts</td></tr>
+          <tr><td>Query layer — 50 query functions</td><td class="stat" style="color:#34D399">✓ REUSED</td><td class="loc">lib/queries.ts</td></tr>
+          <tr class="grp"><td colspan="3">Needs building — the actual cost of this redesign</td></tr>
+          <tr><td>ATR (14 day)</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">lib/risk.ts — extend</td></tr>
+          <tr><td>Z-score anomaly detection</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">lib/anomaly.ts — new</td></tr>
+          <tr><td>Rolling-window correlation</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">lib/correlation.ts — extend</td></tr>
+          <tr><td>Weekday distribution of views</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">lib/queries.ts — new query</td></tr>
+          <tr><td>Monthly aggregation</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">lib/period-compare.ts — extend</td></tr>
+          <tr><td>Sidebar shell and company-scope routing</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">app/(scoped)/[company]/ — new</td></tr>
+          <tr style="border-bottom:none"><td>Per-row sparklines in tables</td><td class="stat" style="color:#FB923C">⚑ BUILD</td><td class="loc">components/charts/row-spark.tsx — new</td></tr>
+        </tbody>
+      </table>
+      <div style="background:#161B27;border-top:1px solid #232A33;padding:8px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div class="fn">Seven new pieces, none of them a new data source — every one reads the existing warehouse.</div>
+        <div class="fn"><span style="color:#34D399">✓</span> reused &nbsp; <span style="color:#FB923C">⚑</span> to build &nbsp;·&nbsp; glyph, not colour, carries the status</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: scope + reader note -->
+    <div style="width:508px;display:flex;flex-direction:column;gap:12px">
+
+      <div class="card" style="padding:11px 14px 3px">
+        <div class="ctit">Scope — the four decisions taken</div>
+        <div class="csub" style="margin:2px 0 10px">Settled. Listed here so approval covers them explicitly.</div>
+
+        <div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid #1B222C">
+          <div class="mono" style="flex:0 0 20px;height:20px;border-radius:4px;background:rgba(59,130,246,.12);color:#60A5FA;font-size:11px;display:flex;align-items:center;justify-content:center">1</div>
+          <div><div style="font-size:12.5px;font-weight:600">Sidebar navigation with a company switcher</div>
+          <div style="font-size:11px;color:#94A3B8;line-height:1.45;margin-top:2px">Fixed 290px. One company in scope; the switcher is the only global control.</div></div>
+        </div>
+
+        <div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid #1B222C">
+          <div class="mono" style="flex:0 0 20px;height:20px;border-radius:4px;background:rgba(59,130,246,.12);color:#60A5FA;font-size:11px;display:flex;align-items:center;justify-content:center">2</div>
+          <div><div style="font-size:12.5px;font-weight:600">Five sections plus one Compare view</div>
+          <div style="font-size:11px;color:#94A3B8;line-height:1.45;margin-top:2px">Overview · Nowcast · Content Analytics · Anomalies · Data Table. Compare is the only two-company screen.</div></div>
+        </div>
+
+        <div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid #1B222C">
+          <div class="mono" style="flex:0 0 20px;height:20px;border-radius:4px;background:rgba(59,130,246,.12);color:#60A5FA;font-size:11px;display:flex;align-items:center;justify-content:center">3</div>
+          <div><div style="font-size:12.5px;font-weight:600">Views vs price indexed to 100, never dual-axis</div>
+          <div style="font-size:11px;color:#94A3B8;line-height:1.45;margin-top:2px">Two free y-scales can be slid to imply any correlation; one shared axis cannot. Pearson r, n and significance sit beside the chart.</div></div>
+        </div>
+
+        <div style="display:flex;gap:10px;padding:6px 0;border-top:1px solid #1B222C">
+          <div class="mono" style="flex:0 0 20px;height:20px;border-radius:4px;background:rgba(59,130,246,.12);color:#60A5FA;font-size:11px;display:flex;align-items:center;justify-content:center">4</div>
+          <div><div style="font-size:12.5px;font-weight:600">Match the reference's density — fix three defects</div>
+          <div style="font-size:11px;color:#94A3B8;line-height:1.45;margin-top:2px">Colour-blind-unsafe series → the validated three. Colour-only status → glyph plus colour. Absent-as-zero → an em dash.</div></div>
         </div>
       </div>
+
+      <div class="card" style="padding:10px 14px 11px">
+        <div class="ctit">What changes for the reader</div>
+        <div style="font-size:11.5px;color:#CBD5E1;line-height:1.5;margin:5px 0 9px">Today: thirteen flat pages, both companies on every one, the scoping done in the reader’s head. After: they pick a company once, then read five dense screens.</div>
+        <div style="display:flex;gap:14px;align-items:flex-start">
+          <div style="flex:1">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin-bottom:6px">Today · 13 flat pages</div>
+            <div style="display:flex;flex-wrap:wrap;gap:3px;width:174px">
+              <div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div>
+              <div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div>
+              <div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div><div style="width:30px;height:14px;background:#1B2027;border:1px solid #232A33;border-radius:2px"></div>
+            </div>
+            <div class="fn" style="margin-top:7px">Both companies on every screen. No scope.</div>
+          </div>
+          <div style="font-size:15px;color:#64748B;padding-top:22px">→</div>
+          <div style="flex:1">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748B;margin-bottom:6px">After · 5 scoped screens</div>
+            <div style="display:flex;flex-direction:column;gap:3px;width:200px">
+              <div style="height:14px;border-radius:3px;background:linear-gradient(90deg,rgba(59,130,246,.20),rgba(59,130,246,.06));border:1px solid #232A33;font-size:9.5px;color:#CBD5E1;display:flex;align-items:center;padding:0 6px">📊 Overview</div>
+              <div style="height:14px;border-radius:3px;background:linear-gradient(90deg,rgba(59,130,246,.20),rgba(59,130,246,.06));border:1px solid #232A33;font-size:9.5px;color:#CBD5E1;display:flex;align-items:center;padding:0 6px">💹 Nowcast</div>
+              <div style="height:14px;border-radius:3px;background:linear-gradient(90deg,rgba(59,130,246,.20),rgba(59,130,246,.06));border:1px solid #232A33;font-size:9.5px;color:#CBD5E1;display:flex;align-items:center;padding:0 6px">📺 Content Analytics</div>
+              <div style="height:14px;border-radius:3px;background:linear-gradient(90deg,rgba(59,130,246,.20),rgba(59,130,246,.06));border:1px solid #232A33;font-size:9.5px;color:#CBD5E1;display:flex;align-items:center;padding:0 6px">🚨 Anomalies</div>
+              <div style="height:14px;border-radius:3px;background:linear-gradient(90deg,rgba(59,130,246,.20),rgba(59,130,246,.06));border:1px solid #232A33;font-size:9.5px;color:#CBD5E1;display:flex;align-items:center;padding:0 6px">📋 Data Table</div>
+              <div style="height:14px;border-radius:3px;border:1px dashed #3B4457;font-size:9.5px;color:#94A3B8;display:flex;align-items:center;padding:0 6px">⇄ Compare</div>
+            </div>
+            <div class="fn" style="margin-top:7px">One company in scope, chosen once.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:9px 14px;border-color:#3D3320;background:#161B27">
+        <div style="display:flex;gap:9px">
+          <span style="color:#FCD34D;font-size:13px;line-height:1.2">⚠</span>
+          <div style="font-size:11.5px;color:#CBD5E1;line-height:1.5">The revenue nowcast has <span style="color:#FCD34D">never been scored against a printed result</span>. The Nowcast section states that in words; it must not render an empty track-record table, which would read as "no misses" when the truth is "never checked".</div>
+        </div>
+      </div>
+
     </div>
   </div>
 

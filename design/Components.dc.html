@@ -1,0 +1,376 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    .cmp * { box-sizing: border-box; }
+    .cmp { font-family: Inter, -apple-system, "Segoe UI", sans-serif; color: #F1F5F9; -webkit-font-smoothing: antialiased; }
+    .cmp .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .cmp .sechead { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; height: 26px; line-height: 17px; display: flex; align-items: flex-start; gap: 10px; }
+    .cmp .sechead .n { color: #64748B; font-weight: 500; }
+    .cmp .sechead em { font-style: normal; font-size: 11px; letter-spacing: 0; text-transform: none; color: #64748B; font-weight: 400; margin-left: auto; padding-top: 2px; }
+    .cmp .gap { margin-top: 16px; }
+    .cmp .card { background: #121620; border: 1px solid #232A33; border-radius: 8px; }
+    .cmp .grp-t { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #64748B; height: 15px; line-height: 15px; margin-bottom: 8px; }
+    .cmp .sw { display: flex; align-items: center; gap: 9px; height: 24px; }
+    .cmp .chip { width: 34px; height: 18px; border-radius: 3px; flex: none; border: 1px solid #232A33; }
+    .cmp .sw-n { font-size: 11.5px; color: #CBD5E1; width: 84px; flex: none; }
+    .cmp .sw-h { font-size: 11px; color: #64748B; }
+    .cmp .fn { font-size: 11px; color: #64748B; line-height: 1.45; }
+    .cmp table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .cmp th { background: #161B27; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; height: 34px; padding: 0 14px; text-align: left; border-bottom: 1px solid #232A33; }
+    .cmp td { height: 38px; padding: 0 14px; font-size: 13px; border-bottom: 1px solid #1B222C; color: #F1F5F9; white-space: nowrap; }
+    .cmp td.r, .cmp th.r { text-align: right; }
+    .cmp tr.hov { background: rgba(255,255,255,.02); }
+    .cmp .up { color: #34D399; } .cmp .dn { color: #F4576B; } .cmp .flat { color: #94A3B8; }
+    .cmp .dash { color: #64748B; }
+    .cmp .amber { color: #FCD34D; }
+    .cmp .badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 11.5px; font-weight: 500; border: 1px solid; white-space: nowrap; }
+    .cmp .kpi-l { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; height: 15px; line-height: 15px; }
+    .cmp .kpi-v { font-size: 30px; font-weight: 600; color: #F1F5F9; line-height: 38px; }
+    .cmp .kpi-d { font-size: 12px; font-weight: 500; height: 15px; line-height: 15px; }
+    .cmp .cht { font-size: 14px; font-weight: 600; line-height: 17px; }
+    .cmp .csub { font-size: 12px; color: #94A3B8; line-height: 15px; }
+    .cmp .read { font-size: 12px; color: #94A3B8; line-height: 16px; }
+    .cmp svg { display: block; }
+  </style>
+</helmet>
+<div class="cmp" style="box-sizing:border-box; width:1440px; min-height:1700px; background:#0C0E13; padding:24px 24px 0; overflow:hidden;">
+
+  <!-- ===== HEADER · 66 + 16 ===== -->
+  <div style="height:66px; border-bottom:1px solid #232A33; margin-bottom:16px;">
+    <div style="display:flex; align-items:baseline; gap:14px;">
+      <div style="font-size:28px; font-weight:600; letter-spacing:-.01em; line-height:34px;">Components</div>
+      <div style="font-size:12px; color:#64748B;">The design system · every board is built from exactly these · updated Aug 31, 2026 at 03:09 PM</div>
+      <div style="margin-left:auto; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8;">TIPS <span style="color:#0072B2;">■</span> &nbsp; SAREGAMA <span style="color:#D55E00;">■</span></div>
+    </div>
+    <div style="font-size:11px; color:#64748B; margin-top:6px;">Rendered specimens, not descriptions. If a component is not on this board it does not exist; if it is here, it is used identically on every screen.</div>
+  </div>
+
+  <!-- ===== 01 COLOUR · 26 + 198 + 16 ===== -->
+  <div class="sechead"><span class="n">01</span> Colour <em>every swatch carries its literal hex — no named aliases, no opacity tricks</em></div>
+  <div style="height:198px; display:flex; gap:12px;">
+
+    <div class="card" style="width:216px; padding:12px 14px;">
+      <div class="grp-t">Surfaces</div>
+      <div class="sw"><div class="chip" style="background:#0C0E13;"></div><div class="sw-n">page</div><div class="sw-h mono">#0C0E13</div></div>
+      <div class="sw"><div class="chip" style="background:#0A0C11;"></div><div class="sw-n">sidebar</div><div class="sw-h mono">#0A0C11</div></div>
+      <div class="sw"><div class="chip" style="background:#121620;"></div><div class="sw-n">card</div><div class="sw-h mono">#121620</div></div>
+      <div class="sw"><div class="chip" style="background:#161B27;"></div><div class="sw-n">card raised</div><div class="sw-h mono">#161B27</div></div>
+      <div class="sw"><div class="chip" style="background:#1B2027;"></div><div class="sw-n">muted</div><div class="sw-h mono">#1B2027</div></div>
+      <div class="sw"><div class="chip" style="background:#232A33;"></div><div class="sw-n">border</div><div class="sw-h mono">#232A33</div></div>
+    </div>
+
+    <div class="card" style="width:200px; padding:12px 14px;">
+      <div class="grp-t">Text</div>
+      <div class="sw"><div class="chip" style="background:#F1F5F9;"></div><div class="sw-n" style="width:70px;">foreground</div><div class="sw-h mono">#F1F5F9</div></div>
+      <div class="sw"><div class="chip" style="background:#CBD5E1;"></div><div class="sw-n" style="width:70px;">dim</div><div class="sw-h mono">#CBD5E1</div></div>
+      <div class="sw"><div class="chip" style="background:#94A3B8;"></div><div class="sw-n" style="width:70px;">muted</div><div class="sw-h mono">#94A3B8</div></div>
+      <div class="sw"><div class="chip" style="background:#64748B;"></div><div class="sw-n" style="width:70px;">faint</div><div class="sw-h mono">#64748B</div></div>
+      <div class="sw"><div class="chip" style="background:#3B82F6;"></div><div class="sw-n" style="width:70px;">accent</div><div class="sw-h mono">#3B82F6</div></div>
+      <div class="sw"><div class="chip" style="background:#1B222C;"></div><div class="sw-n" style="width:70px;">bdr subtle</div><div class="sw-h mono">#1B222C</div></div>
+    </div>
+
+    <div class="card" style="width:200px; padding:12px 14px;">
+      <div class="grp-t">Semantic</div>
+      <div class="sw"><div class="chip" style="background:#34D399;"></div><div class="sw-n" style="width:70px;">good</div><div class="sw-h mono">#34D399</div></div>
+      <div class="sw"><div class="chip" style="background:#FCD34D;"></div><div class="sw-n" style="width:70px;">warning</div><div class="sw-h mono">#FCD34D</div></div>
+      <div class="sw"><div class="chip" style="background:#FB923C;"></div><div class="sw-n" style="width:70px;">serious</div><div class="sw-h mono">#FB923C</div></div>
+      <div class="sw"><div class="chip" style="background:#F4576B;"></div><div class="sw-n" style="width:70px;">critical</div><div class="sw-h mono">#F4576B</div></div>
+      <div class="sw"><div class="chip" style="background:#60A5FA;"></div><div class="sw-n" style="width:70px;">info</div><div class="sw-h mono">#60A5FA</div></div>
+      <div class="sw"><div class="chip" style="background:#E8EDF4;"></div><div class="sw-n" style="width:70px;">ref line</div><div class="sw-h mono">#E8EDF4</div></div>
+    </div>
+
+    <div class="card" style="flex:1; padding:12px 14px; display:flex; gap:16px;">
+      <div style="width:232px; flex:none;">
+        <div class="grp-t">Chart series — exactly three</div>
+        <div class="sw"><div class="chip" style="background:#0072B2;"></div><div class="sw-n" style="width:122px;">series 1 · TIPS</div><div class="sw-h mono">#0072B2</div></div>
+        <div class="sw"><div class="chip" style="background:#D55E00;"></div><div class="sw-n" style="width:122px;">series 2 · SAREGAMA</div><div class="sw-h mono">#D55E00</div></div>
+        <div class="sw"><div class="chip" style="background:#009E73;"></div><div class="sw-n" style="width:122px;">series 3 · other</div><div class="sw-h mono">#009E73</div></div>
+        <div class="sw"><div class="chip" style="background:#8B97A8;"></div><div class="sw-n" style="width:122px;">folded tail</div><div class="sw-h mono">#8B97A8</div></div>
+        <div class="sw"><div class="chip" style="background:#1B2027;"></div><div class="sw-n" style="width:122px;">chart grid</div><div class="sw-h mono">#1B2027</div></div>
+      </div>
+      <div style="border-left:1px solid #232A33; padding-left:16px; flex:1;">
+        <div class="grp-t">Why exactly three</div>
+        <div class="fn" style="color:#94A3B8;">Under deuteranopia and protanopia hue collapses onto a single blue–yellow axis. Every four-hue set tried failed an all-pairs colour-blindness check — the best candidate put blue and purple <span class="mono" style="color:#CBD5E1;">ΔE 0.3</span> apart under protanopia, which is indistinguishable.</div>
+        <div class="fn" style="margin-top:7px;">Three is a hard ceiling, not a preference. Beyond three series, <span style="color:#CBD5E1;">facet into small multiples</span> or fold the tail into <span class="mono" style="color:#8B97A8;">#8B97A8</span> and label it directly.</div>
+        <div class="fn" style="margin-top:7px;">TIPS is <span class="mono" style="color:#0072B2;">#0072B2</span> and SAREGAMA <span class="mono" style="color:#D55E00;">#D55E00</span> on every board — fixed, never reallocated by series order.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 02 TYPE · 26 + 156 + 16 ===== -->
+  <div class="gap"></div>
+  <div class="sechead"><span class="n">02</span> Type scale <em>Inter everywhere · JetBrains Mono for every figure in a table or KPI</em></div>
+  <div class="card" style="height:164px; padding:10px 16px; display:flex; gap:22px;">
+    <div style="flex:1;">
+      <div style="height:32px; display:flex; align-items:center; gap:14px;"><div style="font-size:28px; font-weight:600; letter-spacing:-.01em; line-height:32px;">Page title</div><div class="fn" style="margin-left:auto;">28 / 600 / Inter</div></div>
+      <div style="height:26px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8;">Section heading</div><div class="fn" style="margin-left:auto;">13 / 600 / caps / .06em / #94A3B8</div></div>
+      <div style="height:26px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div style="font-size:14px; font-weight:600;">Card title</div><div class="fn" style="margin-left:auto;">14 / 600</div></div>
+      <div style="height:26px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div style="font-size:12px; color:#94A3B8;">Card subtitle — what this chart answers</div><div class="fn" style="margin-left:auto;">12 / 400 / #94A3B8</div></div>
+      <div style="height:26px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div class="kpi-l">KPI label</div><div class="fn" style="margin-left:auto;">11 / 500 / caps / .06em</div></div>
+    </div>
+    <div style="flex:1;">
+      <div style="height:40px; display:flex; align-items:center; gap:14px;"><div class="kpi-v mono">45.91M</div><div class="fn" style="margin-left:auto;">30 / 600 / JetBrains Mono</div></div>
+      <div style="height:24px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div class="kpi-d up">▲ 3.14% vs prior 30d</div><div class="fn" style="margin-left:auto;">12 / 500</div></div>
+      <div style="height:24px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div style="font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8;">Table head</div><div class="fn" style="margin-left:auto;">11 / 500 / caps / .06em</div></div>
+      <div style="height:24px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div style="font-size:13px;">Table cell &nbsp;·&nbsp; <span class="mono">32,020,411</span></div><div class="fn" style="margin-left:auto;">13 / 400 · figures mono, right</div></div>
+      <div style="height:22px; display:flex; align-items:center; gap:14px; border-top:1px solid #1B222C;"><div class="fn">Footnote — 4.7% of channel-days repaired</div><div class="fn" style="margin-left:auto;">11 / #64748B</div></div>
+    </div>
+  </div>
+
+  <!-- ===== 03 KPI TILE · 26 + 152 + 16 ===== -->
+  <div class="gap"></div>
+  <div class="sechead"><span class="n">03</span> KPI tile <em>the ▲ ▼ — glyph is mandatory · colour is never the only encoding</em></div>
+  <div style="height:146px; display:flex; gap:12px;">
+
+    <div class="card" style="flex:1; padding:16px 16px 0; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="kpi-l">Daily views</div>
+      <div class="kpi-v mono" style="margin-top:8px;">45.91M</div>
+      <div class="kpi-d up" style="margin-top:6px;">▲ 3.14% <span style="color:#94A3B8; font-weight:400;">vs prior 30d</span></div>
+      <div style="margin-top:auto; height:40px; margin-left:-16px; margin-right:-16px;">
+        <svg width="100%" height="40" viewBox="0 0 320 40" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,32 24,30 48,34 72,27 96,29 120,24 144,26 168,20 192,22 216,16 240,18 264,12 288,13 320,7"/></svg>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1; padding:16px 16px 0; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="kpi-l">Share price</div>
+      <div class="kpi-v mono" style="margin-top:8px;">₹648.05</div>
+      <div class="kpi-d dn" style="margin-top:6px;">▼ 1.85% <span style="color:#94A3B8; font-weight:400;">on the day</span></div>
+      <div style="margin-top:auto; height:40px; margin-left:-16px; margin-right:-16px;">
+        <svg width="100%" height="40" viewBox="0 0 320 40" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,10 24,13 48,9 72,15 96,12 120,18 144,16 168,22 192,19 216,25 240,23 264,28 288,26 320,33"/></svg>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1; padding:16px 16px 0; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="kpi-l">Owned channels</div>
+      <div class="kpi-v mono" style="margin-top:8px;">16</div>
+      <div class="kpi-d flat" style="margin-top:6px;">— unchanged <span style="color:#64748B; font-weight:400;">29 of 29 days</span></div>
+      <div style="margin-top:auto; height:40px; margin-left:-16px; margin-right:-16px;">
+        <svg width="100%" height="40" viewBox="0 0 320 40" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,20 40,20 80,20 120,20 160,20 200,20 240,20 280,20 320,20"/></svg>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1; padding:16px 16px 0; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="kpi-l" style="color:#64748B;">Nowcast error vs print</div>
+      <div class="kpi-v mono" style="margin-top:8px; color:#64748B;">—</div>
+      <div class="kpi-d" style="margin-top:6px; color:#64748B; font-weight:400;">no estimate has been scored yet</div>
+      <div style="margin-top:auto; height:40px; margin-left:-16px; margin-right:-16px; position:relative;">
+        <svg width="100%" height="40" viewBox="0 0 320 40" preserveAspectRatio="none"><line x1="0" y1="27" x2="320" y2="27" stroke="#232A33" stroke-width="2" stroke-dasharray="5 6"/></svg>
+        <div class="fn" style="position:absolute; left:16px; top:2px;">no series — never draw a flat zero line</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 04 TABLE · 26 + 262 + 16 ===== -->
+  <div class="gap"></div>
+  <div class="sechead"><span class="n">04</span> Table <em>figures right-aligned, mono, tabular · an absent value is an em dash, never 0</em></div>
+  <div class="card" style="height:264px; overflow:hidden;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:290px;">Channel</th>
+          <th class="r" style="width:170px;">Daily views ⇅</th>
+          <th class="r" style="width:120px;">Δ 7d ⇅</th>
+          <th class="r" style="width:160px;">Subscribers ⇅</th>
+          <th style="width:190px;">Data quality</th>
+          <th style="color:#64748B; text-transform:none; letter-spacing:0;">specimen note</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tips Official</td><td class="r mono">32,020,411</td><td class="r mono up">▲ 2.41%</td><td class="r mono">82,200,000</td>
+          <td><span style="color:#34D399;">✓</span> <span style="color:#CBD5E1;">measured</span></td><td class="fn">normal row · 38px, border #1B222C</td>
+        </tr>
+        <tr class="hov">
+          <td>90's Gaane</td><td class="r mono">8,160,244</td><td class="r mono dn">▼ 1.12%</td><td class="r mono">21,440,900</td>
+          <td><span style="color:#34D399;">✓</span> <span style="color:#CBD5E1;">measured</span></td><td class="fn">hover · rgba(255,255,255,.02)</td>
+        </tr>
+        <tr>
+          <td>Tips Punjabi</td><td class="r mono">2,820,178</td><td class="r mono up">▲ 6.83%</td><td class="r mono">9,101,220</td>
+          <td><span style="color:#34D399;">✓</span> <span style="color:#CBD5E1;">measured</span></td><td class="fn">▲ / ▼ change glyph + colour</td>
+        </tr>
+        <tr>
+          <td>Tips Telugu</td><td class="r mono">1,500,062</td><td class="r mono dash">—</td><td class="r mono">4,620,300</td>
+          <td class="dash">— not computed</td><td class="fn">absent value — never 0, never blank</td>
+        </tr>
+        <tr>
+          <td>Tips Bhakti Prem</td><td class="r mono amber">705,812 <span style="font-size:11px;">▲!</span></td><td class="r mono up">▲ 0.94%</td><td class="r mono">2,310,540</td>
+          <td class="amber">▲ inferred · repaired</td><td class="fn">frozen cumulative count, back-filled</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="height:36px; display:flex; align-items:center; padding:0 14px; border-top:1px solid #232A33;">
+      <div class="fn">Showing 1–5 of 16 records &nbsp;·&nbsp; <span class="amber">1 value inferred (▲!)</span> — YouTube freezes cumulative counts on ~4.7% of channel-days</div>
+      <div style="margin-left:auto; display:flex; gap:14px; font-size:11px;"><span style="color:#64748B;">‹ Prev</span><span style="color:#60A5FA;">Next ›</span></div>
+    </div>
+  </div>
+
+  <!-- ===== 05 CHARTS · 26 + 200 + 16 ===== -->
+  <div class="gap"></div>
+  <div class="sechead"><span class="n">05</span> Chart specimens <em>every chart carries a one-line plain-language read-out beneath it</em></div>
+  <div style="height:200px; display:flex; gap:12px;">
+
+    <div class="card" style="flex:1; padding:12px 14px; display:flex; flex-direction:column;">
+      <div class="cht">Line + 30d MA</div>
+      <div class="csub" style="margin-top:2px;">Is daily reach trending, or is it noise?</div>
+      <svg width="100%" height="98" viewBox="0 0 315 98" style="margin-top:6px;">
+        <line x1="30" y1="14" x2="312" y2="14" stroke="#1B2027"/><line x1="30" y1="38" x2="312" y2="38" stroke="#1B2027"/><line x1="30" y1="62" x2="312" y2="62" stroke="#1B2027"/>
+        <line x1="30" y1="86" x2="312" y2="86" stroke="#232A33"/><line x1="30" y1="8" x2="30" y2="86" stroke="#232A33"/>
+        <text x="26" y="17" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">48M</text>
+        <text x="26" y="65" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">40M</text>
+        <polyline fill="none" stroke="#8B97A8" stroke-width="2" stroke-dasharray="4 4" points="36,62 56,60 76,58 96,56 116,54 136,50 156,48 176,45 196,42 216,39 236,36 256,33 276,30 296,27 310,25"/>
+        <polyline fill="none" stroke="#0072B2" stroke-width="2" points="36,60 56,52 76,68 96,45 116,58 136,40 156,52 176,35 196,48 216,30 236,42 256,26 276,38 296,22 310,29"/>
+        <text x="36" y="95" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">Aug 03</text>
+        <text x="310" y="95" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">Aug 31</text>
+      </svg>
+      <div class="read" style="margin-top:auto;">Daily views sat <span style="color:#CBD5E1;">above</span> the 30d MA on 19 of 29 days; the mean rose 3.14%.</div>
+    </div>
+
+    <div class="card" style="flex:1; padding:12px 14px; display:flex; flex-direction:column;">
+      <div class="cht">Bars</div>
+      <div class="csub" style="margin-top:2px;">Which months carried the catalogue reach?</div>
+      <svg width="100%" height="98" viewBox="0 0 315 98" style="margin-top:6px;">
+        <line x1="30" y1="14" x2="312" y2="14" stroke="#1B2027"/><line x1="30" y1="38" x2="312" y2="38" stroke="#1B2027"/><line x1="30" y1="62" x2="312" y2="62" stroke="#1B2027"/>
+        <line x1="30" y1="86" x2="312" y2="86" stroke="#232A33"/><line x1="30" y1="8" x2="30" y2="86" stroke="#232A33"/>
+        <text x="26" y="17" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">1.5B</text>
+        <text x="26" y="65" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">0.5B</text>
+        <g fill="#0072B2">
+          <rect x="36" y="56" width="18" height="30"/><rect x="59" y="42" width="18" height="44"/><rect x="82" y="48" width="18" height="38"/><rect x="105" y="30" width="18" height="56"/>
+          <rect x="128" y="36" width="18" height="50"/><rect x="151" y="24" width="18" height="62"/><rect x="174" y="38" width="18" height="48"/><rect x="197" y="16" width="18" height="70"/>
+          <rect x="220" y="28" width="18" height="58"/><rect x="243" y="12" width="18" height="74"/><rect x="266" y="20" width="18" height="66"/>
+        </g>
+        <rect x="289" y="30" width="18" height="56" fill="#0072B2" fill-opacity=".3" stroke="#0072B2" stroke-dasharray="3 3"/>
+        <text x="36" y="95" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">Sep 25</text>
+        <text x="310" y="95" text-anchor="end" fill="#FCD34D" font-size="9" font-family="JetBrains Mono">Aug 26*</text>
+      </svg>
+      <div class="read" style="margin-top:auto;">Aug is a <span class="amber">part-month</span> (29 of 31 days), hatched — never ranked against full months.</div>
+    </div>
+
+    <div class="card" style="flex:1; padding:12px 14px; display:flex; flex-direction:column;">
+      <div class="cht">Control chart ±2σ</div>
+      <div class="csub" style="margin-top:2px;">Is any day outside normal variation?</div>
+      <svg width="100%" height="98" viewBox="0 0 315 98" style="margin-top:6px;">
+        <rect x="30" y="22" width="282" height="56" fill="#0072B2" fill-opacity=".08"/>
+        <line x1="30" y1="86" x2="312" y2="86" stroke="#232A33"/><line x1="30" y1="8" x2="30" y2="86" stroke="#232A33"/>
+        <line x1="30" y1="50" x2="312" y2="50" stroke="#E8EDF4" stroke-opacity=".5"/>
+        <line x1="30" y1="22" x2="312" y2="22" stroke="#8B97A8" stroke-dasharray="4 4"/>
+        <line x1="30" y1="78" x2="312" y2="78" stroke="#8B97A8" stroke-dasharray="4 4"/>
+        <text x="312" y="19" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">+2σ</text>
+        <text x="312" y="88" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">−2σ</text>
+        <text x="26" y="53" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">μ</text>
+        <polyline fill="none" stroke="#009E73" stroke-width="2" points="36,52 56,46 76,55 96,48 116,58 136,44 156,50 176,56 196,42 216,54 236,16 256,50 276,46 296,53 310,49"/>
+        <circle cx="236" cy="16" r="6.5" fill="none" stroke="#F4576B" stroke-width="2"/>
+        <circle cx="236" cy="16" r="2.4" fill="#F4576B"/>
+        <text x="236" y="34" text-anchor="middle" fill="#F4576B" font-size="9" font-family="JetBrains Mono">Aug 21</text>
+      </svg>
+      <div class="read" style="margin-top:auto;"><span style="color:#F4576B;">1 breach</span> at +3.4σ on Aug 21, ringed. 28 of 29 days sit inside ±2σ.</div>
+    </div>
+
+    <div class="card" style="flex:1; padding:12px 14px; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:baseline;">
+        <div class="cht">Indexed to 100</div>
+        <div style="margin-left:auto; display:flex; gap:4px; font-size:11px;">
+          <span style="padding:1px 7px; border-radius:9px; background:#1B2027; color:#F1F5F9;">30d</span>
+          <span style="padding:1px 7px; color:#64748B;">90d</span>
+        </div>
+      </div>
+      <div class="csub" style="margin-top:2px;">Views vs price on one shared axis — never dual-axis.</div>
+      <svg width="100%" height="98" viewBox="0 0 315 98" style="margin-top:6px;">
+        <line x1="30" y1="18" x2="312" y2="18" stroke="#1B2027"/><line x1="30" y1="80" x2="312" y2="80" stroke="#1B2027"/>
+        <line x1="30" y1="8" x2="30" y2="86" stroke="#232A33"/><line x1="30" y1="86" x2="312" y2="86" stroke="#232A33"/>
+        <line x1="30" y1="52" x2="312" y2="52" stroke="#E8EDF4" stroke-opacity=".5"/>
+        <text x="26" y="55" text-anchor="end" fill="#E8EDF4" font-size="9" font-family="JetBrains Mono">100</text>
+        <text x="26" y="21" text-anchor="end" fill="#94A3B8" font-size="9" font-family="JetBrains Mono">112</text>
+        <polyline fill="none" stroke="#0072B2" stroke-width="2" points="36,52 64,49 92,45 120,47 148,41 176,37 204,40 232,33 260,29 310,25"/>
+        <polyline fill="none" stroke="#D55E00" stroke-width="2" points="36,52 64,55 92,53 120,59 148,57 176,63 204,60 232,67 260,65 310,71"/>
+        <text x="308" y="20" text-anchor="end" fill="#0072B2" font-size="9" font-family="JetBrains Mono">Views 110.4</text>
+        <text x="308" y="84" text-anchor="end" fill="#D55E00" font-size="9" font-family="JetBrains Mono">Price 96.2</text>
+      </svg>
+      <div class="read" style="margin-top:auto;">Views lead price by 5d at <span class="mono">r=−0.07</span> — not significant at <span class="mono">n=29</span> (critical <span class="mono">r=0.37</span>).</div>
+    </div>
+  </div>
+
+  <!-- ===== 06 STATUS · 26 + 100 + 16 ===== -->
+  <div class="gap"></div>
+  <div class="sechead"><span class="n">06</span> Status &amp; badges <em>colour + glyph + word · all three, always</em></div>
+  <div class="card" style="height:112px; padding:14px 16px; display:flex; gap:16px;">
+    <div style="width:620px; flex:none;">
+      <div style="display:flex; gap:10px;">
+        <span class="badge" style="color:#34D399; border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.08);">✓ Good</span>
+        <span class="badge" style="color:#FCD34D; border-color:rgba(252,211,77,.35); background:rgba(252,211,77,.08);">▲ Warning</span>
+        <span class="badge" style="color:#FB923C; border-color:rgba(251,146,60,.35); background:rgba(251,146,60,.08);">◆ Serious</span>
+        <span class="badge" style="color:#F4576B; border-color:rgba(244,87,107,.35); background:rgba(244,87,107,.08);">✕ Critical</span>
+        <span class="badge" style="color:#60A5FA; border-color:rgba(96,165,250,.35); background:rgba(96,165,250,.08);">i Info</span>
+        <span class="badge" style="color:#94A3B8; border-color:#232A33; background:#161B27;">— Unknown</span>
+      </div>
+      <div style="display:flex; gap:9px; margin-top:12px; font-size:12px; align-items:center;">
+        <span style="color:#34D399;">✓ Fresh</span><span style="color:#232A33;">|</span>
+        <span style="color:#FCD34D;">▲ Stale 2d</span><span style="color:#232A33;">|</span>
+        <span style="color:#FB923C;">◆ Backfill running</span><span style="color:#232A33;">|</span>
+        <span style="color:#F4576B;">✕ Cron failed</span><span style="color:#232A33;">|</span>
+        <span style="color:#94A3B8;">— Never run</span>
+      </div>
+      <div class="fn" style="margin-top:10px;">The same four states, applied to pipeline health. Shapes stay attached to states across every board.</div>
+    </div>
+    <div style="border-left:1px solid #232A33; padding-left:16px; flex:1;">
+      <div class="fn" style="color:#94A3B8;">The rule: good-vs-bad is red-vs-green, which is exactly the axis a deuteranope or protanope loses. Colour therefore never carries the state on its own — every badge is <span style="color:#CBD5E1;">colour + a distinct glyph + the word</span>, and the glyph shapes (✓ ▲ ◆ ✕ —) are separable in pure greyscale.</div>
+      <div class="fn" style="margin-top:8px;">The same rule governs table deltas (▲ / ▼ / —) and chart breaches, which are <span style="color:#CBD5E1;">ringed</span> rather than merely recoloured.</div>
+    </div>
+  </div>
+
+  <!-- ===== 07 EMPTY & UNKNOWN · 26 + 146 ===== -->
+  <div class="gap"></div>
+  <div class="sechead"><span class="n">07</span> Empty &amp; unknown states <em>an empty table reads as "no misses" when the truth is "never checked"</em></div>
+  <div style="height:150px; display:flex; gap:12px;">
+
+    <div class="card" style="width:250px; padding:12px 14px; display:flex; flex-direction:column;">
+      <div class="grp-t">Absent value</div>
+      <div style="background:#161B27; border:1px solid #232A33; border-radius:5px; height:36px; display:flex; align-items:center; justify-content:flex-end; padding:0 14px;">
+        <span class="mono dash" style="font-size:13px;">—</span>
+      </div>
+      <div class="fn" style="margin-top:auto;">Use when the value was never collected or cannot be computed. <span style="color:#CBD5E1;">Never 0, NaN or a blank cell</span> — each of those is a claim.</div>
+    </div>
+
+    <div class="card" style="width:250px; padding:12px 14px; display:flex; flex-direction:column;">
+      <div class="grp-t">No estimate stored</div>
+      <div style="height:36px; display:flex; align-items:center;">
+        <span class="badge" style="color:#94A3B8; border-color:#232A33; background:#161B27;">— No estimate stored yet</span>
+      </div>
+      <div class="fn" style="margin-top:auto;">Use where a nowcast slot exists but nothing was ever written to it. Distinct from a nowcast that ran and returned nothing.</div>
+    </div>
+
+    <div class="card" style="flex:1; padding:12px 14px; display:flex; flex-direction:column; border-color:rgba(252,211,77,.28);">
+      <div class="grp-t" style="color:#FCD34D;">Unscored track record</div>
+      <div style="display:flex; gap:14px; align-items:flex-start;">
+        <div style="width:132px; height:52px; border:1px dashed #232A33; border-radius:5px; display:flex; align-items:center; justify-content:center; flex:none;">
+          <span class="fn" style="color:#64748B;">no rows — by design</span>
+        </div>
+        <div>
+          <div style="font-size:12.5px; color:#FCD34D;">▲ Never scored against a printed result</div>
+          <div class="fn" style="margin-top:4px;">0 of 0 quarters checked. TIPS FY27 Q1 printed ₹106.51cr; no nowcast was stored before that print, so there is no error to report.</div>
+        </div>
+      </div>
+      <div class="fn" style="margin-top:auto; border-top:1px solid #1B222C; padding-top:6px;">Use this instead of an empty table anywhere a track record would go — an empty table is read as a clean record.</div>
+    </div>
+
+    <div class="card" style="width:296px; padding:12px 14px; display:flex; flex-direction:column;">
+      <div class="grp-t" style="color:#FCD34D;">Inferred, not measured</div>
+      <div style="height:36px; display:flex; align-items:center; gap:10px;">
+        <span class="mono amber" style="font-size:13px;">705,812 ▲!</span>
+        <span class="badge" style="color:#FCD34D; border-color:rgba(252,211,77,.35); background:rgba(252,211,77,.08);">▲ Repaired</span>
+      </div>
+      <div class="fn" style="margin-top:auto;">Use on any figure produced by back-fill rather than observation. Carries the amber flag plus a footnote, everywhere it appears.</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

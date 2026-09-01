@@ -1,0 +1,434 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    .nc *{box-sizing:border-box;margin:0;padding:0}
+    .nc{font-family:Inter,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;color:#F1F5F9}
+    .nc .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+    /* ---------- sidebar ---------- */
+    .nc .sb{width:290px;flex:0 0 290px;background:#0A0C11;border-right:1px solid #232A33;display:flex;flex-direction:column;padding:16px 0}
+    .nc .sb-brand{padding:2px 18px 14px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#64748B}
+    .nc .sw{padding:0 12px;display:flex;flex-direction:column;gap:6px}
+    .nc .sw-row{height:44px;border-radius:8px;display:flex;align-items:center;gap:10px;padding:0 12px;font-size:13px;font-weight:500}
+    .nc .sw-on{background:linear-gradient(90deg,#3B82F6 0%,#8B5CF6 100%);color:#FFFFFF;font-weight:600}
+    .nc .sw-off{color:#94A3B8}
+    .nc .sw-tick{font-size:10px;letter-spacing:.06em;margin-left:auto;opacity:.85}
+    .nc .div{height:1px;background:#232A33;margin:16px 0}
+    .nc .nav{padding:0 12px;display:flex;flex-direction:column;gap:2px}
+    .nc .nav a{height:40px;border-radius:8px;display:flex;align-items:center;gap:10px;padding:0 12px;font-size:13px;color:#94A3B8;text-decoration:none}
+    .nc .nav a.on{background:rgba(59,130,246,.12);color:#60A5FA;font-weight:600}
+    .nc .sb-foot{margin-top:auto;padding:12px 22px 2px;display:flex;align-items:center;justify-content:space-between;color:#64748B;font-size:14px}
+
+    /* ---------- shell ---------- */
+    .nc .content{flex:1;min-width:0;display:flex;flex-direction:column}
+    .nc .hdr{padding:20px 24px;border-bottom:1px solid #232A33;display:flex;align-items:flex-end;justify-content:space-between}
+    .nc .h1{font-size:28px;font-weight:600;letter-spacing:-.01em}
+    .nc .h1sub{font-size:12px;color:#64748B;margin-top:5px}
+    .nc .ctl{display:flex;align-items:center;gap:10px}
+    .nc .lbl{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8}
+    .nc .sel{height:32px;border:1px solid #232A33;background:#161B27;border-radius:6px;padding:0 26px 0 10px;font-size:12px;color:#CBD5E1;display:flex;align-items:center;position:relative}
+    .nc .sel:after{content:"▾";position:absolute;right:9px;color:#64748B;font-size:10px}
+    .nc .btn{height:32px;border-radius:6px;padding:0 12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px}
+    .nc .btn-p{background:#3B82F6;color:#fff}
+    .nc .btn-o{border:1px solid #232A33;color:#CBD5E1;background:transparent}
+
+    .nc .tabs{display:flex;gap:0;padding:0 24px;border-bottom:1px solid #232A33;background:#0C0E13}
+    .nc .tab{height:44px;display:flex;align-items:center;padding:0 16px;font-size:13px;font-weight:500;color:#64748B;border-bottom:2px solid transparent;margin-bottom:-1px}
+    .nc .tab.on{color:#F1F5F9;border-bottom-color:#3B82F6;font-weight:600}
+
+    .nc .main{padding:18px 24px 10px}
+    .nc .sh{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8;margin-bottom:10px;display:flex;align-items:baseline;gap:10px}
+    .nc .sh .shn{font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:#64748B}
+    .nc .card{background:#121620;border:1px solid #232A33;border-radius:8px}
+    .nc .ct{font-size:14px;font-weight:600}
+    .nc .cs{font-size:12px;color:#94A3B8;margin-top:3px}
+    .nc .fn{font-size:11px;color:#64748B}
+
+    /* ---------- kpi ---------- */
+    .nc .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .nc .kpi{background:#121620;border:1px solid #232A33;border-radius:8px;padding:16px 16px 0;overflow:hidden;position:relative;height:148px;display:flex;flex-direction:column}
+    .nc .kv{font-size:30px;font-weight:600;line-height:1.1;margin-top:8px}
+    .nc .kd{font-size:12px;font-weight:500;margin-top:7px}
+    .nc .spark{margin-top:auto;margin-left:-16px;margin-right:-16px;display:block}
+    .up{color:#34D399}.dn{color:#F4576B}.fl{color:#94A3B8}
+    .nc .amber{color:#FCD34D}
+
+    /* ---------- table ---------- */
+    .nc .tbl{width:100%;border-collapse:collapse}
+    .nc .tbl th{background:#161B27;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#94A3B8;text-align:left;padding:0 14px;height:42px;border-bottom:1px solid #232A33;white-space:nowrap}
+    .nc .tbl td{height:38px;padding:0 14px;font-size:13px;border-bottom:1px solid #1B222C;color:#CBD5E1;white-space:nowrap}
+    .nc .tbl tr:last-child td{border-bottom:none}
+    .nc .num{text-align:right;font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;color:#F1F5F9}
+    .nc .tfoot{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-top:1px solid #232A33;background:#0F131B;font-size:11px;color:#64748B}
+    .nc .pg{display:flex;gap:6px}
+    .nc .pg span{border:1px solid #232A33;border-radius:5px;padding:3px 9px;color:#94A3B8}
+    .nc .tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 7px;border-radius:4px;border:1px solid #232A33;background:#161B27;color:#94A3B8}
+  </style>
+</helmet>
+
+<div class="nc" style="width:1440px;height:2300px;background:#0C0E13;display:flex;overflow:hidden">
+
+  <!-- ============ SIDEBAR ============ -->
+  <div class="sb">
+    <div class="sb-brand">Tusk · Music Terminal</div>
+    <div class="sw">
+      <div class="sw-row sw-on"><span>♪</span><span>TIPS Music</span><span class="sw-tick mono">TIPSMUSIC</span></div>
+      <div class="sw-row sw-off"><span>♪</span><span>Saregama</span><span class="sw-tick mono">SAREGAMA</span></div>
+    </div>
+    <div class="div"></div>
+    <div class="nav">
+      <a href="#"><span>📊</span>Overview</a>
+      <a href="#" class="on"><span>💹</span>Nowcast</a>
+      <a href="#"><span>📺</span>Content Analytics</a>
+      <a href="#"><span>🚨</span>Anomalies</a>
+      <a href="#"><span>📋</span>Data Table</a>
+    </div>
+    <div class="div"></div>
+    <div class="nav"><a href="#"><span>⇄</span>Compare</a></div>
+    <div class="sb-foot"><span>🌙</span><span>‹</span></div>
+  </div>
+
+  <!-- ============ CONTENT ============ -->
+  <div class="content">
+
+    <div class="hdr">
+      <div>
+        <div class="h1">Nowcast</div>
+        <div class="h1sub">TIPS Music · music line · Updated Aug 31, 2026 at 03:09 PM</div>
+      </div>
+      <div class="ctl">
+        <span class="lbl">Period:</span>
+        <div class="sel">FY27 Q2 (current)</div>
+        <div class="btn btn-p"><span>⟳</span>Refresh</div>
+        <div class="btn btn-o"><span>⬇</span>Export</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on">Estimate</div>
+      <div class="tab">Drivers</div>
+    </div>
+
+    <div class="main">
+
+      <!-- 1. QUARTER DATELINE -->
+      <div class="card" style="padding:14px 16px 15px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <div style="font-size:14px;font-weight:600">FY27 Q2 <span style="color:#64748B;font-weight:400">·</span> <span class="mono" style="font-weight:500;color:#CBD5E1">1 Jul – 30 Sep 2026</span></div>
+          <div style="font-size:12px;color:#94A3B8"><span class="mono" style="color:#F1F5F9">67%</span> elapsed <span style="color:#64748B">·</span> <span class="mono" style="color:#F1F5F9">62</span> of <span class="mono">92</span> days measured <span style="color:#64748B">·</span> <span class="mono" style="color:#FCD34D">30</span> days to quarter end</div>
+        </div>
+        <div style="margin-top:11px;height:6px;border-radius:3px;background:#1B2027;overflow:hidden">
+          <div style="width:67%;height:6px;border-radius:3px;background:#0072B2"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px" class="fn">
+          <span>1 Jul</span><span>today · 31 Aug</span><span>30 Sep</span>
+        </div>
+      </div>
+
+      <!-- 2. THE ESTIMATE -->
+      <div class="sh" style="margin-top:14px">The estimate <span class="shn">Music-line net revenue, ₹ crore</span></div>
+      <div class="card" style="padding:16px;display:flex;gap:20px;align-items:stretch">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <div class="ct">FY27 Q2 revenue band</div>
+          <div class="cs">Modelled from measured catalogue reach; not a company guidance figure.</div>
+          <svg width="700" height="104" viewBox="0 0 700 104" style="margin-top:10px;display:block">
+            <!-- axis -->
+            <line x1="0" y1="70" x2="694" y2="70" stroke="#232A33" stroke-width="1"/>
+            <g stroke="#232A33" stroke-width="1">
+              <line x1="0" y1="70" x2="0" y2="75"/><line x1="127.3" y1="70" x2="127.3" y2="75"/><line x1="254.5" y1="70" x2="254.5" y2="75"/>
+              <line x1="381.8" y1="70" x2="381.8" y2="75"/><line x1="509.1" y1="70" x2="509.1" y2="75"/><line x1="636.4" y1="70" x2="636.4" y2="75"/>
+            </g>
+            <g font-family="JetBrains Mono, monospace" font-size="10" fill="#64748B" text-anchor="middle">
+              <text x="4" y="87">70</text>
+              <text x="127.3" y="87">80</text>
+              <text x="254.5" y="87">90</text>
+              <text x="381.8" y="87">100</text>
+              <text x="509.1" y="87">110</text>
+              <text x="636.4" y="87">120</text>
+            </g>
+            <!-- band -->
+            <rect x="90.4" y="34" width="501.4" height="20" rx="4" fill="#0072B2" opacity="0.28"/>
+            <rect x="90.4" y="34" width="501.4" height="20" rx="4" fill="none" stroke="#0072B2" stroke-width="1.5"/>
+            <!-- ticks -->
+            <line x1="90.4" y1="26" x2="90.4" y2="62" stroke="#0072B2" stroke-width="2"/>
+            <line x1="591.8" y1="26" x2="591.8" y2="62" stroke="#0072B2" stroke-width="2"/>
+            <line x1="341.1" y1="20" x2="341.1" y2="68" stroke="#E8EDF4" stroke-width="2"/>
+            <!-- prior print reference -->
+            <line x1="464.7" y1="24" x2="464.7" y2="64" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3 3"/>
+            <text x="464.7" y="18" text-anchor="middle" font-size="10" fill="#94A3B8">Q1 print 106.51</text>
+            <!-- labels -->
+            <g font-family="Inter, sans-serif">
+              <text x="90.4" y="16" text-anchor="start" font-size="10" fill="#94A3B8" letter-spacing="0.6">LOW</text>
+              <text x="591.8" y="16" text-anchor="end" font-size="10" fill="#94A3B8" letter-spacing="0.6">HIGH</text>
+            </g>
+            <g font-family="JetBrains Mono, monospace" font-weight="500">
+              <text x="90.4" y="102" text-anchor="start" font-size="13" fill="#CBD5E1">₹77.1cr</text>
+              <text x="341.1" y="102" text-anchor="middle" font-size="13" fill="#CBD5E1">mid ₹96.8cr</text>
+              <text x="591.8" y="102" text-anchor="end" font-size="13" fill="#CBD5E1">₹116.5cr</text>
+            </g>
+          </svg>
+          <div style="display:flex;align-items:flex-end;gap:26px;margin-top:auto;padding-top:12px">
+            <div>
+              <div class="lbl">Midpoint estimate</div>
+              <div class="mono" style="font-size:31px;font-weight:600;line-height:1.05;margin-top:5px">₹96.8<span style="font-size:17px;color:#94A3B8">cr</span></div>
+            </div>
+            <div style="padding-bottom:6px">
+              <div class="lbl">Band width</div>
+              <div class="mono" style="font-size:15px;margin-top:6px;color:#CBD5E1">±20.4% <span style="color:#64748B">(₹39.4cr)</span></div>
+            </div>
+            <div style="padding-bottom:6px">
+              <div class="lbl">vs FY27 Q1 print</div>
+              <div class="mono dn" style="font-size:15px;margin-top:6px">▼ −9.1%</div>
+            </div>
+            <div style="padding-bottom:6px">
+              <div class="lbl">Repaired days in window</div>
+              <div class="mono amber" style="font-size:15px;margin-top:6px">⚠ 4.7%</div>
+            </div>
+          </div>
+          <div class="fn" style="margin-top:10px;padding-top:10px;border-top:1px solid #1B222C;line-height:1.5">
+            Band edges are the 10th and 90th percentile of 4,000 draws over the CPM band and the seasonal-ramp factor. Extrapolation error on the 30 unmeasured days is included; a catalogue release or takedown inside those days is not.
+          </div>
+        </div>
+
+        <div style="width:330px;flex:0 0 330px;border-left:1px solid #232A33;padding-left:20px;display:flex;flex-direction:column">
+          <div style="border:1px solid #FCD34D;background:rgba(252,211,77,.08);border-radius:8px;padding:12px 13px">
+            <div style="display:flex;align-items:center;gap:8px;color:#FCD34D;font-size:13px;font-weight:600;letter-spacing:.03em">
+              <span style="font-size:15px">⚠</span><span>UNSCORED</span>
+            </div>
+            <div style="font-size:12px;color:#FCD34D;margin-top:8px;line-height:1.55;font-weight:500">No quarter has been checked yet.</div>
+            <div style="font-size:12px;color:#CBD5E1;margin-top:8px;line-height:1.55">
+              Never compared against a printed result: no measured hit-rate, no error history, no calibration. Treat it as a hypothesis, not a number you can size a position on.
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#94A3B8">Quarters scored to date</span><span class="mono" style="color:#F1F5F9">0</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#94A3B8">Mean absolute error</span><span class="mono" style="color:#64748B">—</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#94A3B8">Hit-rate inside band</span><span class="mono" style="color:#64748B">—</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#94A3B8">Next scoring date</span><span class="mono" style="color:#CBD5E1">~05 Nov 2026</span></div>
+          </div>
+          <div class="fn" style="margin-top:auto;padding-top:12px;line-height:1.5">Scoring runs when the FY27 Q2 filing lands.</div>
+        </div>
+      </div>
+
+      <!-- 3. KPI TILES -->
+      <div style="height:16px"></div>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="lbl">Last printed · FY27 Q1</div>
+          <div class="kv mono">₹106.51<span style="font-size:16px;color:#94A3B8">cr</span></div>
+          <div class="kd up">▲ +2.5% vs FY26 Q4 (₹103.93cr)</div>
+          <svg class="spark" width="212" height="34" viewBox="0 0 180 34" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity="0.6" stroke-width="2" points="0.0,32.0 25.7,25.4 51.4,20.1 77.1,13.9 102.9,6.2 128.6,10.6 154.3,4.8 180.0,2.0"/>
+          </svg>
+        </div>
+        <div class="kpi">
+          <div class="lbl">YoY · Q1 vs Q1</div>
+          <div class="kv mono up">+20.9%</div>
+          <div class="kd up">▲ ₹88.07cr → ₹106.51cr, Q1 on Q1</div>
+          <svg class="spark" width="212" height="34" viewBox="0 0 180 34" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity="0.6" stroke-width="2" points="0.0,32.0 25.7,27.9 51.4,21.2 77.1,14.7 102.9,8.5 128.6,11.1 154.3,5.6 180.0,2.0"/>
+          </svg>
+        </div>
+        <div class="kpi">
+          <div class="lbl">FY26 full year</div>
+          <div class="kv mono">₹375.51<span style="font-size:16px;color:#94A3B8">cr</span></div>
+          <div class="kd up">▲ +27.3% on FY25 · audited</div>
+          <svg class="spark" width="212" height="34" viewBox="0 0 180 34" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity="0.6" stroke-width="2" points="0.0,32.0 25.7,25.5 51.4,18.7 77.1,14.8 102.9,8.9 128.6,6.9 154.3,4.0 180.0,2.0"/>
+          </svg>
+        </div>
+        <div class="kpi">
+          <div class="lbl">Quarter progress</div>
+          <div class="kv mono">67%</div>
+          <div class="kd fl">— 62 of 92 days measured · 30 remain</div>
+          <svg class="spark" width="212" height="34" viewBox="0 0 180 34" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity="0.6" stroke-width="2" points="0.0,32.0 25.7,28.0 51.4,23.9 77.1,19.9 102.9,15.9 128.6,11.9 154.3,7.4 180.0,2.0"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 4. BAND EVOLUTION CHART -->
+      <div style="height:16px"></div>
+      <div class="card" style="padding:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <div class="ct">How the FY27 Q2 band has moved, day by day</div>
+            <div class="cs">Each day re-runs the whole quarter estimate on the reach measured so far. Does the band narrow as the quarter fills in?</div>
+          </div>
+          <div style="display:flex;gap:4px;flex:0 0 auto">
+            <div style="font-size:11px;padding:4px 9px;border-radius:5px;background:#1B2027;color:#F1F5F9">Band</div>
+            <div style="font-size:11px;padding:4px 9px;border-radius:5px;color:#64748B">Midpoint only</div>
+            <div style="font-size:11px;padding:4px 9px;border-radius:5px;color:#64748B">Width %</div>
+          </div>
+        </div>
+
+        <svg width="1070" height="250" viewBox="0 0 1102 258" preserveAspectRatio="none" style="margin-top:10px;display:block">
+          <g stroke="#1B2027" stroke-width="1">
+            <line x1="62" y1="236" x2="1092" y2="236"/>
+            <line x1="62" y1="186" x2="1092" y2="186"/>
+            <line x1="62" y1="136" x2="1092" y2="136"/>
+            <line x1="62" y1="86"  x2="1092" y2="86"/>
+            <line x1="62" y1="36"  x2="1092" y2="36"/>
+          </g>
+          <line x1="62" y1="236" x2="1092" y2="236" stroke="#232A33" stroke-width="1"/>
+          <line x1="62" y1="16" x2="62" y2="236" stroke="#232A33" stroke-width="1"/>
+          <g font-family="JetBrains Mono, monospace" font-size="11" fill="#94A3B8" text-anchor="end">
+            <text x="54" y="240">40</text><text x="54" y="190">70</text><text x="54" y="140">100</text><text x="54" y="90">130</text><text x="54" y="40">160</text>
+          </g>
+          <text x="16" y="130" font-size="10" fill="#64748B" transform="rotate(-90 16 130)" text-anchor="middle" font-family="Inter, sans-serif">₹ crore</text>
+
+          <rect x="752.4" y="16" width="339.6" height="220" fill="#0A0C11" opacity="0.55"/>
+          <line x1="752.4" y1="16" x2="752.4" y2="236" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="4 4" opacity="0.7"/>
+          <text x="922" y="196" text-anchor="middle" font-size="12" fill="#64748B" font-family="Inter, sans-serif">30 days not yet measured — band will keep narrowing</text>
+          <text x="748" y="28" text-anchor="end" font-size="10" fill="#CBD5E1" font-family="Inter, sans-serif">today</text>
+
+          <line x1="62" y1="125.1" x2="752.4" y2="125.1" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="2 4" opacity="0.5"/>
+          <text x="68" y="121" font-size="10" fill="#94A3B8" font-family="Inter, sans-serif">FY27 Q1 printed ₹106.51cr</text>
+
+          <polygon fill="#0072B2" opacity="0.22" points="62.0,83.2 73.3,82.1 84.6,81.3 96.0,80.9 107.3,80.8 118.6,81.0 129.9,81.5 141.2,82.2 152.5,82.9 163.9,83.6 175.2,84.1 186.5,84.6 197.8,84.9 209.1,85.2 220.5,85.5 231.8,86.0 243.1,86.6 254.4,87.5 265.7,88.7 277.1,90.0 288.4,91.5 299.7,93.0 311.0,94.4 322.3,95.5 333.6,96.4 345.0,96.9 356.3,97.2 367.6,97.1 378.9,96.9 390.2,96.5 401.6,96.2 412.9,96.0 424.2,96.0 435.5,96.1 446.8,96.4 458.2,96.7 469.5,97.1 480.8,97.5 492.1,97.7 503.4,97.8 514.7,97.8 526.1,97.7 537.4,97.6 548.7,97.5 560.0,97.5 571.3,97.8 582.7,98.4 594.0,99.1 605.3,100.1 616.6,101.3 627.9,102.6 639.3,103.8 650.6,104.9 661.9,105.9 673.2,106.7 684.5,107.3 695.8,107.7 707.2,108.1 718.5,108.5 729.8,108.9 741.1,109.5 752.4,108.5 752.4,174.2 741.1,177.9 729.8,179.4 718.5,180.8 707.2,182.2 695.8,183.5 684.5,184.6 673.2,185.5 661.9,186.2 650.6,186.7 639.3,186.9 627.9,187.1 616.6,187.2 605.3,187.4 594.0,187.7 582.7,188.2 571.3,189.0 560.0,190.0 548.7,191.1 537.4,192.5 526.1,193.8 514.7,195.1 503.4,196.4 492.1,197.4 480.8,198.4 469.5,199.2 458.2,200.0 446.8,200.8 435.5,201.7 424.2,202.7 412.9,203.8 401.6,205.2 390.2,206.6 378.9,208.0 367.6,209.3 356.3,210.5 345.0,211.4 333.6,211.9 322.3,212.1 311.0,212.0 299.7,211.7 288.4,211.2 277.1,210.8 265.7,210.5 254.4,210.4 243.1,210.6 231.8,210.9 220.5,211.5 209.1,212.2 197.8,212.9 186.5,213.6 175.2,214.2 163.9,214.7 152.5,215.0 141.2,215.3 129.9,215.6 118.6,216.1 107.3,216.9 96.0,218.0 84.6,219.4 73.3,221.2 62.0,223.2"/>
+          <polyline fill="none" stroke="#0072B2" stroke-width="1" opacity="0.65" points="62.0,83.2 73.3,82.1 84.6,81.3 96.0,80.9 107.3,80.8 118.6,81.0 129.9,81.5 141.2,82.2 152.5,82.9 163.9,83.6 175.2,84.1 186.5,84.6 197.8,84.9 209.1,85.2 220.5,85.5 231.8,86.0 243.1,86.6 254.4,87.5 265.7,88.7 277.1,90.0 288.4,91.5 299.7,93.0 311.0,94.4 322.3,95.5 333.6,96.4 345.0,96.9 356.3,97.2 367.6,97.1 378.9,96.9 390.2,96.5 401.6,96.2 412.9,96.0 424.2,96.0 435.5,96.1 446.8,96.4 458.2,96.7 469.5,97.1 480.8,97.5 492.1,97.7 503.4,97.8 514.7,97.8 526.1,97.7 537.4,97.6 548.7,97.5 560.0,97.5 571.3,97.8 582.7,98.4 594.0,99.1 605.3,100.1 616.6,101.3 627.9,102.6 639.3,103.8 650.6,104.9 661.9,105.9 673.2,106.7 684.5,107.3 695.8,107.7 707.2,108.1 718.5,108.5 729.8,108.9 741.1,109.5 752.4,108.5"/>
+          <polyline fill="none" stroke="#0072B2" stroke-width="1" opacity="0.65" points="62.0,223.2 73.3,221.2 84.6,219.4 96.0,218.0 107.3,216.9 118.6,216.1 129.9,215.6 141.2,215.3 152.5,215.0 163.9,214.7 175.2,214.2 186.5,213.6 197.8,212.9 209.1,212.2 220.5,211.5 231.8,210.9 243.1,210.6 254.4,210.4 265.7,210.5 277.1,210.8 288.4,211.2 299.7,211.7 311.0,212.0 322.3,212.1 333.6,211.9 345.0,211.4 356.3,210.5 367.6,209.3 378.9,208.0 390.2,206.6 401.6,205.2 412.9,203.8 424.2,202.7 435.5,201.7 446.8,200.8 458.2,200.0 469.5,199.2 480.8,198.4 492.1,197.4 503.4,196.4 514.7,195.1 526.1,193.8 537.4,192.5 548.7,191.1 560.0,190.0 571.3,189.0 582.7,188.2 594.0,187.7 605.3,187.4 616.6,187.2 627.9,187.1 639.3,186.9 650.6,186.7 661.9,186.2 673.2,185.5 684.5,184.6 695.8,183.5 707.2,182.2 718.5,180.8 729.8,179.4 741.1,177.9 752.4,174.2"/>
+          <polyline fill="none" stroke="#0072B2" stroke-width="2" points="62.0,153.2 73.3,151.6 84.6,150.4 96.0,149.4 107.3,148.8 118.6,148.6 129.9,148.6 141.2,148.7 152.5,149.0 163.9,149.1 175.2,149.2 186.5,149.1 197.8,148.9 209.1,148.7 220.5,148.5 231.8,148.4 243.1,148.6 254.4,149.0 265.7,149.6 277.1,150.4 288.4,151.4 299.7,152.3 311.0,153.2 322.3,153.8 333.6,154.1 345.0,154.1 356.3,153.8 367.6,153.2 378.9,152.4 390.2,151.6 401.6,150.7 412.9,149.9 424.2,149.3 435.5,148.9 446.8,148.6 458.2,148.4 469.5,148.2 480.8,147.9 492.1,147.6 503.4,147.1 514.7,146.5 526.1,145.7 537.4,145.0 548.7,144.3 560.0,143.8 571.3,143.4 582.7,143.3 594.0,143.4 605.3,143.8 616.6,144.3 627.9,144.8 639.3,145.4 650.6,145.8 661.9,146.0 673.2,146.1 684.5,145.9 695.8,145.6 707.2,145.2 718.5,144.7 729.8,144.2 741.1,143.7 752.4,141.3"/>
+          <circle cx="752.4" cy="141.3" r="3.5" fill="#0072B2" stroke="#0C0E13" stroke-width="1.5"/>
+          <text x="762" y="139" font-size="11" fill="#CBD5E1" font-family="JetBrains Mono, monospace">96.8</text>
+          <text x="762" y="177" font-size="10" fill="#94A3B8" font-family="JetBrains Mono, monospace">77.1</text>
+          <text x="762" y="106" font-size="10" fill="#94A3B8" font-family="JetBrains Mono, monospace">116.5</text>
+
+          <line x1="333.6" y1="16" x2="333.6" y2="236" stroke="#FCD34D" stroke-width="1" opacity="0.45"/>
+          <circle cx="333.6" cy="154.1" r="3" fill="#FCD34D"/>
+          <text x="339.6" y="30" font-size="10" fill="#FCD34D" font-family="Inter, sans-serif">⚠ 21–25 Jul: frozen counts, repaired</text>
+
+          <g font-size="11" fill="#94A3B8" font-family="Inter, sans-serif" text-anchor="middle">
+            <text x="62" y="252">1 Jul</text>
+            <text x="220.5" y="252">15 Jul</text>
+            <text x="412.9" y="252">1 Aug</text>
+            <text x="571.3" y="252">15 Aug</text>
+            <text x="752.4" y="252">31 Aug</text>
+            <text x="922.2" y="252">15 Sep</text>
+            <text x="1092" y="252" text-anchor="end">30 Sep</text>
+          </g>
+        </svg>
+
+        <div style="display:flex;gap:18px;align-items:center;margin-top:10px">
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94A3B8"><span style="width:18px;height:3px;background:#0072B2;display:inline-block;border-radius:2px"></span>Midpoint</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94A3B8"><span style="width:18px;height:10px;background:#0072B2;opacity:.28;display:inline-block;border-radius:2px"></span>Low–high band</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#94A3B8"><span style="width:18px;height:0;border-top:1px dashed #E8EDF4;display:inline-block"></span>FY27 Q1 printed result</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:#FCD34D"><span style="width:18px;height:0;border-top:1px solid #FCD34D;display:inline-block"></span>Inferred / repaired days</span>
+        </div>
+        <div style="font-size:12px;color:#94A3B8;margin-top:8px;line-height:1.55">
+          The band has narrowed from ±₹42.0cr on 1 Jul to ±₹19.7cr today — width falls because measured days replace extrapolated ones, not because conviction rose. The midpoint has drifted ₹8.8cr in 62 days and has sat below the FY27 Q1 print throughout; five late-July days were frozen and repaired, so they are inferred, not measured.
+        </div>
+      </div>
+
+      <!-- 5. REPORTED FINANCIALS -->
+      <div class="sh" style="margin-top:14px">Reported financials <span class="shn">exchange filings · the figures the nowcast is scored against</span></div>
+      <div class="card" style="overflow:hidden">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:150px">Company ⇅</th>
+              <th style="width:130px">Fiscal label ⇅</th>
+              <th>Line item</th>
+              <th class="num" style="width:130px;text-align:right">₹ crore ⇅</th>
+              <th style="width:240px">Source</th>
+              <th style="width:150px">Confirmed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="color:#F1F5F9"><span style="color:#0072B2">■</span> TIPS Music</td><td class="mono">FY27 Q1</td><td>Music revenue from operations</td><td class="num">106.51</td><td style="color:#94A3B8">NSE filing · 24 Jul 2026</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#0072B2">■</span> TIPS Music</td><td class="mono">FY26 Q4</td><td>Music revenue from operations</td><td class="num">103.93</td><td style="color:#94A3B8">NSE filing · 29 Apr 2026</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#0072B2">■</span> TIPS Music</td><td class="mono">FY26 Q1</td><td>Music revenue from operations</td><td class="num">88.07</td><td style="color:#94A3B8">NSE filing · 22 Jul 2025</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#0072B2">■</span> TIPS Music</td><td class="mono">FY26 FY</td><td>Music revenue from operations</td><td class="num">375.51</td><td style="color:#94A3B8">Annual report FY26 · audited</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#D55E00">■</span> Saregama</td><td class="mono">FY27 Q1</td><td>Music segment revenue</td><td class="num">184.60</td><td style="color:#94A3B8">BSE filing · 29 Jul 2026</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#D55E00">■</span> Saregama</td><td class="mono">FY26 Q4</td><td>Music segment revenue</td><td class="num">200.43</td><td style="color:#94A3B8">BSE filing · 06 May 2026</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#D55E00">■</span> Saregama</td><td class="mono">FY26 Q1</td><td>Music segment revenue</td><td class="num">143.28</td><td style="color:#94A3B8">BSE filing · 30 Jul 2025</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+            <tr><td style="color:#F1F5F9"><span style="color:#D55E00">■</span> Saregama</td><td class="mono">FY26 FY</td><td>Music segment revenue</td><td class="num">683.52</td><td style="color:#94A3B8">Annual report FY26 · audited</td><td><span class="up">✓</span> <span style="color:#CBD5E1">confirmed</span></td></tr>
+          </tbody>
+        </table>
+        <div class="tfoot">
+          <span>Showing 1–8 of 8 records · segment figures as disclosed, not restated</span>
+          <div class="pg"><span>‹ Prev</span><span>Next ›</span></div>
+        </div>
+      </div>
+
+      <!-- 6. TRACK RECORD -->
+      <div class="sh" style="margin-top:14px">Track record</div>
+      <div class="card" style="border-color:#FCD34D;background:rgba(252,211,77,.05);padding:0;overflow:hidden">
+        <div style="padding:16px 18px;border-bottom:1px solid #232A33">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span style="color:#FCD34D;font-size:15px">⚠</span>
+            <span style="font-size:14px;font-weight:600;color:#FCD34D">No estimate has been scored yet</span>
+          </div>
+          <div style="font-size:13px;color:#CBD5E1;margin-top:8px;line-height:1.6;max-width:900px">
+            The nowcast has never been checked against a printed result, so it carries no accuracy record and should not be relied on. The columns below are what this panel will hold once the first quarter is scored — they are shown greyed out as a preview, not as data.
+          </div>
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:180px">Quarter</th>
+              <th class="num" style="width:180px;text-align:right">Estimate (mid)</th>
+              <th class="num" style="width:180px;text-align:right">Actual</th>
+              <th class="num" style="width:180px;text-align:right">Error</th>
+              <th>Inside band?</th>
+            </tr>
+          </thead>
+          <tbody style="opacity:.42">
+            <tr><td class="mono" style="color:#64748B">FY27 Q2</td><td class="num" style="color:#64748B">—</td><td class="num" style="color:#64748B">—</td><td class="num" style="color:#64748B">—</td><td style="color:#64748B">—</td></tr>
+            <tr><td class="mono" style="color:#64748B">FY27 Q3</td><td class="num" style="color:#64748B">—</td><td class="num" style="color:#64748B">—</td><td class="num" style="color:#64748B">—</td><td style="color:#64748B">—</td></tr>
+          </tbody>
+        </table>
+        <div class="tfoot" style="background:transparent">
+          <span>Showing 0 scored quarters · 2 rows reserved · preview only, no values exist</span>
+          <div class="pg"><span style="opacity:.4">‹ Prev</span><span style="opacity:.4">Next ›</span></div>
+        </div>
+      </div>
+
+      <!-- 7. HOW THIS IS BUILT -->
+      <div class="sh" style="margin-top:14px">How this is built</div>
+      <div class="card" style="padding:16px 18px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0">
+          <div style="padding-right:18px">
+            <div class="lbl" style="color:#64748B">Step 1 · Measured</div>
+            <div style="font-size:13px;font-weight:600;margin-top:7px">Quarter-to-date reach</div>
+            <div class="mono" style="font-size:17px;margin-top:6px;color:#F1F5F9">2.846<span style="font-size:12px;color:#94A3B8">B views</span></div>
+            <div class="fn" style="margin-top:6px;line-height:1.5">16 owned channels, 62 days, daily deltas on cumulative counts.</div>
+          </div>
+          <div style="padding:0 18px;border-left:1px solid #232A33">
+            <div class="lbl" style="color:#64748B">Step 2 · Extrapolated</div>
+            <div style="font-size:13px;font-weight:600;margin-top:7px">Scaled on elapsed days</div>
+            <div class="mono" style="font-size:17px;margin-top:6px;color:#F1F5F9">×1.484<span style="font-size:12px;color:#94A3B8"> → 4.223B</span></div>
+            <div class="fn" style="margin-top:6px;line-height:1.5">92 ÷ 62, seasonally adjusted for the Sep festival ramp.</div>
+          </div>
+          <div style="padding:0 18px;border-left:1px solid #232A33">
+            <div class="lbl" style="color:#64748B">Step 3 · Converted</div>
+            <div style="font-size:13px;font-weight:600;margin-top:7px">Rate band per 1k views</div>
+            <div class="mono" style="font-size:17px;margin-top:6px;color:#F1F5F9">₹13.4 – ₹20.3</div>
+            <div class="fn" style="margin-top:6px;line-height:1.5">Language-weighted CPM band; the dominant source of band width.</div>
+          </div>
+          <div style="padding-left:18px;border-left:1px solid #232A33">
+            <div class="lbl" style="color:#64748B">Step 4 · Uplift</div>
+            <div style="font-size:13px;font-weight:600;margin-top:7px">Revenue not on YouTube</div>
+            <div class="mono" style="font-size:17px;margin-top:6px;color:#F1F5F9">+37% <span style="font-size:12px;color:#94A3B8">gross-up</span></div>
+            <div class="fn" style="margin-top:6px;line-height:1.5">DSP streaming, sync and licensing that YouTube reach cannot see.</div>
+          </div>
+        </div>
+        <div class="fn" style="margin-top:14px;padding-top:12px;border-top:1px solid #1B222C;line-height:1.55">
+          Every step above is a modelling choice, not a measurement, and the step-4 uplift has never been calibrated against a printed result — see the track record. YouTube freezes cumulative counts on ~4.7% of channel-days; repaired days are flagged amber wherever they enter a figure.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    .dt-root, .dt-root * { box-sizing: border-box; margin: 0; padding: 0; }
+    .dt-root {
+      font-family: Inter, -apple-system, "Segoe UI", sans-serif;
+      background: #0C0E13; color: #F1F5F9;
+      -webkit-font-smoothing: antialiased;
+    }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+    /* ---------- sidebar ---------- */
+    .sb { width: 290px; flex: 0 0 290px; background: #0A0C11; border-right: 1px solid #232A33; display: flex; flex-direction: column; }
+    .sb-brand { padding: 18px 16px 14px; }
+    .sb-brand .k { font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: #64748B; }
+    .sb-brand .n { font-size: 15px; font-weight: 600; color: #F1F5F9; margin-top: 3px; }
+    .sw { padding: 0 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .sw-row { height: 40px; border-radius: 8px; display: flex; align-items: center; gap: 9px; padding: 0 12px; font-size: 13px; font-weight: 500; }
+    .sw-row.on { background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%); color: #FFFFFF; font-weight: 600; }
+    .sw-row.off { color: #94A3B8; }
+    .sw-row .tick { margin-left: auto; font-size: 11px; opacity: .9; }
+    .sw-row .cd { width: 7px; height: 7px; border-radius: 50%; margin-left: auto; }
+    .divide { height: 1px; background: #232A33; margin: 0 12px; }
+    .nav { padding: 12px 12px 0; display: flex; flex-direction: column; gap: 2px; }
+    .nv { height: 40px; border-radius: 7px; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 13px; color: #94A3B8; }
+    .nv .g { width: 17px; font-size: 13px; text-align: center; }
+    .nv.on { background: rgba(59,130,246,.12); color: #60A5FA; font-weight: 600; }
+    .sb-foot { margin-top: auto; padding: 14px 20px 18px; display: flex; align-items: center; justify-content: space-between; color: #64748B; font-size: 13px; border-top: 1px solid #232A33; }
+
+    /* ---------- content ---------- */
+    .ct { width: 1150px; flex: 0 0 1150px; }
+    .hd { padding: 20px 24px; border-bottom: 1px solid #232A33; display: flex; align-items: flex-start; justify-content: space-between; }
+    .hd h1 { font-size: 28px; font-weight: 600; line-height: 34px; letter-spacing: -.01em; }
+    .hd .sub { font-size: 12px; color: #64748B; line-height: 16px; margin-top: 4px; }
+    .hd-r { display: flex; align-items: center; gap: 10px; padding-top: 8px; }
+    .lbl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; }
+    .sel { height: 30px; border: 1px solid #232A33; background: #161B27; border-radius: 6px; color: #CBD5E1; font-size: 12px; padding: 0 26px 0 10px; display: inline-flex; align-items: center; position: relative; }
+    .sel::after { content: "▾"; position: absolute; right: 9px; color: #64748B; font-size: 10px; }
+    .btn { height: 30px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; }
+    .btn.fill { background: #3B82F6; color: #fff; }
+    .btn.out { border: 1px solid #232A33; color: #CBD5E1; background: transparent; }
+
+    .body { padding: 18px 24px 24px; }
+
+    .bar { display: flex; align-items: center; gap: 10px; height: 34px; margin-bottom: 14px; }
+    .inp { height: 32px; width: 260px; border: 1px solid #232A33; background: #121620; border-radius: 6px; color: #64748B; font-size: 12px; padding: 0 10px; display: flex; align-items: center; gap: 7px; }
+    .btn.lg { height: 32px; }
+
+    .card { background: #121620; border: 1px solid #232A33; border-radius: 8px; }
+
+    .slicer { padding: 13px 14px; margin-bottom: 14px; }
+    .srow { display: flex; align-items: center; gap: 10px; height: 28px; }
+    .srow + .srow { margin-top: 12px; }
+    .sk { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; width: 76px; flex: 0 0 76px; }
+    .chip { height: 24px; border-radius: 12px; border: 1px solid #232A33; color: #94A3B8; font-size: 11px; font-weight: 500; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; }
+    .chip.on { background: #1B2027; border-color: #2C3644; color: #F1F5F9; }
+    .chip.mute { color: #64748B; border-style: dashed; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .seg { display: inline-flex; border: 1px solid #232A33; border-radius: 6px; overflow: hidden; height: 24px; }
+    .seg span { font-size: 11px; font-weight: 500; color: #64748B; padding: 0 11px; display: inline-flex; align-items: center; border-right: 1px solid #232A33; }
+    .seg span:last-child { border-right: 0; }
+    .seg span.on { background: #1B2027; color: #F1F5F9; }
+    .vr { width: 1px; height: 20px; background: #232A33; margin: 0 3px; }
+    .rng { font-size: 12px; color: #CBD5E1; }
+    .cnt { margin-left: auto; font-size: 11px; color: #94A3B8; letter-spacing: .02em; }
+
+    /* KPI */
+    .kpis { display: flex; gap: 12px; margin-bottom: 14px; }
+    .kpi { flex: 1 1 0; background: #121620; border: 1px solid #232A33; border-radius: 8px; overflow: hidden; position: relative; height: 124px; }
+    .kpi .pad { padding: 14px 14px 0; }
+    .kpi .kl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; line-height: 13px; }
+    .kpi .kv { font-size: 30px; font-weight: 600; line-height: 32px; margin-top: 6px; color: #F1F5F9; letter-spacing: -.02em; }
+    .kpi .kv.sm { font-size: 22px; line-height: 32px; }
+    .kpi .kd { font-size: 12px; font-weight: 500; line-height: 15px; margin-top: 4px; }
+    .kpi svg { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 38px; display: block; }
+    .up { color: #34D399; } .dn { color: #F4576B; } .flat { color: #94A3B8; }
+    .qual { color: #64748B; font-weight: 400; }
+
+    .showing { font-size: 12px; color: #94A3B8; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .showing b { color: #F1F5F9; font-weight: 600; }
+
+    /* grid */
+    .grid { overflow: hidden; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    thead th { background: #161B27; height: 36px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; text-align: right; padding: 0 14px; border-bottom: 1px solid #232A33; white-space: nowrap; }
+    thead th:first-child { text-align: left; }
+    th .s { color: #64748B; font-size: 10px; margin-left: 4px; }
+    th.act { color: #F1F5F9; }
+    th.act .s { color: #60A5FA; }
+    tr.units td { height: 24px; background: #121620; font-size: 10px; color: #64748B; text-align: right; padding: 0 14px; border-bottom: 1px solid #1B222C; letter-spacing: .04em; }
+    tr.units td:first-child { text-align: left; }
+    tbody td { height: 38px; font-size: 13px; text-align: right; padding: 0 14px; border-bottom: 1px solid #1B222C; color: #CBD5E1; white-space: nowrap; }
+    tbody td:first-child { text-align: left; }
+    tbody tr.wk { background: rgba(255,255,255,.012); }
+    td.d { color: #F1F5F9; }
+    td.d .dw { color: #64748B; font-size: 11px; margin-left: 7px; }
+    .em { color: #64748B; }
+    .amb { color: #FCD34D; background: rgba(252,211,77,.09); box-shadow: inset 0 0 0 1px rgba(252,211,77,.18); }
+    .amb .fl { font-size: 10px; vertical-align: super; }
+    .tag { font-size: 9px; letter-spacing: .06em; color: #64748B; border: 1px solid #232A33; border-radius: 3px; padding: 1px 4px; margin-left: 7px; }
+    tr.tot td { height: 42px; background: #161B27; border-top: 1px solid #232A33; border-bottom: 1px solid #232A33; font-size: 12px; color: #F1F5F9; font-weight: 500; }
+    tr.tot td:first-child { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; font-weight: 500; }
+    .foot { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 12px; color: #94A3B8; }
+    .pg { display: flex; gap: 6px; }
+    .pg span { border: 1px solid #232A33; border-radius: 5px; height: 26px; padding: 0 11px; display: inline-flex; align-items: center; font-size: 11px; color: #64748B; }
+    .pg span.a { color: #CBD5E1; }
+
+    .notes { font-size: 11px; color: #64748B; line-height: 17px; }
+    .notes .fl { color: #FCD34D; }
+    .notes p + p { margin-top: 5px; }
+  </style>
+</helmet>
+
+<div class="dt-root" style="width:1440px; height:1700px; background:#0C0E13; display:flex; overflow:hidden;">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="k">Tusk Invest</div>
+      <div class="n">Catalogue Reach Terminal</div>
+    </div>
+    <div class="sw">
+      <div class="sw-row on"><span>♪</span><span>TIPS Music</span><span class="tick">✓</span></div>
+      <div class="sw-row off"><span>♪</span><span>Saregama</span><span class="cd" style="background:#D55E00"></span></div>
+    </div>
+    <div class="divide"></div>
+    <nav class="nav">
+      <div class="nv"><span class="g">📊</span>Overview</div>
+      <div class="nv"><span class="g">💹</span>Nowcast</div>
+      <div class="nv"><span class="g">📺</span>Content Analytics</div>
+      <div class="nv"><span class="g">🚨</span>Anomalies</div>
+      <div class="nv on"><span class="g">📋</span>Data Table</div>
+    </nav>
+    <div class="divide" style="margin-top:12px"></div>
+    <nav class="nav" style="padding-top:12px">
+      <div class="nv"><span class="g">⇄</span>Compare</div>
+    </nav>
+    <div class="sb-foot"><span>🌙</span><span>‹</span></div>
+  </aside>
+
+  <!-- ============ CONTENT ============ -->
+  <main class="ct">
+
+    <!-- page header -->
+    <div class="hd">
+      <div>
+        <h1>Data Table</h1>
+        <div class="sub">Updated Aug 31, 2026 at 03:09 PM &nbsp;·&nbsp; TIPS Music (NSE: TIPSMUSIC) &nbsp;·&nbsp; 16 owned channels</div>
+      </div>
+      <div class="hd-r">
+        <span class="lbl">Period:</span>
+        <span class="sel">Last 30 Days</span>
+        <span class="btn fill">⟳ Refresh</span>
+        <span class="btn out">⬇ Export</span>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <!-- 1. control bar -->
+      <div class="bar">
+        <span class="btn fill lg">⬇ Export CSV</span>
+        <span class="inp"><span style="color:#64748B">⌕</span>Filter rows…</span>
+        <span class="sel" style="height:32px">Combined (YouTube + Stock)</span>
+        <span style="margin-left:auto; font-size:11px; color:#64748B;">Source: dim_channel_day ⋈ dim_price_day &nbsp;·&nbsp; join on trade date</span>
+      </div>
+
+      <!-- 2. slicer row -->
+      <div class="card slicer">
+        <div class="srow">
+          <span class="sk">Company</span>
+          <span class="chip on"><span class="dot" style="background:#0072B2"></span>Tips</span>
+          <span class="chip mute"><span class="dot" style="background:#D55E00;opacity:.5"></span>Saregama</span>
+          <span class="vr"></span>
+          <span class="sk" style="width:60px;flex:0 0 60px">Metric</span>
+          <span class="chip on">Views</span>
+          <span class="chip on">Daily views</span>
+          <span class="chip on">Subscribers</span>
+          <span class="chip on">Δ subs</span>
+          <span class="chip mute">Releases</span>
+          <span class="chip on">Stock</span>
+        </div>
+        <div class="srow">
+          <span class="sk">Grain</span>
+          <span class="seg"><span class="on">Day</span><span>Week</span><span>Month</span><span>Quarter</span></span>
+          <span class="vr"></span>
+          <span class="sk" style="width:60px;flex:0 0 60px">Range</span>
+          <span class="rng mono" style="font-size:11px">2026-08-03 → 2026-08-31</span>
+          <span class="seg"><span>7D</span><span class="on">30D</span><span>90D</span><span>FY</span><span>Custom</span></span>
+          <span class="cnt"><b style="color:#F1F5F9;font-weight:600">29</b> rows &nbsp;·&nbsp; 14 company-days</span>
+        </div>
+      </div>
+
+      <!-- 3. KPI tiles -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="pad">
+            <div class="kl">Period</div>
+            <div class="kv sm mono">08-03 – 08-31</div>
+            <div class="kd flat">— 29 days <span class="qual">· 20 trading</span></div>
+          </div>
+          <svg viewBox="0 0 212 38" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,30 15,30 30,12 45,12 60,12 75,30 90,30 106,30 121,12 136,12 151,12 166,30 181,30 197,12 212,12"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="pad">
+            <div class="kl">Total daily views</div>
+            <div class="kv mono">1.05B</div>
+            <div class="kd flat">— avg <span class="mono" style="color:#CBD5E1">36.26M</span>/day</div>
+          </div>
+          <svg viewBox="0 0 212 38" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,20 12,26 24,8 36,5 48,22 60,25 72,28 84,18 96,10 108,7 120,21 132,24 144,27 156,26 168,23 180,9 192,6 204,19 212,15"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="pad">
+            <div class="kl">Subscribers</div>
+            <div class="kv mono">133.55M</div>
+            <div class="kd up">▲ +390.0K <span class="qual">+0.3% in period</span></div>
+          </div>
+          <svg viewBox="0 0 212 38" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,34 18,32 36,29 54,27 72,24 90,21 108,19 126,16 144,13 162,10 180,8 196,5 212,3"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="pad">
+            <div class="kl">Stock price</div>
+            <div class="kv mono">₹648.05</div>
+            <div class="kd dn">▼ −5.9% <span class="qual">from ₹688.55</span></div>
+          </div>
+          <svg viewBox="0 0 212 38" preserveAspectRatio="none"><polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,8 16,5 32,11 48,7 64,13 80,10 96,16 112,14 128,19 144,17 160,22 176,20 192,26 204,29 212,33"/></svg>
+        </div>
+        <div class="kpi">
+          <div class="pad">
+            <div class="kl">Avg daily volume</div>
+            <div class="kv mono">213.3K</div>
+            <div class="kd flat">— total <span class="mono" style="color:#CBD5E1">4.27M</span> shares</div>
+          </div>
+          <svg viewBox="0 0 212 38" preserveAspectRatio="none">
+            <g fill="#0072B2" fill-opacity=".6">
+              <rect x="2" y="20" width="8" height="18"/><rect x="15" y="24" width="8" height="14"/><rect x="28" y="14" width="8" height="24"/><rect x="41" y="27" width="8" height="11"/><rect x="54" y="22" width="8" height="16"/><rect x="67" y="25" width="8" height="13"/><rect x="80" y="17" width="8" height="21"/><rect x="93" y="28" width="8" height="10"/><rect x="106" y="9" width="8" height="29"/><rect x="119" y="26" width="8" height="12"/><rect x="132" y="23" width="8" height="15"/><rect x="145" y="19" width="8" height="19"/><rect x="158" y="29" width="8" height="9"/><rect x="171" y="27" width="8" height="11"/><rect x="184" y="24" width="8" height="14"/><rect x="197" y="4" width="8" height="34"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 4. showing -->
+      <div class="showing">Showing <b>29</b> of <b>29</b> rows<span style="color:#232A33">|</span><span style="color:#64748B">no row filter applied · 3 cells repaired</span></div>
+
+      <!-- 5. the grid -->
+      <div class="card grid">
+        <table>
+          <colgroup>
+            <col style="width:170px"><col style="width:160px"><col style="width:146px"><col style="width:150px"><col style="width:132px"><col style="width:140px"><col>
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="act">Date<span class="s">▼</span></th>
+              <th>Views<span class="s">⇅</span></th>
+              <th>Daily views<span class="s">⇅</span></th>
+              <th>Subscribers<span class="s">⇅</span></th>
+              <th>Daily subs<span class="s">⇅</span></th>
+              <th>Stock close<span class="s">⇅</span></th>
+              <th>Stock volume<span class="s">⇅</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="units"><td>ISO · IST</td><td>cumulative</td><td>per day</td><td>cumulative</td><td>net add</td><td>₹ · NSE</td><td>shares</td></tr>
+
+            <tr><td class="d">2026-08-31<span class="dw">Mon</span></td><td class="mono">84.3524B</td><td class="mono">38.14M</td><td class="mono">133.550M</td><td class="mono up">▲ 14.2K</td><td class="mono">648.05</td><td class="mono">341,200</td></tr>
+            <tr class="wk"><td class="d">2026-08-30<span class="dw">Sun</span></td><td class="mono">84.3143B</td><td class="mono">41.02M</td><td class="mono">133.536M</td><td class="mono up">▲ 19.8K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr class="wk"><td class="d">2026-08-29<span class="dw">Sat</span></td><td class="mono">84.2733B</td><td class="mono">40.55M</td><td class="mono">133.516M</td><td class="mono up">▲ 20.4K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr><td class="d">2026-08-28<span class="dw">Fri</span></td><td class="mono">84.2327B</td><td class="mono">36.88M</td><td class="mono">133.496M</td><td class="mono up">▲ 15.1K</td><td class="mono">660.27</td><td class="mono">268,400</td></tr>
+            <tr><td class="d">2026-08-27<span class="dw">Thu</span></td><td class="mono">84.1958B</td><td class="mono amb">35.71M<span class="fl">†</span></td><td class="mono">133.481M</td><td class="mono up">▲ 13.6K</td><td class="mono">663.90</td><td class="mono">194,700</td></tr>
+            <tr><td class="d">2026-08-26<span class="dw">Wed</span></td><td class="mono">84.1601B</td><td class="mono">34.96M</td><td class="mono">133.467M</td><td class="mono up">▲ 12.9K</td><td class="mono">671.15</td><td class="mono">176,300</td></tr>
+            <tr><td class="d">2026-08-25<span class="dw">Tue</span></td><td class="mono">84.1251B</td><td class="mono">33.80M</td><td class="mono">133.454M</td><td class="mono up">▲ 13.4K</td><td class="mono">668.40</td><td class="mono">158,900</td></tr>
+            <tr><td class="d">2026-08-24<span class="dw">Mon</span></td><td class="mono">84.0913B</td><td class="mono">35.42M</td><td class="mono">133.441M</td><td class="mono up">▲ 14.8K</td><td class="mono">675.80</td><td class="mono">231,500</td></tr>
+            <tr class="wk"><td class="d">2026-08-23<span class="dw">Sun</span></td><td class="mono">84.0559B</td><td class="mono">43.11M</td><td class="mono">133.426M</td><td class="mono up">▲ 21.2K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr class="wk"><td class="d">2026-08-22<span class="dw">Sat</span></td><td class="mono">84.0128B</td><td class="mono">42.68M</td><td class="mono">133.405M</td><td class="mono up">▲ 20.6K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr><td class="d">2026-08-21<span class="dw">Fri</span></td><td class="mono">83.9701B</td><td class="mono">37.55M</td><td class="mono">133.384M</td><td class="mono up">▲ 15.9K</td><td class="mono">679.25</td><td class="mono">205,800</td></tr>
+            <tr><td class="d">2026-08-20<span class="dw">Thu</span></td><td class="mono">83.9326B</td><td class="mono">36.02M</td><td class="mono">133.368M</td><td class="mono up">▲ 14.4K</td><td class="mono">682.10</td><td class="mono">187,200</td></tr>
+            <tr><td class="d">2026-08-19<span class="dw">Wed</span></td><td class="mono">83.8966B</td><td class="mono amb">34.88M<span class="fl">†</span></td><td class="mono">133.354M</td><td class="mono up">▲ 13.1K</td><td class="mono">677.55</td><td class="mono">249,600</td></tr>
+            <tr><td class="d">2026-08-18<span class="dw">Tue</span></td><td class="mono">83.8617B</td><td class="mono amb">33.91M<span class="fl">†</span></td><td class="mono">133.341M</td><td class="mono up">▲ 12.7K</td><td class="mono">685.40</td><td class="mono">168,400</td></tr>
+            <tr><td class="d">2026-08-17<span class="dw">Mon</span></td><td class="mono">83.8278B</td><td class="mono">34.60M</td><td class="mono">133.328M</td><td class="mono up">▲ 13.9K</td><td class="em">—<span class="tag">MKT HOL</span></td><td class="em">—</td></tr>
+            <tr class="wk"><td class="d">2026-08-16<span class="dw">Sun</span></td><td class="mono">83.7932B</td><td class="mono">44.20M</td><td class="mono">133.314M</td><td class="mono up">▲ 22.4K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr class="wk"><td class="d">2026-08-15<span class="dw">Sat</span></td><td class="mono">83.7490B</td><td class="mono">45.91M</td><td class="mono">133.292M</td><td class="mono up">▲ 23.1K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr><td class="d">2026-08-14<span class="dw">Fri</span></td><td class="mono">83.7031B</td><td class="mono">38.72M</td><td class="mono">133.268M</td><td class="mono up">▲ 16.2K</td><td class="mono">694.30</td><td class="mono">198,300</td></tr>
+            <tr><td class="d">2026-08-13<span class="dw">Thu</span></td><td class="mono">83.6643B</td><td class="mono">37.14M</td><td class="mono">133.252M</td><td class="mono up">▲ 15.0K</td><td class="mono">688.75</td><td class="mono">211,900</td></tr>
+            <tr><td class="d">2026-08-12<span class="dw">Wed</span></td><td class="mono">83.6272B</td><td class="mono">35.86M</td><td class="mono">133.237M</td><td class="mono up">▲ 14.1K</td><td class="mono">692.40</td><td class="mono">165,200</td></tr>
+            <tr><td class="d">2026-08-11<span class="dw">Tue</span></td><td class="mono">83.5913B</td><td class="mono">34.42M</td><td class="mono">133.223M</td><td class="mono up">▲ 13.3K</td><td class="mono">686.90</td><td class="mono">179,800</td></tr>
+            <tr><td class="d">2026-08-10<span class="dw">Mon</span></td><td class="mono">83.5569B</td><td class="mono">36.19M</td><td class="mono">133.210M</td><td class="mono up">▲ 14.6K</td><td class="mono">683.25</td><td class="mono">223,400</td></tr>
+            <tr class="wk"><td class="d">2026-08-09<span class="dw">Sun</span></td><td class="mono">83.5207B</td><td class="mono">43.55M</td><td class="mono">133.195M</td><td class="mono up">▲ 21.5K</td><td class="em">—</td><td class="em">—</td></tr>
+            <tr class="wk"><td class="d">2026-08-08<span class="dw">Sat</span></td><td class="mono">83.4772B</td><td class="mono">42.10M</td><td class="mono">133.174M</td><td class="mono up">▲ 20.8K</td><td class="em">—</td><td class="em">—</td></tr>
+
+            <tr class="tot">
+              <td>Period total · 29 d</td>
+              <td class="mono em">—</td>
+              <td class="mono">1.0516B</td>
+              <td class="mono em">—</td>
+              <td class="mono up">▲ 390.0K</td>
+              <td class="mono em">—</td>
+              <td class="mono">4,270,300</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="foot">
+          <span>Rows <span class="mono" style="color:#CBD5E1">1–24</span> of <span class="mono" style="color:#CBD5E1">29</span> &nbsp;·&nbsp; page 1 of 2 &nbsp;·&nbsp; cumulative columns cannot be summed, marked —</span>
+          <span class="pg"><span>‹ Prev</span><span class="a">Next ›</span></span>
+        </div>
+      </div>
+
+      <!-- 7. footnotes -->
+      <div class="notes">
+        <p><span class="fl">†</span> <span style="color:#94A3B8">Repaired reading.</span> YouTube intermittently serves a stale cumulative view count (~4.7% of channel-days). The stale day reports no growth and the following day reports the catch-up. Those days are repaired by redistributing the catch-up evenly across the days it covered; <b style="color:#94A3B8;font-weight:500">the cumulative total is never modified</b>, only the derived per-day figure. 3 of 24 visible daily-view cells are repaired.</p>
+        <p>Stock columns are blank — rendered as <span style="color:#94A3B8">—</span>, never 0 — on the 9 non-trading days in this period: 8 weekend days and 1 exchange holiday (Mon 17 Aug, tagged <span style="color:#94A3B8">MKT HOL</span>). That leaves 20 trading days against 29 calendar days, so the two halves of every row are aligned on date, never carried forward. Period totals sum only where summing is meaningful: a cumulative view count and a subscriber count are levels, not flows, and are shown as —.</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

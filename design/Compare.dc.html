@@ -1,0 +1,457 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    .tk *{box-sizing:border-box;margin:0;padding:0}
+    .tk{font-family:Inter,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;color:#F1F5F9}
+    .tk .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+    /* ---- sidebar ---- */
+    .tk .sb{width:290px;flex:0 0 290px;background:#0A0C11;border-right:1px solid #232A33;display:flex;flex-direction:column}
+    .tk .sb-brand{padding:18px 16px 14px;border-bottom:1px solid #232A33}
+    .tk .sb-brand .wm{font-size:11px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:#64748B}
+    .tk .sb-brand .nm{font-size:15px;font-weight:600;color:#F1F5F9;margin-top:3px}
+    .tk .sw{padding:14px 12px 12px}
+    .tk .sw-lb{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#94A3B8;padding:0 4px 8px}
+    .tk .pill{display:flex;align-items:center;gap:9px;height:38px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:500;margin-bottom:6px}
+    .tk .pill.on{background:linear-gradient(90deg,#3B82F6,#8B5CF6);color:#fff;font-weight:600}
+    .tk .pill.off{color:#94A3B8}
+    .tk .pill .dot{width:6px;height:6px;border-radius:50%;margin-left:auto}
+    .tk .divx{height:1px;background:#232A33;margin:2px 0}
+    .tk .nav{padding:12px 12px 0}
+    .tk .nv{display:flex;align-items:center;gap:10px;height:40px;padding:0 12px;border-radius:8px;font-size:13px;color:#94A3B8;margin-bottom:2px}
+    .tk .nv.on{background:rgba(59,130,246,.12);color:#60A5FA;font-weight:600}
+    .tk .nv .g{font-size:13px;width:18px;text-align:center}
+    .tk .sb-foot{margin-top:auto;padding:14px 20px;border-top:1px solid #232A33;display:flex;align-items:center;justify-content:space-between;color:#64748B;font-size:13px}
+
+    /* ---- header ---- */
+    .tk .hd{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #232A33}
+    .tk .hd h1{font-size:28px;font-weight:600;letter-spacing:-.01em}
+    .tk .hd .upd{font-size:12px;color:#64748B;margin-top:5px}
+    .tk .hd .rt{display:flex;align-items:center;gap:10px}
+    .tk .lbl{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#94A3B8}
+    .tk .sel{height:32px;display:flex;align-items:center;gap:16px;padding:0 11px;border:1px solid #232A33;border-radius:6px;background:#121620;font-size:12px;color:#CBD5E1}
+    .tk .btn{height:32px;display:flex;align-items:center;gap:6px;padding:0 13px;border-radius:6px;font-size:12px;font-weight:500}
+    .tk .btn.p{background:#3B82F6;color:#fff}
+    .tk .btn.o{border:1px solid #232A33;color:#CBD5E1;background:#121620}
+
+    /* ---- shared ---- */
+    .tk .card{background:#121620;border:1px solid #232A33;border-radius:8px;overflow:hidden}
+    .tk .ch{padding:11px 16px 9px;border-bottom:1px solid #1B222C;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .tk .ct{font-size:14px;font-weight:600}
+    .tk .cs{font-size:12px;color:#94A3B8;margin-top:3px;line-height:1.35}
+    .tk .toggle{display:flex;gap:4px;flex:0 0 auto}
+    .tk .tg{font-size:11px;padding:4px 9px;border-radius:5px;color:#64748B}
+    .tk .tg.on{background:#1B2027;color:#F1F5F9}
+    .tk .rdo{font-size:12px;color:#94A3B8;line-height:1.4;padding:8px 16px 11px;border-top:1px solid #1B222C}
+    .tk .fn{font-size:11px;color:#64748B;line-height:1.45}
+    .tk .sec{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#94A3B8}
+
+    /* ---- tables ---- */
+    .tk table{width:100%;border-collapse:collapse}
+    .tk thead th{background:#161B27;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#94A3B8;text-align:left;padding:0 14px;height:32px;border-bottom:1px solid #232A33;white-space:nowrap}
+    .tk thead th.r{text-align:right}
+    .tk tbody td{font-size:13px;padding:0 14px;height:31px;border-bottom:1px solid #1B222C;color:#CBD5E1;white-space:nowrap}
+    .tk tbody td.r{text-align:right;font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;color:#F1F5F9}
+    .tk tbody tr:last-child td{border-bottom:none}
+    .tk .mlab{color:#F1F5F9;font-weight:500}
+    .tk .sub{color:#64748B;font-size:11px;font-weight:400}
+    .tk .up{color:#34D399}.tk .dn{color:#F4576B}.tk .fl{color:#94A3B8}
+    .tk .em{color:#64748B}
+    .tk .chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:2px 7px;border-radius:4px;line-height:1.5}
+    .tk .chip.ok{background:rgba(52,211,153,.10);color:#34D399;border:1px solid rgba(52,211,153,.25)}
+    .tk .chip.am{background:rgba(252,211,77,.10);color:#FCD34D;border:1px solid rgba(252,211,77,.28)}
+    .tk .chip.cr{background:rgba(244,87,107,.10);color:#F4576B;border:1px solid rgba(244,87,107,.28)}
+    .tk .tf{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:7px 16px;background:#0F131B;border-top:1px solid #1B222C;font-size:11px;color:#64748B;line-height:1.45}
+    .tk .tf>span:first-child{flex:1 1 auto;min-width:0}
+    .tk .tf>span:last-child{flex:0 0 auto;white-space:nowrap;text-align:right}
+
+    .tk .swb{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:7px;vertical-align:1px}
+  </style>
+</helmet>
+
+<div style="width:1440px;height:1900px;background:#0C0E13;display:flex;overflow:hidden" class="tk">
+
+  <!-- ============ SIDEBAR ============ -->
+  <div class="sb">
+    <div class="sb-brand">
+      <div class="wm">Tusk Invest · Research</div>
+      <div class="nm">Indian Music Terminal</div>
+    </div>
+
+    <div class="sw">
+      <div class="sw-lb">Company</div>
+      <div class="pill on"><span>♪</span><span>TIPS Music</span><span class="dot" style="background:#0072B2;box-shadow:0 0 0 2px rgba(255,255,255,.55)"></span></div>
+      <div class="pill on"><span>♪</span><span>Saregama</span><span class="dot" style="background:#D55E00;box-shadow:0 0 0 2px rgba(255,255,255,.55)"></span></div>
+      <div style="font-size:11px;color:#64748B;padding:2px 4px 0;line-height:1.4">Both selected — Compare is the only two-company screen.</div>
+    </div>
+
+    <div class="divx" style="margin:12px 12px"></div>
+
+    <div class="nav">
+      <div class="nv"><span class="g">📊</span><span>Overview</span></div>
+      <div class="nv"><span class="g">💹</span><span>Nowcast</span></div>
+      <div class="nv"><span class="g">📺</span><span>Content Analytics</span></div>
+      <div class="nv"><span class="g">🚨</span><span>Anomalies</span></div>
+      <div class="nv"><span class="g">📋</span><span>Data Table</span></div>
+    </div>
+    <div class="divx" style="margin:12px 12px"></div>
+    <div style="padding:0 12px">
+      <div class="nv on"><span class="g">⇄</span><span>Compare</span></div>
+    </div>
+
+    <div class="sb-foot"><span>🌙 Dark</span><span>‹</span></div>
+  </div>
+
+  <!-- ============ CONTENT ============ -->
+  <div style="flex:1 1 auto;display:flex;flex-direction:column;min-width:0">
+
+    <!-- header -->
+    <div class="hd">
+      <div>
+        <h1>Compare · TIPS Music vs Saregama</h1>
+        <div class="upd">Updated Aug 31, 2026 at 03:09 PM · window 2026-06-03 → 2026-08-31 (90 days)</div>
+      </div>
+      <div class="rt">
+        <span class="lbl">Period:</span>
+        <span class="sel"><span>Last 90 Days</span><span style="color:#64748B">▾</span></span>
+        <span class="btn p">⟳ Refresh</span>
+        <span class="btn o">⬇ Export</span>
+      </div>
+    </div>
+
+    <div style="padding:14px 24px 18px;display:flex;flex-direction:column;gap:12px">
+
+      <!-- ===== 1. COMPARABILITY CAVEAT ===== -->
+      <div style="background:#161B27;border:1px solid #232A33;border-left:3px solid #FCD34D;border-radius:8px;padding:11px 16px;display:flex;gap:14px;align-items:flex-start">
+        <div style="font-size:16px;line-height:1.1;color:#FCD34D">⚠</div>
+        <div style="flex:1 1 auto">
+          <div style="font-size:13px;font-weight:600;color:#F1F5F9;margin-bottom:5px">These two revenue lines are not like-for-like unless you pick the right one.</div>
+          <div style="font-size:12px;color:#CBD5E1;line-height:1.55">
+            <b style="color:#0072B2">TIPS Music</b> reports a <b>single segment</b> — its reported revenue <i>is</i> its music revenue, so the whole P&amp;L line is comparable.
+            <b style="color:#D55E00">Saregama</b> reports a <b>group</b> figure that also carries artist management, video content (Yoodlee) and live events; its <b>Music segment only</b> is used everywhere on this page.
+            Every Saregama rupee figure below is the segment line, marked <span class="chip am" style="padding:1px 6px">MUSIC SEG</span>. Comparing Saregama's group revenue against TIPS is the single easiest error on this screen — it overstates Saregama by roughly 26–31% of group turnover.
+          </div>
+        </div>
+        <div style="flex:0 0 190px;border-left:1px solid #232A33;padding-left:14px">
+          <div class="lbl" style="margin-bottom:6px">Basis in use</div>
+          <div style="font-size:12px;color:#CBD5E1;line-height:1.7">
+            <div><span class="swb" style="background:#0072B2"></span>TIPS — total revenue</div>
+            <div><span class="swb" style="background:#D55E00"></span>SGA — music segment</div>
+            <div class="fn" style="margin-top:5px">Views basis: owned channels only. UGC excluded from both.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 2. KPI MATRIX ===== -->
+      <div class="card">
+        <div class="ch">
+          <div>
+            <div class="ct">Side-by-side metric matrix</div>
+            <div class="cs">Δ is TIPS minus Saregama, withheld where the two quantities are not on a common basis.</div>
+          </div>
+          <div class="toggle"><span class="tg on">Absolute</span><span class="tg">Per channel</span></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:270px">Metric</th>
+              <th style="width:110px">Basis</th>
+              <th class="r" style="width:190px"><span class="swb" style="background:#0072B2"></span>TIPS Music</th>
+              <th class="r" style="width:190px"><span class="swb" style="background:#D55E00"></span>Saregama</th>
+              <th class="r" style="width:170px">Δ (TIPS − SGA)</th>
+              <th style="width:auto">Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mlab">Daily views <span class="sub">· 7-day mean</span></td><td class="sub">Owned ch.</td>
+              <td class="r">45.91 M</td><td class="r">43.02 M</td>
+              <td class="r up">▲ +2.89 M</td><td class="fn">+6.7% ahead on flow</td>
+            </tr>
+            <tr>
+              <td class="mlab">Subscribers</td><td class="sub">Owned ch.</td>
+              <td class="r">133.55 M</td><td class="r">148.20 M</td>
+              <td class="r dn">▼ −14.65 M</td><td class="fn">Tips Official alone is 82.20 M</td>
+            </tr>
+            <tr>
+              <td class="mlab">Owned channels</td><td class="sub">Tracked</td>
+              <td class="r">16</td><td class="r">25</td>
+              <td class="r dn">▼ −9</td><td class="fn">TIPS is far more concentrated</td>
+            </tr>
+            <tr>
+              <td class="mlab">Total views <span class="sub">· cumulative</span></td><td class="sub">Owned ch.</td>
+              <td class="r">84.35 B</td><td class="r">112.80 B</td>
+              <td class="r dn">▼ −28.45 B</td><td class="fn">Catalogue depth, not current flow</td>
+            </tr>
+            <tr>
+              <td class="mlab">Share price <span class="sub">· 31 Aug close</span></td><td class="sub">NSE</td>
+              <td class="r">₹648.05</td><td class="r">₹512.40</td>
+              <td class="r em">—</td><td class="fn">Price levels are not comparable — different share bases</td>
+            </tr>
+            <tr>
+              <td class="mlab">30-day return</td><td class="sub">NSE</td>
+              <td class="r up">+4.62%</td><td class="r dn">−2.85%</td>
+              <td class="r up">▲ +7.47 pp</td><td class="fn">TIPS ahead over the trailing month</td>
+            </tr>
+            <tr>
+              <td class="mlab">Nowcast midpoint <span class="sub">· FY27 Q2</span></td><td class="sub">Music</td>
+              <td class="r" style="color:#FCD34D">₹114.80 cr</td><td class="r" style="color:#FCD34D">₹191.20 cr</td>
+              <td class="r dn">▼ −₹76.40 cr</td><td class="fn" style="color:#FCD34D">⚑ Never scored against a printed result</td>
+            </tr>
+            <tr>
+              <td class="mlab">Last printed quarter <span class="sub">· FY27 Q1</span></td><td class="sub">Music</td>
+              <td class="r">₹106.51 cr</td><td class="r">₹184.60 cr</td>
+              <td class="r dn">▼ −₹78.09 cr</td><td class="fn">SGA = music segment, not group</td>
+            </tr>
+            <tr>
+              <td class="mlab">YoY <span class="sub">· FY27 Q1 vs FY26 Q1</span></td><td class="sub">Music</td>
+              <td class="r up">+18.4%</td><td class="r up">+9.1%</td>
+              <td class="r up">▲ +9.3 pp</td><td class="fn">TIPS growing roughly 2× faster off a smaller base</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tf">
+          <span>FY26 anchors — TIPS ₹375.51 cr full year, ₹103.93 cr in FY26 Q4 · Saregama music segment ₹683.52 cr full year</span>
+          <span style="color:#FCD34D">⚑ Nowcast rows are model output, not reported</span>
+        </div>
+      </div>
+
+      <!-- ===== 3 + 4. TWO CHARTS ===== -->
+      <div style="display:flex;gap:12px">
+
+        <!-- 3. daily views, both, one axis -->
+        <div class="card" style="flex:1 1 0;min-width:0">
+          <div class="ch">
+            <div>
+              <div class="ct">Daily views, both companies · 90 days</div>
+              <div class="cs">Absolute flow on one shared axis — both sit inside the same 37–49 M band.</div>
+            </div>
+          </div>
+          <div style="padding:10px 16px 0">
+            <svg width="511" height="258" viewBox="0 0 511 258" style="display:block">
+              <!-- legend -->
+              <g font-family="Inter" font-size="11">
+                <rect x="52" y="12" width="9" height="9" rx="2" fill="#0072B2"></rect>
+                <text x="66" y="20" fill="#CBD5E1">TIPS Music</text>
+                <rect x="146" y="12" width="9" height="9" rx="2" fill="#D55E00"></rect>
+                <text x="160" y="20" fill="#CBD5E1">Saregama</text>
+                <text x="496" y="20" fill="#64748B" text-anchor="end">M views / day</text>
+              </g>
+              <!-- grid -->
+              <g stroke="#1B2027" stroke-width="1">
+                <line x1="52" y1="44" x2="496" y2="44"></line>
+                <line x1="52" y1="93" x2="496" y2="93"></line>
+                <line x1="52" y1="142" x2="496" y2="142"></line>
+                <line x1="52" y1="191" x2="496" y2="191"></line>
+              </g>
+              <line x1="52" y1="240" x2="496" y2="240" stroke="#232A33" stroke-width="1"></line>
+              <line x1="52" y1="44" x2="52" y2="240" stroke="#232A33" stroke-width="1"></line>
+              <g font-family="Inter" font-size="11" fill="#94A3B8" text-anchor="end">
+                <text x="44" y="48">50</text><text x="44" y="97">46</text>
+                <text x="44" y="146">42</text><text x="44" y="195">38</text><text x="44" y="244">34</text>
+              </g>
+              <g font-family="Inter" font-size="11" fill="#94A3B8" text-anchor="middle">
+                <text x="52" y="256">03 Jun</text><text x="202" y="256">03 Jul</text>
+                <text x="351" y="256">02 Aug</text><text x="490" y="256">31 Aug</text>
+              </g>
+              <polyline fill="none" stroke="#D55E00" stroke-width="2" stroke-linejoin="round" points="52.0,165.9 57.0,166.6 62.0,169.6 67.0,177.7 72.0,183.5 76.9,184.3 81.9,160.4 86.9,161.4 91.9,148.3 96.9,165.9 101.9,182.4 106.9,182.8 111.9,180.7 116.9,157.6 121.8,152.4 126.8,155.4 131.8,169.1 136.8,177.5 141.8,178.8 146.8,171.7 151.8,166.3 156.8,151.2 161.8,154.1 166.7,158.8 171.7,181.3 176.7,191.1 181.7,177.6 186.7,173.5 191.7,163.7 196.7,167.2 201.7,182.1 206.7,189.7 211.6,198.2 216.6,185.7 221.6,179.6 226.6,169.3 231.6,162.6 236.6,181.3 241.6,183.2 246.6,189.0 251.6,187.3 256.5,162.2 261.5,159.2 266.5,145.3 271.5,158.3 276.5,159.3 281.5,162.5 286.5,163.7 291.5,143.2 296.4,145.5 301.4,142.7 306.4,146.0 311.4,159.9 316.4,161.5 321.4,153.7 326.4,140.2 331.4,132.0 336.4,140.9 341.3,136.5 346.3,146.7 351.3,158.1 356.3,148.9 361.3,147.4 366.3,136.4 371.3,137.6 376.3,144.0 381.3,150.8 386.2,146.7 391.2,154.0 396.2,139.3 401.2,133.8 406.2,118.2 411.2,135.0 416.2,152.0 421.2,153.8 426.2,150.5 431.1,125.7 436.1,130.2 441.1,131.5 446.1,123.3 451.1,138.6 456.1,148.8 461.1,136.8 466.1,125.4 471.1,125.6 476.0,111.8 481.0,123.0 486.0,134.6 491.0,143.0 496.0,146.3"></polyline>
+              <polyline fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round" points="52.0,157.5 57.0,137.9 62.0,136.1 67.0,153.2 72.0,167.2 76.9,174.9 81.9,164.5 86.9,156.4 91.9,133.6 96.9,130.6 101.9,131.6 106.9,147.4 111.9,168.8 116.9,161.9 121.8,150.7 126.8,128.7 131.8,126.5 136.8,143.7 141.8,146.0 146.8,161.0 151.8,154.6 156.8,134.7 161.8,131.2 166.7,122.2 171.7,126.7 176.7,135.8 181.7,154.4 186.7,155.4 191.7,143.9 196.7,116.9 201.7,111.0 206.7,122.6 211.6,138.4 216.6,141.9 221.6,144.7 226.6,138.7 231.6,114.3 236.6,107.2 241.6,123.4 246.6,143.7 251.6,149.2 256.5,147.2 261.5,132.1 266.5,113.4 271.5,114.8 276.5,113.9 281.5,121.8 286.5,139.1 291.5,132.5 296.4,106.4 301.4,105.4 306.4,98.4 311.4,97.8 316.4,119.5 321.4,118.2 326.4,100.6 331.4,91.9 336.4,72.3 341.3,61.5 346.3,67.6 351.3,88.0 356.3,99.9 361.3,95.8 366.3,79.2 371.3,63.5 376.3,66.9 381.3,74.9 386.2,92.2 391.2,92.2 396.2,97.9 401.2,85.3 406.2,65.8 411.2,72.1 416.2,90.2 421.2,101.8 426.2,103.5 431.1,116.6 436.1,95.5 441.1,83.1 446.1,80.7 451.1,83.8 456.1,109.2 461.1,119.8 466.1,109.7 471.1,100.1 476.0,77.9 481.0,73.4 486.0,82.4 491.0,107.0 496.0,113.0"></polyline>
+              <!-- direct labels -->
+              <text x="447" y="60" font-family="Inter" font-size="11" font-weight="600" fill="#0072B2" text-anchor="end">TIPS · 44.4 M</text>
+              <text x="447" y="212" font-family="Inter" font-size="11" font-weight="600" fill="#D55E00" text-anchor="end">SGA · 41.7 M</text>
+              <circle cx="496" cy="113.0" r="3" fill="#0072B2"></circle>
+              <circle cx="496" cy="146.3" r="3" fill="#D55E00"></circle>
+              <!-- release spike marker -->
+              <line x1="341" y1="44" x2="341" y2="240" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="3 3" opacity=".38"></line>
+              <text x="337" y="54" font-family="Inter" font-size="10" fill="#94A3B8" text-anchor="end">TIPS slate, 05 Aug</text>
+            </svg>
+          </div>
+          <div class="rdo">TIPS leads on each of the last 34 days; the 05 Aug slate took it to a 48.6 M peak while Saregama stayed flat. Axis starts at 34 M, not zero — the gap looks ~3× wider than on a zero baseline.</div>
+        </div>
+
+        <!-- 4. indexed to 100 -->
+        <div class="card" style="flex:1 1 0;min-width:0">
+          <div class="ch">
+            <div>
+              <div class="ct">Indexed to 100 at window start</div>
+              <div class="cs">7-day mean, both rebased to 100 on 03 Jun 2026.</div>
+            </div>
+            <div class="toggle"><span class="tg on">7d mean</span><span class="tg">Raw</span></div>
+          </div>
+          <div style="padding:10px 16px 0">
+            <svg width="511" height="258" viewBox="0 0 511 258" style="display:block">
+              <g font-family="Inter" font-size="11">
+                <rect x="52" y="12" width="9" height="9" rx="2" fill="#0072B2"></rect>
+                <text x="66" y="20" fill="#CBD5E1">TIPS Music</text>
+                <rect x="146" y="12" width="9" height="9" rx="2" fill="#D55E00"></rect>
+                <text x="160" y="20" fill="#CBD5E1">Saregama</text>
+                <text x="496" y="20" fill="#64748B" text-anchor="end">index, 03 Jun = 100</text>
+              </g>
+              <g stroke="#1B2027" stroke-width="1">
+                <line x1="52" y1="44" x2="496" y2="44"></line>
+                <line x1="52" y1="93" x2="496" y2="93"></line>
+                <line x1="52" y1="142" x2="496" y2="142"></line>
+              </g>
+              <line x1="52" y1="240" x2="496" y2="240" stroke="#232A33" stroke-width="1"></line>
+              <line x1="52" y1="44" x2="52" y2="240" stroke="#232A33" stroke-width="1"></line>
+              <!-- reference line at 100 -->
+              <line x1="52" y1="191" x2="496" y2="191" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="4 4" opacity=".55"></line>
+              <text x="496" y="187" font-family="Inter" font-size="10" fill="#CBD5E1" text-anchor="end">100</text>
+              <g font-family="Inter" font-size="11" fill="#94A3B8" text-anchor="end">
+                <text x="44" y="48">118</text><text x="44" y="97">112</text>
+                <text x="44" y="146">106</text><text x="44" y="244">94</text>
+              </g>
+              <g font-family="Inter" font-size="11" fill="#94A3B8" text-anchor="middle">
+                <text x="52" y="256">03 Jun</text><text x="202" y="256">03 Jul</text>
+                <text x="351" y="256">02 Aug</text><text x="490" y="256">31 Aug</text>
+              </g>
+              <polyline fill="none" stroke="#D55E00" stroke-width="2" stroke-linejoin="round" points="52.0,191.0 57.0,191.5 62.0,193.4 67.0,197.7 72.0,202.2 76.9,205.5 81.9,202.1 86.9,201.0 91.9,196.7 96.9,195.8 101.9,196.9 106.9,196.7 111.9,195.9 116.9,195.2 121.8,193.0 126.8,194.7 131.8,195.5 136.8,194.3 141.8,193.4 146.8,191.3 151.8,193.3 156.8,193.1 161.8,192.7 166.7,190.3 171.7,191.2 176.7,194.1 181.7,195.5 186.7,197.2 191.7,200.2 196.7,203.3 201.7,208.9 206.7,210.9 211.6,212.5 216.6,214.5 221.6,215.9 226.6,217.3 231.6,216.2 236.6,216.0 241.6,214.4 246.6,212.2 251.6,212.6 256.5,208.5 261.5,206.1 266.5,201.9 271.5,196.5 276.5,190.8 281.5,184.5 286.5,178.9 291.5,174.4 296.4,171.1 301.4,170.5 306.4,167.6 311.4,167.7 316.4,167.5 321.4,165.1 326.4,164.4 331.4,161.1 336.4,160.7 341.3,158.5 346.3,155.3 351.3,154.5 356.3,153.4 361.3,155.1 366.3,156.1 371.3,155.3 376.3,157.1 381.3,158.1 386.2,155.4 391.2,156.6 396.2,154.7 401.2,154.1 406.2,149.5 411.2,147.3 416.2,147.6 421.2,149.3 426.2,148.5 431.1,145.3 436.1,144.4 441.1,147.6 446.1,144.8 451.1,141.6 456.1,140.4 461.1,137.1 466.1,137.0 471.1,135.9 476.0,131.3 481.0,131.2 486.0,130.2 491.0,128.9 496.0,131.1"></polyline>
+              <polyline fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round" points="52.0,191.0 57.0,175.0 62.0,168.6 67.0,172.5 72.0,179.4 76.9,186.1 81.9,188.4 86.9,188.2 91.9,187.2 96.9,185.9 101.9,180.8 106.9,176.2 111.9,174.8 116.9,174.2 121.8,172.8 126.8,171.7 131.8,170.7 136.8,173.5 141.8,173.2 146.8,171.4 151.8,169.6 156.8,165.9 161.8,166.5 166.7,165.5 171.7,161.5 176.7,159.1 181.7,157.6 186.7,157.8 191.7,159.9 196.7,156.6 201.7,154.0 206.7,153.0 211.6,153.6 216.6,150.7 221.6,148.2 226.6,147.0 231.6,146.4 236.6,145.5 241.6,145.7 246.6,147.0 251.6,148.7 256.5,149.2 261.5,147.7 266.5,147.5 271.5,149.2 276.5,147.0 281.5,141.9 286.5,139.5 291.5,136.1 296.4,130.1 301.4,128.2 306.4,124.4 311.4,120.6 316.4,120.1 321.4,115.2 326.4,107.7 331.4,104.4 336.4,96.6 341.3,88.0 346.3,80.9 351.3,73.5 356.3,69.3 361.3,68.2 366.3,65.2 371.3,63.1 376.3,64.4 381.3,66.1 386.2,67.1 391.2,65.3 396.2,65.8 401.2,67.2 406.2,67.7 411.2,68.9 416.2,72.5 421.2,74.8 426.2,77.4 431.1,81.8 436.1,84.2 441.1,88.2 446.1,90.2 451.1,88.7 456.1,90.4 461.1,94.2 466.1,92.6 471.1,93.7 476.0,92.5 481.0,90.8 486.0,90.5 491.0,90.0 496.0,88.4"></polyline>
+              <text x="454" y="62" font-family="Inter" font-size="11" font-weight="600" fill="#0072B2" text-anchor="end">TIPS 112.6</text>
+              <text x="454" y="178" font-family="Inter" font-size="11" font-weight="600" fill="#D55E00" text-anchor="end">SGA 107.3</text>
+              <circle cx="496" cy="88.4" r="3" fill="#0072B2"></circle>
+              <circle cx="496" cy="131.1" r="3" fill="#D55E00"></circle>
+            </svg>
+          </div>
+          <div class="rdo"><b style="color:#F1F5F9">TIPS has grown faster:</b> +12.6% vs Saregama +7.3%, a 5.3 pp gap mostly opened after 20 Jul. Saregama led until 15 Jul, so the ordering is window-dependent — on 30 days the gap is 1.9 pp.</div>
+        </div>
+      </div>
+
+      <!-- ===== 5. PERIOD COMPARISON ===== -->
+      <div class="card">
+        <div class="ch">
+          <div>
+            <div class="ct">Period comparison · owned-channel daily views</div>
+            <div class="cs">Mean views/day by fiscal quarter vs the same quarter a year earlier. Deltas computed only where both periods are whole and on one measurement regime.</div>
+          </div>
+          <div class="toggle"><span class="tg on">Views</span><span class="tg">Revenue</span><span class="tg">Both</span></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:214px">Period</th>
+              <th class="r" style="width:78px">Days</th>
+              <th class="r" style="width:118px"><span class="swb" style="background:#0072B2"></span>TIPS M/day</th>
+              <th class="r" style="width:134px">Δ vs prior year</th>
+              <th class="r" style="width:118px"><span class="swb" style="background:#D55E00"></span>SGA M/day</th>
+              <th class="r" style="width:134px">Δ vs prior year</th>
+              <th style="width:auto">Completeness</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mlab">FY26 Q2 <span class="sub">· Jul–Sep 25</span></td>
+              <td class="r">92/92</td>
+              <td class="r">38.11</td><td class="r up">▲ +7.4%</td>
+              <td class="r">40.94</td><td class="r up">▲ +3.8%</td>
+              <td><span class="chip ok">✓ Whole vs whole</span></td>
+            </tr>
+            <tr>
+              <td class="mlab">FY26 Q3 <span class="sub">· Oct–Dec 25</span></td>
+              <td class="r">84/92</td>
+              <td class="r" style="color:#FCD34D">39.82</td><td class="r up">▲ +5.1%</td>
+              <td class="r" style="color:#FCD34D">41.66</td><td class="r up">▲ +2.2%</td>
+              <td><span class="chip am">⚑ 8 days inferred</span> <span class="fn">counters frozen, repaired</span></td>
+            </tr>
+            <tr>
+              <td class="mlab">FY26 Q4 <span class="sub">· Jan–Mar 26</span></td>
+              <td class="r">90/90</td>
+              <td class="r">41.44</td><td class="r em">⚠ —</td>
+              <td class="r">42.30</td><td class="r em">⚠ —</td>
+              <td><span class="chip cr">⚠ Regime break 2026-02-16</span></td>
+            </tr>
+            <tr>
+              <td class="mlab">FY27 Q1 <span class="sub">· Apr–Jun 26</span></td>
+              <td class="r">91/91</td>
+              <td class="r">44.18</td><td class="r up">▲ +6.6%</td>
+              <td class="r">42.05</td><td class="r dn">▼ −0.6%</td>
+              <td><span class="chip ok">✓ Whole vs whole</span></td>
+            </tr>
+            <tr style="background:rgba(252,211,77,.035)">
+              <td class="mlab">FY27 Q2 <span class="sub">· Jul–Sep 26, to date</span></td>
+              <td class="r" style="color:#FCD34D">62/92</td>
+              <td class="r">45.62</td><td class="r em">—</td>
+              <td class="r">42.88</td><td class="r em">—</td>
+              <td><span class="chip am">⚑ Part period</span> <span class="fn">delta withheld</span></td>
+            </tr>
+            <tr>
+              <td colspan="7" style="height:28px;padding-left:30px;border-bottom:none">
+                <span class="fn">↳ <b style="color:#94A3B8">Like-for-like offered instead</b> — first 62 days of FY26 Q2: TIPS <span class="mono" style="color:#CBD5E1">37.94</span> → <span class="up">▲ +20.2%</span> · Saregama <span class="mono" style="color:#CBD5E1">40.71</span> → <span class="up">▲ +5.3%</span>. Use this, not the withheld quarter delta.</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tf">
+          <span><span style="color:#F4576B">⚠</span> On 2026-02-16 YouTube re-based cumulative counters across 9 TIPS and 14 Saregama channels. Levels either side of that date are not on the same footing, so the FY26 Q4 delta can <b style="color:#CBD5E1">never</b> be computed — not merely missing.</span>
+          <span>Showing 5 of 12 periods &nbsp; ‹ Prev / Next ›</span>
+        </div>
+      </div>
+
+      <!-- ===== 6. RELATIVE PERFORMANCE ===== -->
+      <div class="card">
+        <div class="ch">
+          <div>
+            <div class="ct">Cumulative relative share-price performance · 90 days</div>
+            <div class="cs">Both closes rebased to 100 on 03 Jun 2026; the shaded band is the running gap in percentage points.</div>
+          </div>
+          <div class="toggle"><span class="tg">30d</span><span class="tg on">90d</span><span class="tg">1y</span></div>
+        </div>
+        <div style="padding:10px 20px 0">
+          <svg width="1062" height="264" viewBox="0 0 1062 264" style="display:block">
+            <g font-family="Inter" font-size="11">
+              <rect x="58" y="10" width="9" height="9" rx="2" fill="#0072B2"></rect>
+              <text x="72" y="18" fill="#CBD5E1">TIPS Music (TIPSMUSIC)</text>
+              <rect x="216" y="10" width="9" height="9" rx="2" fill="#D55E00"></rect>
+              <text x="230" y="18" fill="#CBD5E1">Saregama (SAREGAMA)</text>
+              <rect x="372" y="10" width="9" height="9" rx="2" fill="#009E73" opacity=".35"></rect>
+              <text x="386" y="18" fill="#CBD5E1">Gap, TIPS − SGA</text>
+              <text x="1044" y="18" fill="#64748B" text-anchor="end">index, 03 Jun = 100</text>
+            </g>
+            <g stroke="#1B2027" stroke-width="1">
+              <line x1="58" y1="40" x2="1044" y2="40"></line>
+              <line x1="58" y1="91.5" x2="1044" y2="91.5"></line>
+              <line x1="58" y1="143" x2="1044" y2="143"></line>
+              <line x1="58" y1="194.5" x2="1044" y2="194.5"></line>
+            </g>
+            <line x1="58" y1="246" x2="1044" y2="246" stroke="#232A33" stroke-width="1"></line>
+            <line x1="58" y1="40" x2="58" y2="246" stroke="#232A33" stroke-width="1"></line>
+            <g font-family="Inter" font-size="11" fill="#94A3B8" text-anchor="end">
+              <text x="50" y="44">118</text><text x="50" y="95">110</text>
+              <text x="50" y="147">102</text><text x="50" y="198">94</text><text x="50" y="250">86</text>
+            </g>
+            <g font-family="Inter" font-size="11" fill="#94A3B8" text-anchor="middle">
+              <text x="58" y="262">03 Jun</text><text x="302" y="262">25 Jun</text>
+              <text x="546" y="262">17 Jul</text><text x="800" y="262">09 Aug</text><text x="1036" y="262">31 Aug</text>
+            </g>
+            <line x1="58" y1="155.9" x2="1044" y2="155.9" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="4 4" opacity=".5"></line>
+            <text x="200" y="152" font-family="Inter" font-size="10" fill="#CBD5E1">100 · rebase</text>
+            <!-- gap band -->
+            <polygon fill="#009E73" opacity=".16" points="58.0,155.9 69.1,152.6 80.2,139.1 91.2,144.9 102.3,133.6 113.4,133.4 124.5,133.2 135.6,113.5 146.6,109.4 157.7,107.1 168.8,97.6 179.9,84.2 190.9,81.8 202.0,73.3 213.1,80.1 224.2,80.9 235.3,82.4 246.3,92.6 257.4,104.4 268.5,117.0 279.6,116.6 290.7,115.6 301.7,115.9 312.8,112.7 323.9,122.5 335.0,120.6 346.0,115.8 357.1,106.2 368.2,111.5 379.3,112.6 390.4,128.7 401.4,130.7 412.5,148.1 423.6,158.1 434.7,146.1 445.8,163.1 456.8,153.7 467.9,148.4 479.0,148.6 490.1,142.1 501.1,134.9 512.2,122.9 523.3,122.4 534.4,125.2 545.5,128.2 556.5,134.6 567.6,132.4 578.7,137.0 589.8,124.8 600.9,139.3 611.9,146.6 623.0,152.5 634.1,168.4 645.2,149.7 656.2,168.4 667.3,168.4 678.4,170.5 689.5,154.0 700.6,168.9 711.6,157.3 722.7,161.2 733.8,160.1 744.9,163.4 756.0,155.5 767.0,162.9 778.1,161.2 789.2,155.7 800.3,137.1 811.3,156.2 822.4,140.4 833.5,129.4 844.6,131.2 855.7,125.9 866.7,127.6 877.8,110.0 888.9,105.4 900.0,104.8 911.1,104.2 922.1,103.5 933.2,102.4 944.3,108.1 955.4,86.1 966.4,101.9 977.5,133.3 988.6,131.8 999.7,130.6 1010.8,124.7 1021.8,123.9 1032.9,122.7 1044.0,117.1 1044.0,182.6 1032.9,175.5 1021.8,176.3 1010.8,166.9 999.7,172.9 988.6,172.0 977.5,177.3 966.4,179.4 955.4,170.6 944.3,169.4 933.2,168.8 922.1,166.6 911.1,177.1 900.0,179.2 888.9,159.2 877.8,146.2 866.7,147.2 855.7,141.5 844.6,136.4 833.5,138.4 822.4,147.0 811.3,134.1 800.3,140.6 789.2,137.8 778.1,136.4 767.0,141.8 756.0,145.8 744.9,145.0 733.8,142.5 722.7,127.9 711.6,133.6 700.6,147.2 689.5,143.6 678.4,132.1 667.3,134.6 656.2,134.1 645.2,124.1 634.1,127.5 623.0,105.8 611.9,97.6 600.9,103.0 589.8,111.5 578.7,120.1 567.6,127.4 556.5,138.4 545.5,126.0 534.4,119.4 523.3,122.4 512.2,114.1 501.1,99.9 490.1,116.8 479.0,121.7 467.9,116.6 456.8,123.6 445.8,124.0 434.7,123.9 423.6,115.6 412.5,122.5 401.4,120.7 390.4,106.5 379.3,115.4 368.2,106.6 357.1,113.1 346.0,102.2 335.0,104.7 323.9,113.5 312.8,136.5 301.7,133.2 290.7,134.1 279.6,129.2 268.5,136.8 257.4,120.0 246.3,118.8 235.3,123.3 224.2,124.6 213.1,127.7 202.0,139.9 190.9,143.4 179.9,144.2 168.8,133.2 157.7,124.2 146.6,116.4 135.6,114.4 124.5,118.1 113.4,119.3 102.3,122.7 91.2,129.9 80.2,136.8 69.1,154.8 58.0,155.9"></polygon>
+            <polyline fill="none" stroke="#D55E00" stroke-width="2" stroke-linejoin="round" points="58.0,155.9 69.1,154.8 80.2,136.8 91.2,129.9 102.3,122.7 113.4,119.3 124.5,118.1 135.6,114.4 146.6,116.4 157.7,124.2 168.8,133.2 179.9,144.2 190.9,143.4 202.0,139.9 213.1,127.7 224.2,124.6 235.3,123.3 246.3,118.8 257.4,120.0 268.5,136.8 279.6,129.2 290.7,134.1 301.7,133.2 312.8,136.5 323.9,113.5 335.0,104.7 346.0,102.2 357.1,113.1 368.2,106.6 379.3,115.4 390.4,106.5 401.4,120.7 412.5,122.5 423.6,115.6 434.7,123.9 445.8,124.0 456.8,123.6 467.9,116.6 479.0,121.7 490.1,116.8 501.1,99.9 512.2,114.1 523.3,122.4 534.4,119.4 545.5,126.0 556.5,138.4 567.6,127.4 578.7,120.1 589.8,111.5 600.9,103.0 611.9,97.6 623.0,105.8 634.1,127.5 645.2,124.1 656.2,134.1 667.3,134.6 678.4,132.1 689.5,143.6 700.6,147.2 711.6,133.6 722.7,127.9 733.8,142.5 744.9,145.0 756.0,145.8 767.0,141.8 778.1,136.4 789.2,137.8 800.3,140.6 811.3,134.1 822.4,147.0 833.5,138.4 844.6,136.4 855.7,141.5 866.7,147.2 877.8,146.2 888.9,159.2 900.0,179.2 911.1,177.1 922.1,166.6 933.2,168.8 944.3,169.4 955.4,170.6 966.4,179.4 977.5,177.3 988.6,172.0 999.7,172.9 1010.8,166.9 1021.8,176.3 1032.9,175.5 1044.0,182.6"></polyline>
+            <polyline fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round" points="58.0,155.9 69.1,152.6 80.2,139.1 91.2,144.9 102.3,133.6 113.4,133.4 124.5,133.2 135.6,113.5 146.6,109.4 157.7,107.1 168.8,97.6 179.9,84.2 190.9,81.8 202.0,73.3 213.1,80.1 224.2,80.9 235.3,82.4 246.3,92.6 257.4,104.4 268.5,117.0 279.6,116.6 290.7,115.6 301.7,115.9 312.8,112.7 323.9,122.5 335.0,120.6 346.0,115.8 357.1,106.2 368.2,111.5 379.3,112.6 390.4,128.7 401.4,130.7 412.5,148.1 423.6,158.1 434.7,146.1 445.8,163.1 456.8,153.7 467.9,148.4 479.0,148.6 490.1,142.1 501.1,134.9 512.2,122.9 523.3,122.4 534.4,125.2 545.5,128.2 556.5,134.6 567.6,132.4 578.7,137.0 589.8,124.8 600.9,139.3 611.9,146.6 623.0,152.5 634.1,168.4 645.2,149.7 656.2,168.4 667.3,168.4 678.4,170.5 689.5,154.0 700.6,168.9 711.6,157.3 722.7,161.2 733.8,160.1 744.9,163.4 756.0,155.5 767.0,162.9 778.1,161.2 789.2,155.7 800.3,137.1 811.3,156.2 822.4,140.4 833.5,129.4 844.6,131.2 855.7,125.9 866.7,127.6 877.8,110.0 888.9,105.4 900.0,104.8 911.1,104.2 922.1,103.5 933.2,102.4 944.3,108.1 955.4,86.1 966.4,101.9 977.5,133.3 988.6,131.8 999.7,130.6 1010.8,124.7 1021.8,123.9 1032.9,122.7 1044.0,117.1"></polyline>
+            <circle cx="1044" cy="117.1" r="3.5" fill="#0072B2"></circle>
+            <circle cx="1044" cy="182.6" r="3.5" fill="#D55E00"></circle>
+            <text x="1040" y="72" font-family="Inter" font-size="11" font-weight="600" fill="#0072B2" text-anchor="end">TIPS 106.0 · ₹648.05</text>
+            <text x="1040" y="212" font-family="Inter" font-size="11" font-weight="600" fill="#D55E00" text-anchor="end">SGA 95.9 · ₹512.40</text>
+            <!-- crossover marker -->
+            <line x1="623" y1="40" x2="623" y2="246" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="3 3" opacity=".3"></line>
+            <text x="629" y="52" font-family="Inter" font-size="10" fill="#94A3B8">last crossover, 29 Jul</text>
+          </svg>
+        </div>
+        <div class="rdo">TIPS finishes <b style="color:#F1F5F9">+10.2 pp ahead</b> (TIPS +6.0%, Saregama −4.2%); the gap was negative as recently as 29 Jul, so all of it was earned in August. Views vs price over this window: <span class="mono">r = −0.07</span>, n = 29 daily pairs, critical <span class="mono">r = 0.37</span> at p = .05 — <b style="color:#F1F5F9">not significant</b>. Do not read this as views driving price.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

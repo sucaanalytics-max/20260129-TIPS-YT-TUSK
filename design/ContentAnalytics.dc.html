@@ -1,0 +1,601 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    .ca * { box-sizing: border-box; margin: 0; padding: 0; }
+    .ca { font-family: Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; color: #F1F5F9; }
+    .ca .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+    /* ---------- sidebar ---------- */
+    .ca .sb { width: 290px; flex: 0 0 290px; background: #0A0C11; border-right: 1px solid #232A33; display: flex; flex-direction: column; }
+    .ca .sb-brand { padding: 18px 18px 14px; }
+    .ca .sb-brand .wm { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #64748B; }
+    .ca .sb-brand .pd { font-size: 11px; color: #64748B; margin-top: 3px; }
+    .ca .sw { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .ca .sw-row { height: 42px; border-radius: 8px; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 13px; }
+    .ca .sw-on { background: linear-gradient(100deg, #3B82F6 0%, #8B5CF6 100%); color: #FFFFFF; font-weight: 600; }
+    .ca .sw-off { color: #94A3B8; font-weight: 500; }
+    .ca .sw-row .tk { margin-left: auto; font-size: 11px; font-weight: 500; letter-spacing: .04em; opacity: .8; }
+    .ca .sw-on .tk { color: rgba(255,255,255,.82); }
+    .ca .div { height: 1px; background: #232A33; }
+    .ca .nav { padding: 12px 12px; display: flex; flex-direction: column; gap: 2px; }
+    .ca .nv { height: 40px; border-radius: 7px; display: flex; align-items: center; gap: 11px; padding: 0 12px; font-size: 13px; color: #94A3B8; }
+    .ca .nv .g { font-size: 13px; width: 17px; text-align: center; }
+    .ca .nv-on { background: rgba(59,130,246,.12); color: #60A5FA; font-weight: 600; }
+    .ca .sb-foot { margin-top: auto; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #232A33; color: #64748B; font-size: 13px; }
+
+    /* ---------- content ---------- */
+    .ca .ct { flex: 1 1 auto; min-width: 0; }
+    .ca .ph { padding: 16px 24px; border-bottom: 1px solid #232A33; display: flex; align-items: flex-end; justify-content: space-between; height: 84px; }
+    .ca .ph h1 { font-size: 28px; font-weight: 600; letter-spacing: -.01em; line-height: 1.05; }
+    .ca .ph .upd { font-size: 12px; color: #64748B; margin-top: 5px; }
+    .ca .ph-r { display: flex; align-items: center; gap: 10px; }
+    .ca .lbl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; }
+    .ca .sel { height: 30px; padding: 0 10px; border: 1px solid #232A33; border-radius: 6px; background: #161B27; color: #CBD5E1; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+    .ca .btn-p { height: 30px; padding: 0 12px; border-radius: 6px; background: #3B82F6; color: #fff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+    .ca .btn-o { height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid #232A33; color: #CBD5E1; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+
+    .ca .body { padding: 24px; }
+    .ca .sec { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; margin-bottom: 10px; }
+
+    /* ---------- cards ---------- */
+    .ca .card { background: #121620; border: 1px solid #232A33; border-radius: 8px; overflow: hidden; }
+    .ca .ch { padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; height: 50px; }
+    .ca .ch h3 { font-size: 14px; font-weight: 600; line-height: 1.1; }
+    .ca .ch .sub { font-size: 12px; color: #94A3B8; margin-top: 3px; }
+    .ca .pills { display: flex; gap: 4px; }
+    .ca .pill { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 5px; color: #64748B; }
+    .ca .pill-on { background: #1B2027; color: #F1F5F9; }
+    .ca .chip { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 4px; }
+    .ca .chip-w { background: rgba(252,211,77,.12); color: #FCD34D; border: 1px solid rgba(252,211,77,.28); }
+
+    /* ---------- KPI ---------- */
+    .ca .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; height: 124px; }
+    .ca .kpi { background: #121620; border: 1px solid #232A33; border-radius: 8px; position: relative; overflow: hidden; padding: 14px 16px 0; }
+    .ca .kpi .kl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; }
+    .ca .kpi .kv { font-size: 30px; font-weight: 600; color: #F1F5F9; line-height: 1.06; margin-top: 6px; letter-spacing: -.01em; }
+    .ca .kpi .kd { font-size: 12px; font-weight: 500; margin-top: 4px; white-space: nowrap; }
+    .ca .kpi .spark { position: absolute; left: 0; bottom: 0; width: 100%; height: 40px; }
+    .ca .up { color: #34D399; } .ca .dn { color: #F4576B; } .ca .flat { color: #94A3B8; } .ca .warn { color: #FCD34D; }
+    .ca .q { color: #64748B; font-weight: 400; }
+
+    /* ---------- tables ---------- */
+    .ca table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .ca thead th { height: 34px; background: #161B27; border-bottom: 1px solid #232A33; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; text-align: left; padding: 0 10px; white-space: nowrap; }
+    .ca thead th.r { text-align: right; }
+    .ca thead th .s { color: #64748B; margin-left: 3px; }
+    .ca tbody td { height: 38px; border-bottom: 1px solid #1B222C; font-size: 13px; padding: 0 10px; color: #CBD5E1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ca tbody td.r { text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; color: #F1F5F9; }
+    .ca tbody tr:nth-child(even) { background: rgba(255,255,255,.017); }
+    .ca tbody tr:last-child td { border-bottom: none; }
+    .ca td .nm { color: #F1F5F9; font-weight: 500; }
+    .ca td .dim { color: #94A3B8; }
+    .ca .em { color: #64748B; }
+    .ca .amber { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #FCD34D; margin-right: 6px; vertical-align: 1px; }
+    .ca .tf { height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-top: 1px solid #232A33; background: #121620; font-size: 12px; color: #64748B; }
+    .ca .tf .pg { display: flex; gap: 14px; color: #94A3B8; }
+
+    .ca .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .ca .readout { font-size: 12px; color: #94A3B8; line-height: 1.45; padding: 0 16px 14px; }
+    .ca .lg { display: flex; gap: 14px; padding: 0 16px 6px; font-size: 11px; color: #94A3B8; align-items: center; }
+    .ca .lg i { display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: 2px; }
+    .ca .fn { font-size: 11px; color: #64748B; line-height: 1.55; }
+    .ca .fn b { color: #94A3B8; font-weight: 600; }
+  </style>
+</helmet>
+
+<div class="ca" style="width:1440px; height:2400px; background:#0C0E13; display:flex; align-items:stretch; overflow:hidden;">
+
+  <!-- ================= SIDEBAR ================= -->
+  <div class="sb">
+    <div class="sb-brand">
+      <div class="wm">Tusk Invest · YT Terminal</div>
+      <div class="pd">Period 2026-08-03 → 2026-08-31 · 29d</div>
+    </div>
+    <div class="sw">
+      <div class="sw-row sw-on"><span>♪</span><span>TIPS Music</span><span class="tk">TIPSMUSIC</span></div>
+      <div class="sw-row sw-off"><span>♪</span><span>Saregama</span><span class="tk">SAREGAMA</span></div>
+    </div>
+    <div class="div"></div>
+    <div class="nav">
+      <div class="nv"><span class="g">📊</span>Overview</div>
+      <div class="nv"><span class="g">💹</span>Nowcast</div>
+      <div class="nv nv-on"><span class="g">📺</span>Content Analytics</div>
+      <div class="nv"><span class="g">🚨</span>Anomalies</div>
+      <div class="nv"><span class="g">📋</span>Data Table</div>
+    </div>
+    <div class="div"></div>
+    <div class="nav"><div class="nv"><span class="g">⇄</span>Compare</div></div>
+    <div class="div"></div>
+    <div style="padding:14px 18px 0;">
+      <div class="lbl" style="margin-bottom:9px;">Scope</div>
+      <div style="font-size:12px; color:#94A3B8; line-height:1.75;">
+        <div style="display:flex; justify-content:space-between;"><span>Owned channels</span><span class="mono" style="color:#F1F5F9;">16</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>Tracked videos</span><span class="mono" style="color:#F1F5F9;">41,208</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>Channel-days</span><span class="mono" style="color:#F1F5F9;">464</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>Frozen / repaired</span><span class="mono" style="color:#FCD34D;">22 · 4.7%</span></div>
+      </div>
+    </div>
+    <div class="sb-foot"><span>🌙 Dark</span><span>‹</span></div>
+  </div>
+
+  <!-- ================= CONTENT ================= -->
+  <div class="ct">
+
+    <!-- page header -->
+    <div class="ph">
+      <div>
+        <h1>Content Analytics</h1>
+        <div class="upd">TIPS Music · 16 owned channels · Updated Aug 31, 2026 at 03:09 PM</div>
+      </div>
+      <div class="ph-r">
+        <span class="lbl">Period:</span>
+        <span class="sel">Last 30 Days <span style="color:#64748B;">▾</span></span>
+        <span class="btn-p">⟳ Refresh</span>
+        <span class="btn-o">⬇ Export</span>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <!-- ============ KPI ROW ============ -->
+      <div class="kpis">
+
+        <div class="kpi">
+          <div class="kl">Active channels</div>
+          <div class="kv mono">16</div>
+          <div class="kd flat">— <span class="q">no change, 30d</span></div>
+          <svg class="spark" viewBox="0 0 176 40" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,26 15,26 29,26 44,26 59,26 73,26 88,26 103,26 117,26 132,26 147,26 161,26 176,26"/>
+          </svg>
+        </div>
+
+        <div class="kpi">
+          <div class="kl">Releases (30d)</div>
+          <div class="kv mono">342</div>
+          <div class="kd up">▲ +47 <span class="q">vs prior 30d</span></div>
+          <svg class="spark" viewBox="0 0 176 40" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,30 15,24 29,28 44,17 59,22 73,26 88,14 103,20 117,25 132,12 147,18 161,9 176,15"/>
+          </svg>
+        </div>
+
+        <div class="kpi">
+          <div class="kl">Cat. freshness</div>
+          <div class="kv mono">0.10</div>
+          <div class="kd dn">▼ −0.01 <span class="q">vs 30d ago</span></div>
+          <svg class="spark" viewBox="0 0 176 40" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,14 15,16 29,13 44,18 59,17 73,21 88,19 103,23 117,22 132,25 147,24 161,27 176,26"/>
+          </svg>
+        </div>
+
+        <div class="kpi">
+          <div class="kl">Median video age</div>
+          <div class="kv mono">4.2<span style="font-size:15px; color:#94A3B8; margin-left:3px;">yr</span></div>
+          <div class="kd up">▲ +0.1yr <span class="q">ageing</span></div>
+          <svg class="spark" viewBox="0 0 176 40" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,27 15,26 29,26 44,24 59,25 73,23 88,22 103,22 117,20 132,19 147,19 161,17 176,16"/>
+          </svg>
+        </div>
+
+        <div class="kpi">
+          <div class="kl">Top-chan. conc.</div>
+          <div class="kv mono">70.0<span style="font-size:17px; color:#94A3B8;">%</span></div>
+          <div class="kd warn">▲ +1.2pp <span class="q">conc. risk</span></div>
+          <svg class="spark" viewBox="0 0 176 40" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,25 15,23 29,26 44,22 59,24 73,20 88,21 103,18 117,20 132,16 147,17 161,14 176,13"/>
+          </svg>
+        </div>
+
+        <div class="kpi">
+          <div class="kl">Subscriber drift</div>
+          <div class="kv mono">+390K</div>
+          <div class="kd up">▲ +0.29% <span class="q">net adds</span></div>
+          <svg class="spark" viewBox="0 0 176 40" preserveAspectRatio="none">
+            <polyline fill="none" stroke="#0072B2" stroke-opacity=".6" stroke-width="2" points="0,22 15,18 29,24 44,15 59,19 73,13 88,17 103,11 117,16 132,10 147,14 161,8 176,12"/>
+          </svg>
+        </div>
+
+      </div>
+
+      <!-- ============ CHANNEL LEADERBOARD ============ -->
+      <div class="card" style="margin-top:16px; height:658px;">
+        <div class="ch">
+          <div>
+            <h3>Channel leaderboard</h3>
+            <div class="sub">Owned channels ranked by latest complete day (2026-08-30). Δ columns are 30-day.</div>
+          </div>
+          <div class="pills"><span class="pill pill-on">Daily views</span><span class="pill">Subs</span><span class="pill">Δ videos</span></div>
+        </div>
+        <table>
+          <colgroup>
+            <col style="width:268px"><col style="width:104px"><col style="width:128px"><col style="width:132px">
+            <col style="width:128px"><col style="width:120px"><col style="width:100px"><col style="width:94px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Channel <span class="s">⇅</span></th>
+              <th>Language <span class="s">⇅</span></th>
+              <th class="r">Subscribers <span class="s">⇅</span></th>
+              <th class="r">Total views <span class="s">⇅</span></th>
+              <th class="r">Daily views <span class="s">⇅</span></th>
+              <th class="r">Δ subs <span class="s">⇅</span></th>
+              <th class="r">Δ videos <span class="s">⇅</span></th>
+              <th class="r">30d trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="nm">Tips Official</span></td><td class="dim">Hindi</td>
+              <td class="r">82.20M</td><td class="r">67.89B</td><td class="r">32.02M</td>
+              <td class="r up">▲ 217.2K</td><td class="r">+96</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,13 6,12 12,14 18,10 24,11 30,8 36,10 42,7 48,9 54,6 60,7 66,5 72,6"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">90's Gaane</span></td><td class="dim">Hindi</td>
+              <td class="r">19.46M</td><td class="r">9.88B</td><td class="r">8.16M</td>
+              <td class="r up">▲ 71.2K</td><td class="r">+38</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,15 6,13 12,14 18,11 24,12 30,9 36,11 42,8 48,6 54,8 60,5 66,6 72,4"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Punjabi</span></td><td class="dim">Punjabi</td>
+              <td class="r">9.34M</td><td class="r">2.71B</td><td class="r">2.82M</td>
+              <td class="r up">▲ 34.8K</td><td class="r">+41</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,11 6,9 12,12 18,7 24,10 30,6 36,8 42,5 48,9 54,6 60,4 66,7 72,5"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Telugu</span></td><td class="dim">Telugu</td>
+              <td class="r">6.12M</td><td class="r">1.44B</td><td class="r">1.50M</td>
+              <td class="r up">▲ 21.6K</td><td class="r">+29</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,8 6,10 12,7 18,11 24,9 30,12 36,10 42,13 48,11 54,14 60,12 66,15 72,13"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Bhakti Prem</span></td><td class="dim">Hindi</td>
+              <td class="r">4.28M</td><td class="r">0.62B</td><td class="r"><span class="amber"></span>705.8K</td>
+              <td class="r up">▲ 12.4K</td><td class="r">+34</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,14 6,12 12,13 18,9 24,10 30,10 36,10 42,10 48,7 54,9 60,6 66,8 72,5"/><rect x="30" y="2" width="12" height="16" fill="#FCD34D" fill-opacity=".14"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Bollywood Sadabahar</span></td><td class="dim">Hindi</td>
+              <td class="r">3.11M</td><td class="r">0.48B</td><td class="r">609.2K</td>
+              <td class="r up">▲ 8.9K</td><td class="r">+18</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,9 6,11 12,10 18,12 24,11 30,13 36,12 42,14 48,13 54,15 60,13 66,14 72,14"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Films</span></td><td class="dim">Hindi</td>
+              <td class="r">2.86M</td><td class="r">0.41B</td><td class="r">552.2K</td>
+              <td class="r up">▲ 6.1K</td><td class="r">+12</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,12 6,11 12,13 18,10 24,12 30,11 36,13 42,12 48,10 54,12 60,11 66,12 72,11"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Evergreen Bollywood Hits</span></td><td class="dim">Hindi</td>
+              <td class="r">2.44M</td><td class="r">0.36B</td><td class="r">533.8K</td>
+              <td class="r up">▲ 5.7K</td><td class="r">+9</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,10 6,9 12,11 18,8 24,10 30,7 36,9 42,8 48,10 54,7 60,9 66,8 72,7"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Tamil</span></td><td class="dim">Tamil</td>
+              <td class="r">1.18M</td><td class="r">0.19B</td><td class="r">398.1K</td>
+              <td class="r up">▲ 4.2K</td><td class="r">+14</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,13 6,12 12,10 18,11 24,8 30,10 36,7 42,9 48,6 54,8 60,5 66,7 72,5"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Bhojpuri</span></td><td class="dim">Bhojpuri</td>
+              <td class="r">0.96M</td><td class="r">0.14B</td><td class="r"><span class="amber"></span>302.4K</td>
+              <td class="r up">▲ 3.8K</td><td class="r">+22</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,12 6,10 12,11 18,8 24,9 30,9 36,9 42,9 48,6 54,7 60,5 66,6 72,4"/><rect x="30" y="2" width="12" height="16" fill="#FCD34D" fill-opacity=".14"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Gujarati</span></td><td class="dim">Gujarati</td>
+              <td class="r">0.62M</td><td class="r">0.09B</td><td class="r">196.1K</td>
+              <td class="r up">▲ 2.1K</td><td class="r">+11</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,11 6,12 12,10 18,13 24,11 30,12 36,10 42,12 48,11 54,10 60,12 66,10 72,11"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Marathi</span></td><td class="dim">Marathi</td>
+              <td class="r">0.48M</td><td class="r">0.07B</td><td class="r">148.3K</td>
+              <td class="r up">▲ 1.4K</td><td class="r">+8</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,9 6,10 12,12 18,11 24,13 30,12 36,14 42,13 48,14 54,13 60,15 66,14 72,15"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Haryanvi</span></td><td class="dim">Haryanvi</td>
+              <td class="r">0.31M</td><td class="r">0.04B</td><td class="r">96.4K</td>
+              <td class="r up">▲ 0.9K</td><td class="r">+6</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,14 6,13 12,14 18,12 24,13 30,10 36,12 42,9 48,11 54,9 60,10 66,8 72,9"/></svg></td>
+            </tr>
+            <tr>
+              <td><span class="nm">Tips Ghazals &amp; Sufi</span></td><td class="dim">Hindi</td>
+              <td class="r">0.19M</td><td class="r">0.03B</td><td class="r">88.7K</td>
+              <td class="r dn">▼ 0.3K</td><td class="r em">—</td>
+              <td class="r"><svg width="72" height="20" viewBox="0 0 72 20"><polyline fill="none" stroke="#0072B2" stroke-width="1.5" points="0,7 6,8 12,8 18,10 24,9 30,11 36,11 42,12 48,12 54,13 60,14 66,14 72,15"/></svg></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tf">
+          <span>Showing 1–14 of 16 channels · 2 below the 50K-view display threshold (+4 releases, not listed)</span>
+          <span class="pg">‹ Prev &nbsp;·&nbsp; Next ›</span>
+        </div>
+      </div>
+
+      <!-- ============ PAIR 1 ============ -->
+      <div class="grid2" style="margin-top:16px;">
+
+        <!-- Views by language -->
+        <div class="card" style="height:380px;">
+          <div class="ch">
+            <div>
+              <h3>Views by language</h3>
+              <div class="sub">Share of latest-day owned-channel views, 2026-08-30</div>
+            </div>
+            <div class="pills"><span class="pill pill-on">Daily</span><span class="pill">30d</span></div>
+          </div>
+          <svg width="509" height="215" viewBox="0 0 511 216" style="display:block; margin:0 16px;">
+            <!-- gridlines -->
+            <g stroke="#1B2027" stroke-width="1">
+              <line x1="84" y1="8" x2="84" y2="196"/><line x1="184" y1="8" x2="184" y2="196"/>
+              <line x1="284" y1="8" x2="284" y2="196"/><line x1="384" y1="8" x2="384" y2="196"/>
+              <line x1="484" y1="8" x2="484" y2="196"/>
+            </g>
+            <line x1="84" y1="196" x2="484" y2="196" stroke="#232A33" stroke-width="1"/>
+            <g font-family="Inter" font-size="11" fill="#94A3B8">
+              <text x="84" y="210" text-anchor="middle">0%</text><text x="184" y="210" text-anchor="middle">25%</text>
+              <text x="284" y="210" text-anchor="middle">50%</text><text x="384" y="210" text-anchor="middle">75%</text>
+              <text x="484" y="210" text-anchor="middle">100%</text>
+            </g>
+            <g font-family="Inter" font-size="11" fill="#CBD5E1">
+              <text x="78" y="21" text-anchor="end">Hindi</text>
+              <text x="78" y="44" text-anchor="end">Punjabi</text>
+              <text x="78" y="67" text-anchor="end">Telugu</text>
+              <text x="78" y="90" text-anchor="end">Tamil</text>
+              <text x="78" y="113" text-anchor="end">Bhojpuri</text>
+              <text x="78" y="136" text-anchor="end">Gujarati</text>
+              <text x="78" y="159" text-anchor="end">Marathi</text>
+              <text x="78" y="182" text-anchor="end">Haryanvi</text>
+            </g>
+            <g fill="#0072B2">
+              <rect x="84" y="11" width="354.4" height="12" rx="2"/>
+              <rect x="84" y="34" width="23.4" height="12" rx="2"/>
+              <rect x="84" y="57" width="12.5" height="12" rx="2"/>
+              <rect x="84" y="80" width="3.3" height="12" rx="1.5"/>
+              <rect x="84" y="103" width="3" height="12" rx="1.5"/>
+              <rect x="84" y="126" width="3" height="12" rx="1.5"/>
+              <rect x="84" y="149" width="3" height="12" rx="1.5"/>
+              <rect x="84" y="172" width="3" height="12" rx="1.5"/>
+            </g>
+            <g font-family="'JetBrains Mono', monospace" font-size="11" fill="#F1F5F9">
+              <text x="430" y="21" text-anchor="end" fill="#FFFFFF">42.67M · 88.6%</text>
+              <text x="115" y="44">2.82M · 5.9%</text>
+              <text x="104" y="67">1.50M · 3.1%</text>
+              <text x="95" y="90">398.1K · 0.83%</text>
+              <text x="95" y="113">302.4K · 0.63%</text>
+              <text x="95" y="136">196.1K · 0.41%</text>
+              <text x="95" y="159">148.3K · 0.31%</text>
+              <text x="95" y="182">96.4K · 0.20%</text>
+            </g>
+          </svg>
+          <div class="readout" style="padding-top:10px;">Hindi is 88.6% of latest-day views; the seven other languages together are 11.4%. The scale is linear and not clipped — the non-Hindi bars are small because the concentration is real, not because they are truncated.</div>
+        </div>
+
+        <!-- Channel concentration -->
+        <div class="card" style="height:380px;">
+          <div class="ch">
+            <div>
+              <h3>Channel concentration</h3>
+              <div class="sub">Cumulative share of 30-day incremental views by channel rank</div>
+            </div>
+            <div class="pills"><span class="pill pill-on">Cumulative</span><span class="pill">Marginal</span></div>
+          </div>
+          <div class="lg"><span><i style="background:#0072B2"></i>Cumulative share</span><span><i style="background:#E8EDF4"></i>Rank-1 level (70.0%)</span></div>
+          <svg width="509" height="199" viewBox="0 0 511 200" style="display:block; margin:0 16px;">
+            <g stroke="#1B2027" stroke-width="1">
+              <line x1="44" y1="12" x2="500" y2="12"/><line x1="44" y1="53" x2="500" y2="53"/>
+              <line x1="44" y1="94" x2="500" y2="94"/><line x1="44" y1="135" x2="500" y2="135"/>
+            </g>
+            <line x1="44" y1="176" x2="500" y2="176" stroke="#232A33" stroke-width="1"/>
+            <line x1="44" y1="12" x2="44" y2="176" stroke="#232A33" stroke-width="1"/>
+            <g font-family="Inter" font-size="11" fill="#94A3B8">
+              <text x="38" y="16" text-anchor="end">100%</text><text x="38" y="57" text-anchor="end">75%</text>
+              <text x="38" y="98" text-anchor="end">50%</text><text x="38" y="139" text-anchor="end">25%</text>
+              <text x="38" y="180" text-anchor="end">0%</text>
+              <text x="44" y="192" text-anchor="middle">1</text><text x="134" y="192" text-anchor="middle">4</text>
+              <text x="224" y="192" text-anchor="middle">7</text><text x="315" y="192" text-anchor="middle">10</text>
+              <text x="405" y="192" text-anchor="middle">13</text><text x="495" y="192" text-anchor="middle">16</text>
+              <text x="272" y="192" text-anchor="middle" fill="#64748B" opacity="0"> </text>
+            </g>
+            <!-- 70% reference -->
+            <line x1="44" y1="61.2" x2="500" y2="61.2" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
+            <text x="486" y="57" text-anchor="end" font-family="Inter" font-size="11" fill="#E8EDF4" opacity=".8">70.0% at rank 1</text>
+            <!-- area + curve -->
+            <polygon fill="#0072B2" fill-opacity=".13" points="44,176 44,61.2 74.1,34.6 104.1,25.4 134.2,20.5 164.3,18.1 194.3,16.0 224.4,14.2 254.5,13.0 284.6,12.6 314.6,12.3 344.7,12.2 374.8,12.1 404.8,12.0 434.9,12.0 465,12 495,12 495,176"/>
+            <polyline fill="none" stroke="#0072B2" stroke-width="2" stroke-linejoin="round" points="44,61.2 74.1,34.6 104.1,25.4 134.2,20.5 164.3,18.1 194.3,16.0 224.4,14.2 254.5,13.0 284.6,12.6 314.6,12.3 344.7,12.2 374.8,12.1 404.8,12.0 434.9,12.0 465,12 495,12"/>
+            <g fill="#0072B2">
+              <circle cx="44" cy="61.2" r="3.5"/><circle cx="74.1" cy="34.6" r="3"/><circle cx="104.1" cy="25.4" r="2.5"/><circle cx="134.2" cy="20.5" r="2.5"/>
+            </g>
+            <g font-family="Inter" font-size="10" fill="#CBD5E1">
+              <text x="52" y="72">Tips Official</text>
+              <text x="80" y="30">+90's Gaane 86.2%</text>
+              <text x="110" y="21">+Punjabi 91.8%</text>
+            </g>
+          </svg>
+          <div class="readout" style="padding-top:4px;">Rank 1 carries 70.0% of 30-day incremental views and ranks 1–2 carry 86.2%; ranks 9–16 together add 0.6pp. An algorithm change or a takedown on Tips Official alone moves the whole nowcast.</div>
+        </div>
+
+      </div>
+
+      <!-- ============ PAIR 2 ============ -->
+      <div class="grid2" style="margin-top:16px;">
+
+        <!-- Release cadence -->
+        <div class="card" style="height:380px;">
+          <div class="ch">
+            <div>
+              <h3>Release cadence</h3>
+              <div class="sub">Releases per week, 31 weeks to w/c 2026-08-24</div>
+            </div>
+            <span class="chip chip-w">Regime break</span>
+          </div>
+          <div class="lg"><span><i style="background:#0072B2"></i>Per-channel count</span><span><i style="background:#8B97A8"></i>Legacy aggregate (not comparable)</span></div>
+          <svg width="509" height="199" viewBox="0 0 511 200" style="display:block; margin:0 16px;">
+            <g stroke="#1B2027" stroke-width="1">
+              <line x1="40" y1="35.6" x2="500" y2="35.6"/><line x1="40" y1="71.1" x2="500" y2="71.1"/>
+              <line x1="40" y1="106.6" x2="500" y2="106.6"/><line x1="40" y1="141.5" x2="500" y2="141.5"/>
+            </g>
+            <line x1="40" y1="176" x2="500" y2="176" stroke="#232A33" stroke-width="1"/>
+            <line x1="40" y1="18" x2="40" y2="176" stroke="#232A33" stroke-width="1"/>
+            <g font-family="Inter" font-size="11" fill="#94A3B8">
+              <text x="34" y="39" text-anchor="end">100</text><text x="34" y="75" text-anchor="end">75</text>
+              <text x="34" y="110" text-anchor="end">50</text><text x="34" y="145" text-anchor="end">25</text>
+              <text x="34" y="180" text-anchor="end">0</text>
+            </g>
+            <!-- legacy region -->
+            <rect x="40" y="18" width="44.5" height="158" fill="#8B97A8" fill-opacity=".07"/>
+            <!-- legacy bars -->
+            <g fill="#8B97A8">
+              <rect x="42.4" y="159.0" width="10" height="17.0"/>
+              <rect x="57.3" y="163.2" width="10" height="12.8"/>
+              <rect x="72.1" y="156.1" width="10" height="19.9"/>
+            </g>
+            <!-- break line -->
+            <line x1="84.5" y1="14" x2="84.5" y2="176" stroke="#FCD34D" stroke-width="1.5" stroke-dasharray="5 4"/>
+            <text x="88" y="24" font-family="Inter" font-size="10" font-weight="600" fill="#FCD34D">2026-02-16 measurement change</text>
+            <!-- post-break bars: 28 -->
+            <g fill="#0072B2">
+              <rect x="86.9" y="89.5" width="10" height="86.5"/>
+              <rect x="101.8" y="70.1" width="10" height="105.9"/>
+              <rect x="116.6" y="78.2" width="10" height="97.8"/>
+              <rect x="131.5" y="51.2" width="10" height="124.8"/>
+              <rect x="146.3" y="75.3" width="10" height="100.7"/>
+              <rect x="161.1" y="82.4" width="10" height="93.6"/>
+              <rect x="176.0" y="41.3" width="10" height="134.7"/>
+              <rect x="190.8" y="59.7" width="10" height="116.3"/>
+              <rect x="205.7" y="66.8" width="10" height="109.2"/>
+              <rect x="220.5" y="93.8" width="10" height="82.2"/>
+              <rect x="235.4" y="56.9" width="10" height="119.1"/>
+              <rect x="250.2" y="46.9" width="10" height="129.1"/>
+              <rect x="265.0" y="72.5" width="10" height="103.5"/>
+              <rect x="279.9" y="79.6" width="10" height="96.4"/>
+              <rect x="294.7" y="63.9" width="10" height="112.1"/>
+              <rect x="309.6" y="28.5" width="10" height="147.5"/>
+              <rect x="324.4" y="54.1" width="10" height="121.9"/>
+              <rect x="339.3" y="73.9" width="10" height="102.1"/>
+              <rect x="354.1" y="85.2" width="10" height="90.8"/>
+              <rect x="368.9" y="61.1" width="10" height="114.9"/>
+              <rect x="383.8" y="44.1" width="10" height="131.9"/>
+              <rect x="398.6" y="68.2" width="10" height="107.8"/>
+              <rect x="413.5" y="76.7" width="10" height="99.3"/>
+              <rect x="428.3" y="51.2" width="10" height="124.8"/>
+              <rect x="443.2" y="59.7" width="10" height="116.3"/>
+              <rect x="458.0" y="38.4" width="10" height="137.6"/>
+              <rect x="472.8" y="63.9" width="10" height="112.1"/>
+              <rect x="487.7" y="56.9" width="10" height="119.1"/>
+            </g>
+            <g font-family="Inter" font-size="10" fill="#94A3B8">
+              <text x="47" y="190">Jan 26</text><text x="136" y="190">Mar 09</text><text x="225" y="190">Apr 20</text>
+              <text x="314" y="190">Jun 01</text><text x="403" y="190">Jul 13</text><text x="486" y="190" text-anchor="middle">Aug 24</text>
+            </g>
+          </svg>
+          <div class="readout" style="padding-top:4px;">Post-break weekly releases average <span class="mono" style="color:#CBD5E1">79.6</span> (σ 11.8, n=28), trending flat. The three grey bars are a single legacy aggregate, not a per-channel release count — do not read a step-up across the dashed line.</div>
+        </div>
+
+        <!-- Catalogue decay -->
+        <div class="card" style="height:380px;">
+          <div class="ch">
+            <div>
+              <h3>Catalogue decay</h3>
+              <div class="sub">Views per video per day against video age, 41,208 videos binned</div>
+            </div>
+            <div class="pills"><span class="pill pill-on">Linear</span><span class="pill">Log</span></div>
+          </div>
+          <div class="lg"><span><i style="background:#009E73"></i>Fitted decay</span><span><i style="background:#0072B2"></i>Age bin (n≥120)</span><span><i style="background:#E8EDF4"></i>Median age 4.2yr</span></div>
+          <svg width="509" height="199" viewBox="0 0 511 200" style="display:block; margin:0 16px;">
+            <g stroke="#1B2027" stroke-width="1">
+              <line x1="44" y1="20" x2="500" y2="20"/><line x1="44" y1="59" x2="500" y2="59"/>
+              <line x1="44" y1="98" x2="500" y2="98"/><line x1="44" y1="137" x2="500" y2="137"/>
+            </g>
+            <line x1="44" y1="176" x2="500" y2="176" stroke="#232A33" stroke-width="1"/>
+            <line x1="44" y1="16" x2="44" y2="176" stroke="#232A33" stroke-width="1"/>
+            <g font-family="Inter" font-size="11" fill="#94A3B8">
+              <text x="38" y="24" text-anchor="end">14K</text><text x="38" y="63" text-anchor="end">10.5K</text>
+              <text x="38" y="102" text-anchor="end">7K</text><text x="38" y="141" text-anchor="end">3.5K</text>
+              <text x="38" y="180" text-anchor="end">0</text>
+              <text x="44" y="192" text-anchor="middle">0</text><text x="156.8" y="192" text-anchor="middle">5yr</text>
+              <text x="269.5" y="192" text-anchor="middle">10yr</text><text x="382.3" y="192" text-anchor="middle">15yr</text>
+              <text x="495" y="192" text-anchor="middle">20yr</text>
+            </g>
+            <!-- median age marker -->
+            <line x1="138.7" y1="16" x2="138.7" y2="176" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="4 4" opacity=".5"/>
+            <text x="143" y="27" font-family="Inter" font-size="10" fill="#E8EDF4" opacity=".8">median 4.2yr</text>
+            <!-- scatter -->
+            <g fill="#0072B2" fill-opacity=".72">
+              <circle cx="49.6" cy="27.4" r="3"/><circle cx="55.3" cy="44.9" r="3"/><circle cx="60.9" cy="66.1" r="3"/>
+              <circle cx="66.6" cy="90.2" r="3"/><circle cx="72.2" cy="97.4" r="3"/><circle cx="77.8" cy="99.3" r="3"/>
+              <circle cx="89.1" cy="121.6" r="3"/><circle cx="100.4" cy="119.8" r="3"/><circle cx="111.7" cy="134.8" r="3"/>
+              <circle cx="123.0" cy="132.1" r="3"/><circle cx="134.2" cy="141.9" r="3"/><circle cx="145.5" cy="136.6" r="3"/>
+              <circle cx="156.8" cy="147.4" r="3"/><circle cx="168.1" cy="142.0" r="3"/><circle cx="179.3" cy="152.5" r="3"/>
+              <circle cx="201.9" cy="148.6" r="3"/><circle cx="224.4" cy="157.9" r="3"/><circle cx="247.0" cy="151.4" r="3"/>
+              <circle cx="269.5" cy="160.8" r="3"/><circle cx="292.1" cy="154.3" r="3"/><circle cx="314.6" cy="163.9" r="3"/>
+              <circle cx="337.2" cy="157.6" r="3"/><circle cx="359.7" cy="166.7" r="3"/><circle cx="382.3" cy="160.1" r="3"/>
+              <circle cx="416.1" cy="168.4" r="3"/><circle cx="450.0" cy="162.2" r="3"/><circle cx="472.5" cy="169.5" r="3"/>
+              <circle cx="495.0" cy="164.4" r="3"/>
+            </g>
+            <!-- fitted curve -->
+            <polyline fill="none" stroke="#009E73" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"
+              points="49.6,22.2 55.3,51.2 66.6,85.7 77.8,104.7 89.1,116.9 100.4,124.7 111.7,130.3 134.2,138.1 156.8,143.7 179.3,148.1 224.4,153.7 269.5,157.1 314.6,160.4 382.3,163.7 450.0,165.4 495,166.0"/>
+            <!-- halving marker -->
+            <circle cx="138.7" cy="139.2" r="4" fill="none" stroke="#009E73" stroke-width="1.5"/>
+            <text x="300" y="52" font-family="'JetBrains Mono', monospace" font-size="11" fill="#94A3B8">v(a) = 3.9·(a+0.28)^−0.72 · R² 0.91</text>
+          </svg>
+          <div class="readout" style="padding-top:4px;">Views per video halve by age <span class="mono" style="color:#CBD5E1">2.1yr</span> and flatten near 0.9K/day beyond age 8. The 4.2yr median sits on the flat tail: 71% of the catalogue is in the annuity region, so quarterly revenue is far less release-sensitive than the cadence chart suggests.</div>
+        </div>
+
+      </div>
+
+      <!-- ============ UPCOMING RELEASES ============ -->
+      <div class="card" style="margin-top:16px; height:314px;">
+        <div class="ch">
+          <div>
+            <h3>Upcoming releases</h3>
+            <div class="sub">Announced slate — scheduled, not measured. Nothing here enters the nowcast until it prints.</div>
+          </div>
+          <span class="chip chip-w">Forward-looking · not data</span>
+        </div>
+        <table>
+          <colgroup><col style="width:132px"><col style="width:352px"><col style="width:212px"><col style="width:130px"><col style="width:248px"></colgroup>
+          <thead>
+            <tr>
+              <th>Date <span class="s">⇅</span></th><th>Title</th><th>Channel</th><th>Language</th><th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono" style="color:#F1F5F9;">2026-09-04</td><td><span class="nm">Dil Ka Rishta 2 — Title Track</span></td><td class="dim">Tips Official</td><td class="dim">Hindi</td><td class="dim">Film single · confirmed</td></tr>
+            <tr><td class="mono" style="color:#F1F5F9;">2026-09-11</td><td><span class="nm">Sohniye</span></td><td class="dim">Tips Punjabi</td><td class="dim">Punjabi</td><td class="dim">Independent single · confirmed</td></tr>
+            <tr><td class="mono" style="color:#F1F5F9;">2026-09-18</td><td><span class="nm">Navratri Dhun Vol. 4</span></td><td class="dim">Tips Bhakti Prem</td><td class="dim">Hindi</td><td class="dim">Devotional EP · 9 tracks</td></tr>
+            <tr><td class="mono" style="color:#F1F5F9;">2026-09-25</td><td><span class="nm">Aashiqui Reloaded</span></td><td class="dim">90's Gaane</td><td class="dim">Hindi</td><td class="dim">Catalogue re-master · 12 tracks</td></tr>
+            <tr><td class="mono" style="color:#F1F5F9;">2026-10-02</td><td><span class="nm">Prema Yatra</span></td><td class="dim">Tips Telugu</td><td class="dim">Telugu</td><td class="dim">Film album · 6 tracks</td></tr>
+            <tr><td class="mono em">2026-10 <span style="font-family:Inter;">(TBC)</span></td><td><span class="nm">Untitled Q3 film slate</span></td><td class="dim">Tips Films</td><td class="dim">Hindi</td><td class="dim">Film album · <span class="em">date not announced</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ============ FOOTNOTES ============ -->
+      <div style="margin-top:16px; display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div class="fn">
+          <b>2026-02-16 regime break.</b> Before this date the pipeline stored a single legacy aggregate row per day for the whole TIPS estate; after it, real per-channel rows. Release counts, per-channel views and Δ-video columns are therefore <b>not comparable across the break</b>, and the release-cadence chart greys the pre-break region rather than joining it to the live series. Any week-on-week or year-on-year release comparison spanning 2026-02-16 is invalid.
+        </div>
+        <div class="fn">
+          <b>Measurement notes.</b> <span style="color:#FCD34D;">●</span> marks a channel whose cumulative counter was frozen by YouTube on ≥1 day in the window and back-filled by interpolation — 22 of 464 channel-days (4.7%) estate-wide; those values are inferred, not measured. Daily views are the latest complete day (2026-08-30, 48.13M estate total); the 45.91M KPI elsewhere in the terminal is the 29-day mean, 4.6% lower. Top-channel concentration is Tips Official's share of 30-day incremental views (70.0%); on the single latest day it is 66.5%. Absent values render as “—”, never 0.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

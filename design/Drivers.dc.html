@@ -1,0 +1,486 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    .dcv * { box-sizing: border-box; margin: 0; padding: 0; }
+    .dcv { font-family: Inter, -apple-system, "Segoe UI", sans-serif; color: #F1F5F9; -webkit-font-smoothing: antialiased; }
+    .dcv .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+    /* ---------- sidebar ---------- */
+    .dcv .sb { width: 290px; background: #0A0C11; border-right: 1px solid #232A33; padding: 18px 14px; display: flex; flex-direction: column; }
+    .dcv .sb .brand { font-size: 11px; font-weight: 600; letter-spacing: .10em; text-transform: uppercase; color: #64748B; padding: 0 8px 14px; }
+    .dcv .co { display: flex; align-items: center; gap: 9px; height: 42px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+    .dcv .co.on { background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%); color: #FFFFFF; font-weight: 600; }
+    .dcv .co.off { color: #94A3B8; }
+    .dcv .co .tick { margin-left: auto; font-size: 10px; letter-spacing: .06em; font-weight: 500; opacity: .82; }
+    .dcv .div { height: 1px; background: #232A33; margin: 14px 4px; }
+    .dcv .nav { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 6px; font-size: 13px; color: #94A3B8; }
+    .dcv .nav.on { background: rgba(59,130,246,.12); color: #60A5FA; font-weight: 500; }
+    .dcv .nav .g { width: 18px; font-size: 13px; }
+    .dcv .sbfoot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding: 12px 12px 0; border-top: 1px solid #1B222C; color: #64748B; font-size: 13px; }
+
+    /* ---------- header ---------- */
+    .dcv .hd { padding: 22px 24px 18px; border-bottom: 1px solid #232A33; display: flex; align-items: flex-start; justify-content: space-between; }
+    .dcv .h1 { font-size: 28px; font-weight: 600; letter-spacing: -.01em; }
+    .dcv .h1 span { font-size: 13px; font-weight: 500; color: #64748B; letter-spacing: 0; margin-left: 10px; }
+    .dcv .upd { font-size: 12px; color: #64748B; margin-top: 6px; }
+    .dcv .ctl { display: flex; align-items: center; gap: 10px; }
+    .dcv .ctl .lbl { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; }
+    .dcv .sel { height: 32px; border: 1px solid #232A33; background: #161B27; border-radius: 6px; padding: 0 26px 0 10px; font-size: 12px; color: #CBD5E1; display: flex; align-items: center; position: relative; }
+    .dcv .sel:after { content: "\25BE"; position: absolute; right: 9px; color: #64748B; font-size: 9px; }
+    .dcv .btn { height: 32px; border-radius: 6px; padding: 0 12px; font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .dcv .btn.pri { background: #3B82F6; color: #fff; }
+    .dcv .btn.sec { border: 1px solid #232A33; color: #CBD5E1; background: #121620; }
+
+    /* ---------- tabs ---------- */
+    .dcv .tabs { height: 46px; padding: 0 24px; border-bottom: 1px solid #232A33; display: flex; align-items: stretch; gap: 22px; background: #0A0C11; }
+    .dcv .tab { display: flex; align-items: center; font-size: 13px; color: #64748B; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .dcv .tab.on { color: #F1F5F9; font-weight: 600; border-bottom-color: #3B82F6; }
+    .dcv .tabnote { margin-left: auto; display: flex; align-items: center; font-size: 11px; color: #64748B; }
+
+    /* ---------- structure ---------- */
+    .dcv .body { padding: 22px 24px 24px; }
+    .dcv .sh { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; margin-bottom: 12px; display: flex; align-items: baseline; gap: 10px; }
+    .dcv .sh em { font-style: normal; font-size: 11px; font-weight: 400; letter-spacing: 0; text-transform: none; color: #64748B; }
+    .dcv .card { background: #121620; border: 1px solid #232A33; border-radius: 8px; }
+    .dcv .ct { font-size: 14px; font-weight: 600; }
+    .dcv .cs { font-size: 12px; color: #94A3B8; margin-top: 3px; }
+
+    /* ---------- tables ---------- */
+    .dcv table { width: 100%; border-collapse: collapse; }
+    .dcv th { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; background: #161B27; text-align: left; padding: 0 14px; height: 34px; border-bottom: 1px solid #232A33; white-space: nowrap; }
+    .dcv th.r, .dcv td.r { text-align: right; }
+    .dcv td { font-size: 13px; padding: 0 14px; height: 40px; border-bottom: 1px solid #1B222C; color: #F1F5F9; }
+    .dcv tr:last-child td { border-bottom: none; }
+    .dcv td.num { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12.5px; text-align: right; }
+    .dcv td.dash { color: #64748B; text-align: right; font-family: "JetBrains Mono", ui-monospace, monospace; }
+    .dcv .sortg { color: #64748B; font-size: 10px; margin-left: 4px; }
+    .dcv .tight td { height: 36px; }
+    .dcv tr.tot td { background: #161B27; font-weight: 600; border-top: 1px solid #232A33; }
+
+    .dcv .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 8px; vertical-align: middle; }
+    .dcv .foot { font-size: 11px; color: #64748B; line-height: 1.5; }
+    .dcv .readout { font-size: 12px; color: #94A3B8; line-height: 1.5; }
+
+    /* ---------- chart ---------- */
+    .dcv .ax { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; fill: #94A3B8; }
+    .dcv .blab { font-family: Inter, sans-serif; font-size: 11px; fill: #94A3B8; }
+    .dcv .bval { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; fill: #CBD5E1; }
+    .dcv .ghead { font-family: Inter, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: .06em; }
+    .dcv .lg { display: flex; align-items: center; gap: 14px; font-size: 11px; color: #94A3B8; }
+
+    /* ---------- coverage ---------- */
+    .dcv .grid62 { display: flex; gap: 4px; }
+    .dcv .cell { width: 28px; height: 26px; border-radius: 3px; }
+    .dcv .cell.meas { background: rgba(0,114,178,.45); border: 1px solid rgba(0,114,178,.75); }
+    .dcv .cell.imp { border: 1px solid #FCD34D; background:
+        repeating-linear-gradient(45deg, rgba(252,211,77,.85) 0 2px, rgba(252,211,77,.10) 2px 5px); }
+    .dcv .rowlab { width: 54px; font-size: 11px; color: #94A3B8; display: flex; align-items: center; }
+    .dcv .lgbox { width: 14px; height: 12px; border-radius: 2px; display: inline-block; vertical-align: middle; margin-right: 7px; }
+
+    /* ---------- assumptions ---------- */
+    .dcv .as { background: #121620; border: 1px solid #232A33; border-radius: 8px; padding: 15px; height: 252px; display: flex; flex-direction: column; }
+    .dcv .as .k { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: #94A3B8; }
+    .dcv .as .v { font-size: 17px; font-weight: 600; color: #F1F5F9; margin-top: 9px; line-height: 1.3; }
+    .dcv .as .hr { height: 1px; background: #1B222C; margin: 12px 0 10px; }
+    .dcv .as .w { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #FB923C; margin-bottom: 6px; }
+    .dcv .as .t { font-size: 11.5px; color: #94A3B8; line-height: 1.55; }
+    .dcv .as .t b { color: #CBD5E1; font-weight: 500; }
+    .dcv .as .n { font-size: 10px; color: #64748B; font-family: "JetBrains Mono", monospace; }
+
+    .dcv .warn { border: 1px solid rgba(252,211,77,.35); background: rgba(252,211,77,.07); border-radius: 6px; padding: 11px 13px; display: flex; gap: 10px; }
+    .dcv .warn .ic { color: #FCD34D; font-size: 13px; line-height: 1.35; }
+    .dcv .warn .tx { font-size: 12px; color: #CBD5E1; line-height: 1.5; }
+    .dcv .pill { display: inline-flex; align-items: center; height: 19px; padding: 0 7px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+  </style>
+</helmet>
+<div class="dcv" style="width:1440px; height:2000px; background:#0C0E13; display:flex; overflow:hidden;">
+
+  <!-- ================= SIDEBAR ================= -->
+  <div class="sb">
+    <div class="brand">Tusk Invest &middot; YT Terminal</div>
+    <div class="co on"><span>&#9835;</span><span>TIPS Music</span><span class="tick mono">TIPSMUSIC</span></div>
+    <div style="height:6px"></div>
+    <div class="co off"><span>&#9835;</span><span>Saregama India</span><span class="tick mono">SAREGAMA</span></div>
+    <div class="div"></div>
+    <div class="nav"><span class="g">&#128202;</span>Overview</div>
+    <div class="nav on"><span class="g">&#128185;</span>Nowcast</div>
+    <div class="nav"><span class="g">&#128250;</span>Content Analytics</div>
+    <div class="nav"><span class="g">&#128680;</span>Anomalies</div>
+    <div class="nav"><span class="g">&#128203;</span>Data Table</div>
+    <div class="div"></div>
+    <div class="nav"><span class="g">&#8644;</span>Compare</div>
+    <div class="sbfoot"><span>&#127769;</span><span>&#8249;</span></div>
+  </div>
+
+  <!-- ================= CONTENT ================= -->
+  <div style="width:1150px;">
+
+    <div class="hd">
+      <div>
+        <div class="h1">Nowcast<span>TIPS Music &middot; FY27 Q2 in progress</span></div>
+        <div class="upd">Updated Aug 31, 2026 at 03:09 PM &middot; quarter 62 of 92 days elapsed</div>
+      </div>
+      <div class="ctl">
+        <span class="lbl">Period:</span>
+        <div class="sel">Last 30 Days</div>
+        <div class="btn pri">&#10227; Refresh</div>
+        <div class="btn sec">&#11015; Export</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab">Estimate</div>
+      <div class="tab on">Drivers</div>
+      <div class="tabnote">Every figure on this tab is an input to the Estimate tab's &#8377; band &#8212; nothing here is a result.</div>
+    </div>
+
+    <div class="body">
+
+      <!-- ============ 1 + 2  DRIVER MIX / BREAKDOWN ============ -->
+      <div class="sh">Driver mix <em>what the quarter's rupee band is actually built from</em></div>
+      <div style="display:flex; gap:24px; height:450px;">
+
+        <div class="card" style="width:700px; padding:18px;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+            <div>
+              <div class="ct">Views by driver, both companies</div>
+              <div class="cs">Projected full-quarter views per driver &#8212; which stream of reach is doing the work.</div>
+            </div>
+            <div class="lg" style="flex-direction:column; align-items:flex-end; gap:5px; padding-top:2px;">
+              <div><span class="swatch" style="background:#0072B2"></span>Owned channels</div>
+              <div><span class="swatch" style="background:#D55E00"></span>Topic / OAC attributed</div>
+              <div><span class="swatch" style="background:#009E73; opacity:.45"></span>UGC &#8212; excluded</div>
+            </div>
+          </div>
+
+          <svg width="664" height="268" viewBox="0 0 664 268" style="margin-top:10px; display:block;">
+            <defs>
+              <pattern id="hatchG" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                <rect width="6" height="6" fill="#009E73" fill-opacity="0.10"/>
+                <line x1="0" y1="0" x2="0" y2="6" stroke="#009E73" stroke-width="2.2"/>
+              </pattern>
+            </defs>
+            <line x1="92.0" y1="6" x2="92.0" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="92.0" y="239" class="ax" text-anchor="middle">0</text>
+      <line x1="177.8" y1="6" x2="177.8" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="177.8" y="239" class="ax" text-anchor="middle">2</text>
+      <line x1="263.7" y1="6" x2="263.7" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="263.7" y="239" class="ax" text-anchor="middle">4</text>
+      <line x1="349.5" y1="6" x2="349.5" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="349.5" y="239" class="ax" text-anchor="middle">6</text>
+      <line x1="435.4" y1="6" x2="435.4" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="435.4" y="239" class="ax" text-anchor="middle">8</text>
+      <line x1="521.2" y1="6" x2="521.2" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="521.2" y="239" class="ax" text-anchor="middle">10</text>
+      <line x1="607.1" y1="6" x2="607.1" y2="224" stroke="#1B2027" stroke-width="1"/>
+      <text x="607.1" y="239" class="ax" text-anchor="middle">12</text>
+            <line x1="92" y1="6" x2="92" y2="224" stroke="#232A33" stroke-width="1"/>
+            <line x1="92" y1="224" x2="650" y2="224" stroke="#232A33" stroke-width="1"/>
+            <text x="0" y="16" class="ghead" fill="#0072B2">TIPS MUSIC</text>
+            <text x="0" y="128" class="ghead" fill="#D55E00">SAREGAMA</text>
+            <text x="86" y="37" class="blab" text-anchor="end">Owned</text>
+      <rect x="92" y="22" width="151.5" height="22" rx="2" fill="#0072B2" fill-opacity="1"/>
+      <text x="251.5" y="37" class="bval">3.53</text>
+      <text x="86" y="66" class="blab" text-anchor="end">Topic / OAC</text>
+      <rect x="92" y="51" width="99.6" height="22" rx="2" fill="#D55E00" fill-opacity="1"/>
+      <text x="199.6" y="66" class="bval">2.32</text>
+      <text x="86" y="95" class="blab" text-anchor="end">UGC</text>
+      <rect x="92" y="80" width="383.7" height="22" rx="2" fill="#009E73" fill-opacity="0.20"/>
+      <rect x="92" y="80" width="383.7" height="22" rx="2" fill="url(#hatchG)" stroke="#009E73" stroke-width="1"/>
+      <text x="483.7" y="95" class="bval">8.94</text>
+      <text x="86" y="149" class="blab" text-anchor="end">Owned</text>
+      <rect x="92" y="134" width="167.8" height="22" rx="2" fill="#0072B2" fill-opacity="1"/>
+      <text x="267.8" y="149" class="bval">3.91</text>
+      <text x="86" y="178" class="blab" text-anchor="end">Topic / OAC</text>
+      <rect x="92" y="163" width="116.8" height="22" rx="2" fill="#D55E00" fill-opacity="1"/>
+      <text x="216.8" y="178" class="bval">2.72</text>
+      <text x="86" y="207" class="blab" text-anchor="end">UGC</text>
+      <rect x="92" y="192" width="532.7" height="22" rx="2" fill="#009E73" fill-opacity="0.20"/>
+      <rect x="92" y="192" width="532.7" height="22" rx="2" fill="url(#hatchG)" stroke="#009E73" stroke-width="1"/>
+      <text x="632.7" y="207" class="bval">12.41</text>
+            <text x="371" y="258" class="ax" text-anchor="middle" fill="#64748B">views this quarter, billions</text>
+          </svg>
+
+          <div class="readout" style="margin-top:6px;">Only the two solid bars feed the &#8377; estimate. The UGC bars are hatched because they are a <b style="color:#CBD5E1;font-weight:500">cumulative discovered total, not a quarterly flow</b> &#8212; pricing Saregama's 12.41bn at the same rate would add &#8377;205.0cr, more than its printed music segment has ever reached in a quarter.</div>
+        </div>
+
+        <div class="card" style="width:378px; padding:18px; display:flex; flex-direction:column;">
+          <div class="ct">Driver breakdown &#8212; TIPS</div>
+          <div class="cs">Contribution to the &#8377;96.8cr midpoint.</div>
+          <div class="tight" style="margin-top:12px; border:1px solid #232A33; border-radius:6px; overflow:hidden;">
+            <table>
+              <tr><th style="width:38%">Driver</th><th class="r">Views</th><th class="r">&#8377;cr</th><th class="r">Share</th></tr>
+              <tr>
+                <td><span class="swatch" style="background:#0072B2"></span>Owned</td>
+                <td class="num">3.53bn</td><td class="num">58.2</td><td class="num">60%</td>
+              </tr>
+              <tr>
+                <td><span class="swatch" style="background:#D55E00"></span>Topic / OAC</td>
+                <td class="num">2.32bn</td><td class="num">38.6</td><td class="num">40%</td>
+              </tr>
+              <tr>
+                <td><span class="swatch" style="background:#009E73;opacity:.45"></span>UGC</td>
+                <td class="dash">&#8212;</td><td class="dash">&#8212;</td><td class="dash">&#8212;</td>
+              </tr>
+              <tr class="tot">
+                <td>Total</td><td class="num">5.85bn</td><td class="num">96.8</td><td class="num">100%</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="display:flex; height:12px; border-radius:3px; overflow:hidden; margin-top:12px;">
+            <div style="width:60.4%; background:#0072B2"></div>
+            <div style="width:39.6%; background:#D55E00"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px;" class="foot">
+            <span>Owned 60%</span><span>Topic / OAC 40%</span>
+          </div>
+
+          <div style="height:1px; background:#1B222C; margin:12px 0 11px;"></div>
+          <div style="display:flex; align-items:flex-end; justify-content:space-between;">
+            <div>
+              <div class="as-k" style="font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:#94A3B8;">Midpoint, FY27 Q2</div>
+              <div class="mono" style="font-size:30px; font-weight:600; color:#F1F5F9; margin-top:4px; line-height:1;">&#8377;96.8<span style="font-size:15px; color:#94A3B8">cr</span></div>
+            </div>
+            <div style="text-align:right;">
+              <div class="foot">band</div>
+              <div class="mono" style="font-size:13px; color:#CBD5E1;">&#8377;77.0 &#8211; &#8377;116.4cr</div>
+            </div>
+          </div>
+          <div class="foot" style="margin-top:10px;">UGC carries an em dash on every column because it is excluded, not because it is zero.</div>
+        </div>
+      </div>
+
+      <!-- ============ 3  REACH ============ -->
+      <div class="sh" style="margin-top:24px;">Reach <em>measured elapsed views, and what they extrapolate to</em></div>
+      <div class="card" style="height:222px; overflow:hidden;">
+        <div style="padding:14px 16px 12px; display:flex; align-items:baseline; justify-content:space-between;">
+          <div class="ct">Views behind the estimate</div>
+          <div class="cs">Whole counts, Indian digit grouping. 62 elapsed days &#8594; 92-day quarter.</div>
+        </div>
+        <table>
+          <tr>
+            <th style="width:15%">Company <span class="sortg">&#8645;</span></th>
+            <th class="r">Owned views <span class="sortg">&#8645;</span></th>
+            <th class="r">Topic attributed <span class="sortg">&#8645;</span></th>
+            <th class="r">UGC (discovered) <span class="sortg">&#8645;</span></th>
+            <th class="r"><span style="color:#FCD34D">&#9670;</span> Projected full quarter <span class="sortg">&#8645;</span></th>
+            <th class="r" style="width:12%">Midpoint <span class="sortg">&#8645;</span></th>
+          </tr>
+          <tr>
+            <td><span class="swatch" style="background:#0072B2"></span>TIPS</td>
+            <td class="num">2,38,13,84,196</td>
+            <td class="num">1,56,39,64,802</td>
+            <td class="num" style="color:#64748B">8,94,10,22,318</td>
+            <td class="num">5,85,43,90,897</td>
+            <td class="num">&#8377;96.8cr</td>
+          </tr>
+          <tr>
+            <td><span class="swatch" style="background:#D55E00"></span>Saregama</td>
+            <td class="num">2,63,37,46,726</td>
+            <td class="num">1,83,31,70,332</td>
+            <td class="num" style="color:#64748B">12,40,66,81,905</td>
+            <td class="num">6,62,83,28,963</td>
+            <td class="num">&#8377;109.5cr</td>
+          </tr>
+        </table>
+        <div style="padding:11px 16px; border-top:1px solid #1B222C; display:flex; justify-content:space-between;" class="foot">
+          <span><span style="color:#FCD34D">&#9670;</span> Inferred, not measured &#8212; the projected column applies the elapsed-day mean across 92 days, 8 of which were themselves imputed. Owned and Topic are measured over the 62 elapsed days; UGC is greyed and never enters either.</span>
+          <span>Showing 2 of 2 companies</span>
+        </div>
+      </div>
+
+      <!-- ============ 4  COVERAGE ============ -->
+      <div class="sh" style="margin-top:24px;">Coverage <em>how much of the quarter was actually observed</em></div>
+      <div class="card" style="height:228px; padding:18px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+          <div>
+            <div class="ct">Measured vs imputed days</div>
+            <div class="cs">Every imputed day is a day the extrapolation is guessing about.</div>
+          </div>
+          <div class="pill" style="background:rgba(252,211,77,.13); color:#FCD34D; border:1px solid rgba(252,211,77,.35);">&#9650; 12.9% imputed</div>
+        </div>
+
+        <div style="font-size:13px; color:#CBD5E1; line-height:1.55; margin-top:12px;">
+          <b class="mono" style="color:#F1F5F9; font-weight:500">54</b> of <b class="mono" style="color:#F1F5F9; font-weight:500">62</b> elapsed days carried a measured value;
+          <b class="mono" style="color:#FCD34D; font-weight:500">8</b> were frozen or absent and have been imputed at the observed daily mean.
+        </div>
+
+        <div style="margin-top:14px;">
+          <div style="display:flex; align-items:center; margin-bottom:7px;">
+            <div class="rowlab">Jul 1&#8211;31</div>
+            <div class="grid62">
+          <div class="cell meas" title="day 1 — measured"></div>
+          <div class="cell meas" title="day 2 — measured"></div>
+          <div class="cell meas" title="day 3 — measured"></div>
+          <div class="cell meas" title="day 4 — measured"></div>
+          <div class="cell meas" title="day 5 — measured"></div>
+          <div class="cell meas" title="day 6 — measured"></div>
+          <div class="cell meas" title="day 7 — measured"></div>
+          <div class="cell meas" title="day 8 — measured"></div>
+          <div class="cell meas" title="day 9 — measured"></div>
+          <div class="cell meas" title="day 10 — measured"></div>
+          <div class="cell meas" title="day 11 — measured"></div>
+          <div class="cell imp" title="day 12 — imputed"></div>
+          <div class="cell imp" title="day 13 — imputed"></div>
+          <div class="cell meas" title="day 14 — measured"></div>
+          <div class="cell meas" title="day 15 — measured"></div>
+          <div class="cell meas" title="day 16 — measured"></div>
+          <div class="cell meas" title="day 17 — measured"></div>
+          <div class="cell meas" title="day 18 — measured"></div>
+          <div class="cell meas" title="day 19 — measured"></div>
+          <div class="cell meas" title="day 20 — measured"></div>
+          <div class="cell meas" title="day 21 — measured"></div>
+          <div class="cell meas" title="day 22 — measured"></div>
+          <div class="cell meas" title="day 23 — measured"></div>
+          <div class="cell meas" title="day 24 — measured"></div>
+          <div class="cell meas" title="day 25 — measured"></div>
+          <div class="cell meas" title="day 26 — measured"></div>
+          <div class="cell imp" title="day 27 — imputed"></div>
+          <div class="cell meas" title="day 28 — measured"></div>
+          <div class="cell meas" title="day 29 — measured"></div>
+          <div class="cell meas" title="day 30 — measured"></div>
+          <div class="cell meas" title="day 31 — measured"></div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center;">
+            <div class="rowlab">Aug 1&#8211;31</div>
+            <div class="grid62">
+          <div class="cell meas" title="day 32 — measured"></div>
+          <div class="cell meas" title="day 33 — measured"></div>
+          <div class="cell imp" title="day 34 — imputed"></div>
+          <div class="cell meas" title="day 35 — measured"></div>
+          <div class="cell meas" title="day 36 — measured"></div>
+          <div class="cell meas" title="day 37 — measured"></div>
+          <div class="cell meas" title="day 38 — measured"></div>
+          <div class="cell meas" title="day 39 — measured"></div>
+          <div class="cell meas" title="day 40 — measured"></div>
+          <div class="cell imp" title="day 41 — imputed"></div>
+          <div class="cell meas" title="day 42 — measured"></div>
+          <div class="cell meas" title="day 43 — measured"></div>
+          <div class="cell meas" title="day 44 — measured"></div>
+          <div class="cell meas" title="day 45 — measured"></div>
+          <div class="cell meas" title="day 46 — measured"></div>
+          <div class="cell meas" title="day 47 — measured"></div>
+          <div class="cell meas" title="day 48 — measured"></div>
+          <div class="cell imp" title="day 49 — imputed"></div>
+          <div class="cell meas" title="day 50 — measured"></div>
+          <div class="cell meas" title="day 51 — measured"></div>
+          <div class="cell meas" title="day 52 — measured"></div>
+          <div class="cell meas" title="day 53 — measured"></div>
+          <div class="cell meas" title="day 54 — measured"></div>
+          <div class="cell imp" title="day 55 — imputed"></div>
+          <div class="cell imp" title="day 56 — imputed"></div>
+          <div class="cell meas" title="day 57 — measured"></div>
+          <div class="cell meas" title="day 58 — measured"></div>
+          <div class="cell meas" title="day 59 — measured"></div>
+          <div class="cell meas" title="day 60 — measured"></div>
+          <div class="cell meas" title="day 61 — measured"></div>
+          <div class="cell meas" title="day 62 — measured"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:26px; margin-top:15px;">
+          <span class="foot" style="font-size:11.5px;"><span class="lgbox" style="background:rgba(0,114,178,.45); border:1px solid rgba(0,114,178,.75);"></span>Measured &#8212; 54 days</span>
+          <span class="foot" style="font-size:11.5px;"><span class="lgbox" style="border:1px solid #FCD34D; background:repeating-linear-gradient(45deg, rgba(252,211,77,.85) 0 2px, rgba(252,211,77,.10) 2px 5px);"></span>Imputed at observed daily mean &#8212; 8 days</span>
+          <span class="foot" style="margin-left:auto;">YouTube freezes cumulative counts on roughly 4.7% of channel-days; the remainder here are collection gaps.</span>
+        </div>
+      </div>
+
+      <!-- ============ 5  ASSUMPTIONS ============ -->
+      <div class="sh" style="margin-top:24px;">Assumptions <em>each one stated with what it costs when it is wrong</em></div>
+      <div style="display:flex; gap:18px;">
+
+        <div class="as" style="width:262px;">
+          <div class="k">1 &middot; Rate band</div>
+          <div class="v mono">&#8377;94 &#8211; &#8377;142<span style="font-size:12px; font-family:Inter; font-weight:400; color:#94A3B8;"> / 1,000 views</span></div>
+          <div class="n">midpoint &#8377;118</div>
+          <div class="hr"></div>
+          <div class="w">&#9650; If wrong</div>
+          <div class="t">Sets the entire &#8377; scale. At the floor TIPS reads <b>&#8377;77.0cr</b>, at the ceiling <b>&#8377;116.4cr</b> &#8212; a &plusmn;20% swing. The band is wider than the gap to the last print, so no ratio below is decisive.</div>
+        </div>
+
+        <div class="as" style="width:262px;">
+          <div class="k">2 &middot; Non-YouTube uplift</div>
+          <div class="v mono">1.4&times;</div>
+          <div class="n">one flat factor, both companies</div>
+          <div class="hr"></div>
+          <div class="w">&#9650; If wrong</div>
+          <div class="t">Strictly linear. Drop it to 1.0&times; and TIPS falls to <b>&#8377;69.1cr</b> and the sense-check ratio from 91% to <b>65%</b>. Applying one factor to two very different revenue mixes is the single crudest step in the chain.</div>
+        </div>
+
+        <div class="as" style="width:262px;">
+          <div class="k">3 &middot; UGC treatment</div>
+          <div class="v">Excluded</div>
+          <div class="n">cumulative stock, not a flow</div>
+          <div class="hr"></div>
+          <div class="w">&#9650; If wrong</div>
+          <div class="t">TIPS' <b>8.94bn</b> discovered UGC views sit outside the estimate. At the same rate they would add <b>&#8377;147.7cr</b> &#8212; more than the whole printed quarter. Excluded until a quarterly flow, not a running total, can be measured.</div>
+        </div>
+
+        <div class="as" style="width:262px;">
+          <div class="k">4 &middot; Extrapolation</div>
+          <div class="v">Linear on elapsed days</div>
+          <div class="n">62 &#8594; 92 days, &times;1.4839</div>
+          <div class="hr"></div>
+          <div class="w">&#9650; If wrong</div>
+          <div class="t">No seasonal factor is applied. A festival-weighted September falls entirely inside the 30 unobserved days, so this understates in the quarter where it matters most. The 8 imputed days compound the same flat mean.</div>
+        </div>
+      </div>
+
+      <!-- ============ 6  SENSE CHECK ============ -->
+      <div class="sh" style="margin-top:24px;">Sense check
+        <span class="pill" style="background:rgba(252,211,77,.13); color:#FCD34D; border:1px solid rgba(252,211,77,.35);">Not a score</span>
+      </div>
+      <div class="card" style="height:342px; padding:18px;">
+        <div class="warn">
+          <div class="ic">&#9888;</div>
+          <div class="tx">This nowcast has <b>never been scored against a printed result</b>. The table below sets a current, incomplete quarter against a <i>previous</i> quarter's print. It measures plausibility of scale &#8212; nothing here is an error, a hit rate, or a track record, and it must not be read as one.</div>
+        </div>
+
+        <div style="margin-top:16px; border:1px solid #232A33; border-radius:6px; overflow:hidden;">
+          <table>
+            <tr>
+              <th style="width:22%">Company</th>
+              <th class="r" style="width:22%">Midpoint this quarter</th>
+              <th class="r" style="width:26%">Last printed</th>
+              <th class="r" style="width:12%">Ratio</th>
+              <th class="r">Read</th>
+            </tr>
+            <tr>
+              <td><span class="swatch" style="background:#0072B2"></span>TIPS</td>
+              <td class="num">&#8377;96.8cr</td>
+              <td class="num">&#8377;106.51cr <span style="color:#64748B">FY27 Q1</span></td>
+              <td class="num" style="color:#34D399">91%</td>
+              <td style="font-size:12px; color:#94A3B8">Same order of magnitude</td>
+            </tr>
+            <tr>
+              <td><span class="swatch" style="background:#D55E00"></span>Saregama</td>
+              <td class="num">&#8377;109.5cr</td>
+              <td class="num">&#8377;184.60cr <span style="color:#64748B">FY27 Q1 music seg.</span></td>
+              <td class="num" style="color:#FB923C">59%</td>
+              <td style="font-size:12px; color:#94A3B8">Understates &#8212; known cause</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="foot" style="margin-top:14px; font-size:11.5px; line-height:1.6; color:#94A3B8;">
+          Saregama reads low because assumption 2 applies <span style="color:#CBD5E1">one flat 1.4&times; non-YouTube uplift to both companies</span>, while its music segment carries far more off-YouTube licensing &#8212; sync, physical, publishing and non-DSP deals that no YouTube view count can see. That gap is stated here deliberately rather than tuned away: fitting a per-company uplift to close it would make the ratio look good and the model worse. A per-company uplift will only be introduced once a printed quarter has actually been scored.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

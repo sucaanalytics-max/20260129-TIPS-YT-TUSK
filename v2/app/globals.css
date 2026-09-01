@@ -3,51 +3,127 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Tokens lifted verbatim from the Claude Design handoff
+   * (docs/ui-ux-redesign-scope/project/Redesign - TUSK.dc.html).
+   *
+   * Colours are stored as SPACE-SEPARATED RGB CHANNELS rather than hex so that
+   * Tailwind's alpha modifiers keep working: `bg-card/50` compiles to
+   * rgb(var(--surface) / 0.5). The ~60 components carried over from the old
+   * dashboard rely on those modifiers, and switching to bare hex would have
+   * silently dropped every one of them.
+   *
+   * Density and radius stay as plain lengths — the design drives them straight
+   * from a `density` prop, and they are never alpha-modified.
+   */
   :root {
-    --background: 222 22% 6%;
-    --foreground: 210 20% 96%;
-    --card: 222 20% 9%;
-    --card-foreground: 210 20% 96%;
-    --muted: 222 14% 14%;
-    --muted-foreground: 215 14% 65%;
-    --accent: 220 90% 60%;
-    --accent-foreground: 210 20% 98%;
-    --border: 220 14% 18%;
+    --bg:        12 14 19;      /* #0C0E13 */
+    --surface:   20 23 29;      /* #14171D */
+    --surface2:  25 29 36;      /* #191D24 */
+    --border:    35 42 51;      /* #232A33 */
+    --border2:   46 54 65;      /* #2E3641 */
+    --ink:      232 237 244;    /* #E8EDF4 */
+    --ink2:     183 192 204;    /* #B7C0CC */
+    --muted:    139 151 168;    /* #8B97A8 */
+    --accent:    62 143 214;    /* #3E8FD6 */
+    --accent-soft-a: 0.14;
+    --good:      52 211 153;    /* #34D399 */
+    --warn:     252 211 77;     /* #FCD34D */
+    --bad:      244 87 107;     /* #F4576B */
+    --gridline:  27 32 39;      /* #1B2027 */
+
+    /* A company keeps its colour on every screen and in every chart. */
+    --tips:      76 155 216;    /* #4C9BD8 */
+    --sare:     224 123 58;     /* #E07B3A */
+
+    --pad: 20px;
+    --gap: 16px;
+    --fs: 14px;
+    --row: 11px;
+    --r: 10px;
+    --shadow: none;
+  }
+
+  :root[data-theme='light'] {
+    --bg:       246 246 243;    /* #F6F6F3 */
+    --surface:  255 255 255;    /* #FFFFFF */
+    --surface2: 250 250 248;    /* #FAFAF8 */
+    --border:   228 228 222;    /* #E4E4DE */
+    --border2:  213 213 205;    /* #D5D5CD */
+    --ink:       21 24 29;      /* #15181D */
+    --ink2:      60 65 73;      /* #3C4149 */
+    --muted:    113 118 127;    /* #71767F */
+    --good:      14 138 95;     /* #0E8A5F */
+    --warn:     168 122 0;      /* #A87A00 */
+    --bad:      198 48 74;      /* #C6304A */
+    --gridline: 235 235 230;    /* #EBEBE6 */
+    --tips:       0 114 178;    /* #0072B2 */
+    --sare:     194 84 0;       /* #C25400 */
 
     /*
-     * Semantic state, kept from the theme work and tuned for THIS surface.
-     *
-     * Components used to hardcode Tailwind steps (text-emerald-400,
-     * text-amber-300, ...). Routing them through tokens is what made the theme
-     * swappable at all, so the indirection stays even though the values are
-     * back to the dark palette.
-     *
-     * `serious` and `critical` are deliberately NOT the old orange-400/red-400
-     * pair: measured against this surface those sat 8.0 apart in normal vision,
-     * i.e. genuinely hard to tell apart. Re-stepped to 15.0 and CVD now passes.
-     * Good-vs-bad is still red-vs-green, the axis colour-blind readers lose, so
-     * every use must carry a glyph or a word as well.
+     * The handoff leaves --accent at #3E8FD6 in light mode but writes
+     * --accentSoft as rgba(0,114,178,.10), so the two disagree about which blue
+     * light mode uses. #3E8FD6 also lands near 3:1 on #F6F6F3, which is thin for
+     * the 13px tab labels and the 11px range pills it colours. Resolved toward
+     * the value the design's own accentSoft implies — which is also the repo's
+     * validated series blue and one of the design's four offered accents.
      */
-    --good:     158 64% 52%;   /* #34d399 */
-    --warning:   46 97% 64%;   /* #fcd34d */
-    --serious:   27 96% 61%;   /* #fb923c */
-    --critical: 352 88% 65%;   /* #f4576b */
-    --info:     213 94% 68%;   /* #60a5fa */
+    --accent:     0 114 178;    /* #0072B2 */
+    --accent-soft-a: 0.10;
+    --shadow: 0 1px 2px rgb(16 20 28 / 0.05), 0 1px 8px rgb(16 20 28 / 0.04);
   }
 
-  html, body { height: 100%; }
+  :root[data-density='compact'] {
+    --pad: 13px;
+    --gap: 10px;
+    --fs: 13px;
+    --row: 7px;
+  }
+
+  html,
   body {
-    background: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
-    -webkit-font-smoothing: antialiased;
+    height: 100%;
   }
 
-  /*
-   * Figures are read down a column and compared against each other, so digits
-   * must occupy identical width. This is a data dashboard; it applies broadly.
-   */
-  table, .tnum, [data-figure] {
+  body {
+    margin: 0;
+    background: rgb(var(--bg));
+    color: rgb(var(--ink));
+    font-size: var(--fs);
+    -webkit-font-smoothing: antialiased;
+    /* Figures are read down a column and compared, so digits hold their width. */
+    font-feature-settings: 'cv05' 1, 'ss01' 1;
     font-variant-numeric: tabular-nums;
+  }
+
+  a {
+    color: rgb(var(--accent));
+    text-decoration: none;
+  }
+  a:hover {
+    color: rgb(var(--ink));
+  }
+
+  /* Expand-on-demand disclosure: the design replaced standing methodology prose
+     with these, so they appear on nearly every card. */
+  details > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+  details[open] .chev {
+    transform: rotate(90deg);
+  }
+
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
   }
 }

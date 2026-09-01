@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0C0E13; --surface:#14171D; --surface2:#191D24; --border:#232A33; --border2:#2E3641;
+    --ink:#E8EDF4; --ink2:#B7C0CC; --muted:#8B97A8;
+    --accent:#3E8FD6; --accentSoft:rgba(62,143,214,.14);
+    --good:#34D399; --warn:#FCD34D; --bad:#F4576B; --gridline:#1B2027;
+    --tips:#4C9BD8; --sare:#E07B3A;
+    --pad:20px; --gap:16px; --fs:14px; --row:11px;
+    --shadow:none; --r:10px;
+  }
+  :root[data-theme="light"]{
+    --bg:#F6F6F3; --surface:#FFFFFF; --surface2:#FAFAF8; --border:#E4E4DE; --border2:#D5D5CD;
+    --ink:#15181D; --ink2:#3C4149; --muted:#71767F;
+    --accentSoft:rgba(0,114,178,.10);
+    --good:#0E8A5F; --warn:#A87A00; --bad:#C6304A; --gridline:#EBEBE6;
+    --tips:#0072B2; --sare:#C25400;
+    --shadow:0 1px 2px rgba(16,20,28,.05), 0 1px 8px rgba(16,20,28,.04);
+  }
+  :root[data-density="compact"]{ --pad:13px; --gap:10px; --fs:13px; --row:7px; }
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-feature-settings:"cv05" 1,"ss01" 1;font-variant-numeric:tabular-nums}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{color:var(--ink)}
+  details>summary{list-style:none;cursor:pointer}
+  details>summary::-webkit-details-marker{display:none}
+  details[open] .chev{transform:rotate(90deg)}
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.35}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:var(--fs)">
+
+  <header style="position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border)">
+    <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 28px;height:56px">
+      <div style="display:flex;align-items:center;gap:28px;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-shrink:0">
+          <span style="font-size:15px;font-weight:700;letter-spacing:-0.02em">TUSK</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:0.04em">YT×NSE</span>
+        </div>
+        <nav style="display:flex;align-items:center;gap:2px">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ t.go }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </nav>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:5px 10px;white-space:nowrap">
+          <span style="width:6px;height:6px;border-radius:999px;background:var(--good)"></span>DATA 31 AUG · 1d
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--warn);border:1px solid var(--border);border-radius:999px;padding:5px 10px;white-space:nowrap">
+          <span style="width:6px;height:6px;border-radius:999px;background:var(--warn)"></span>PIPELINE 4/5
+        </span>
+        <button onClick="{{ toggleTheme }}" style="border:1px solid var(--border);background:transparent;color:var(--ink2);border-radius:8px;height:30px;padding:0 11px;font-size:11px;font-family:'JetBrains Mono',monospace;cursor:pointer">{{ themeLabel }}</button>
+        <div style="width:28px;height:28px;border-radius:999px;background:var(--surface2);border:1px solid var(--border)"></div>
+      </div>
+    </div>
+    <div style="max-width:1400px;margin:0 auto;padding:0 28px;height:42px;display:flex;align-items:center;gap:18px;overflow-x:auto;border-top:1px solid var(--border)">
+      <sc-for list="{{ subnav }}" as="s" hint-placeholder-count="4">
+        <span style="{{ s.style }}">{{ s.label }}</span>
+      </sc-for>
+      <span style="flex:1"></span>
+      <sc-if value="{{ showRange }}" hint-placeholder-val="{{ true }}">
+        <div style="display:inline-flex;gap:1px;background:var(--border);border-radius:7px;overflow:hidden;border:1px solid var(--border)">
+          <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="7">
+            <button onClick="{{ r.go }}" style="{{ r.style }}">{{ r.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+  </header>
+
+  <sc-if value="{{ isMonitor }}" hint-placeholder-val="{{ true }}">
+  <main style="max-width:1400px;margin:0 auto;padding:24px 28px 64px;display:flex;flex-direction:column;gap:var(--gap)">
+
+    <section style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)">
+      <article style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:15px;font-weight:600;letter-spacing:-0.01em">TIPSMUSIC</span>
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)">₹742.30 · +18.4% 1Y</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:0.08em;color:var(--good);border:1px solid var(--good);border-radius:6px;padding:3px 9px">▲ POSITIVE</span>
+        </div>
+        <p style="margin:0;font-size:16px;line-height:1.45;letter-spacing:-0.005em;text-wrap:pretty">Reach is accelerating faster than the price has followed. View momentum sits at <strong style="font-weight:600">+1.8σ</strong>, catalog freshness holds at 0.62, and the 4-day lead-lag has stayed significant for six weeks.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">momentum +1.8σ</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">r=0.41 @ +4d</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">peer rank +2</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">fresh 0.62</span>
+        </div>
+        <details style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+          <summary style="display:flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em"><span class="chev" style="display:inline-block;transition:transform .15s">›</span>How this read is composed</summary>
+          <p style="margin:9px 0 0;font-size:12px;line-height:1.6;color:var(--ink2);max-width:70ch">Eight measured signals are z-scored against their own 365-day history, weighted by significance, and summed. Bias flips at ±0.75 on the weighted sum. Sector demand from /market is graded LOW and deliberately excluded. Internal view — not research.</p>
+        </details>
+      </article>
+
+      <article style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--warn);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <span style="font-size:15px;font-weight:600;letter-spacing:-0.01em">SAREGAMA</span>
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)">₹486.75 · −7.0% 1Y</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:0.08em;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:3px 9px">● MIXED</span>
+        </div>
+        <p style="margin:0;font-size:16px;line-height:1.45;letter-spacing:-0.005em;text-wrap:pretty">Subscribers still add, but the catalog has gone quiet. Views drift <strong style="font-weight:600">−0.6σ</strong>, freshness has fallen to 0.31, and no lead-lag window clears significance.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">momentum −0.6σ</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">r n/s</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">rel −9.2%</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px">fresh 0.31</span>
+        </div>
+        <details style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+          <summary style="display:flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em"><span class="chev" style="display:inline-block;transition:transform .15s">›</span>Why this is not negative</summary>
+          <p style="margin:9px 0 0;font-size:12px;line-height:1.6;color:var(--ink2);max-width:70ch">Subscriber drift is still positive (+0.5σ) and the group revenue line carries artist management, video and events, so a soft music quarter does not map one-to-one onto the print. Two of eight signals are unavailable.</p>
+        </details>
+      </article>
+    </section>
+
+    <section style="display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:var(--gap);align-items:start">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)">
+        <header style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:var(--pad);border-bottom:1px solid var(--border)">
+          <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">What changed · last 24h</h2>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)">ranked by |σ|</span>
+        </header>
+        <ul style="list-style:none;margin:0;padding:0">
+          <li style="border-bottom:1px solid var(--border)">
+            <details><summary style="display:grid;grid-template-columns:14px minmax(0,1fr) 90px 96px 64px 14px;align-items:center;gap:12px;padding:var(--row) var(--pad)">
+              <span style="width:7px;height:7px;border-radius:999px;background:var(--good)"></span>
+              <span style="font-weight:500">Tips Punjabi · daily views</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">9.1M</span>
+              <svg width="96" height="18" style="overflow:visible"><path d="M1,14 L20,13 L38,11 L57,10 L76,6 L94,2" fill="none" stroke="var(--good)" stroke-width="1.5" stroke-linecap="round"></path></svg>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good);text-align:right">+3.4σ</span>
+              <span class="chev" style="color:var(--muted);transition:transform .15s">›</span>
+            </summary>
+            <p style="margin:0;padding:0 var(--pad) var(--pad) 46px;font-size:12px;line-height:1.6;color:var(--ink2);max-width:78ch">Two singles released 6 Aug are still compounding — the channel is running 41% above its own 30d mean. This is the single largest contributor to the group view delta today.</p>
+            </details>
+          </li>
+          <li style="border-bottom:1px solid var(--border)">
+            <details><summary style="display:grid;grid-template-columns:14px minmax(0,1fr) 90px 96px 64px 14px;align-items:center;gap:12px;padding:var(--row) var(--pad)">
+              <span style="width:7px;height:7px;border-radius:999px;background:var(--bad)"></span>
+              <span style="font-weight:500">Saregama Tamil · daily views</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">6.4M</span>
+              <svg width="96" height="18" style="overflow:visible"><path d="M1,3 L20,5 L38,7 L57,8 L76,12 L94,15" fill="none" stroke="var(--bad)" stroke-width="1.5" stroke-linecap="round"></path></svg>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--bad);text-align:right">−2.1σ</span>
+              <span class="chev" style="color:var(--muted);transition:transform .15s">›</span>
+            </summary>
+            <p style="margin:0;padding:0 var(--pad) var(--pad) 46px;font-size:12px;line-height:1.6;color:var(--ink2);max-width:78ch">Decay off a 12 Jul upload spike, not a new deterioration. The 90d trend is flat; treat as base-effect unless it persists past 10 Sep.</p>
+            </details>
+          </li>
+          <li style="border-bottom:1px solid var(--border)">
+            <details><summary style="display:grid;grid-template-columns:14px minmax(0,1fr) 90px 96px 64px 14px;align-items:center;gap:12px;padding:var(--row) var(--pad)">
+              <span style="width:7px;height:7px;border-radius:999px;background:var(--good)"></span>
+              <span style="font-weight:500">TIPSMUSIC · subscriber drift</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">+16.5k</span>
+              <svg width="96" height="18" style="overflow:visible"><path d="M1,13 L20,12 L38,11 L57,9 L76,8 L94,5" fill="none" stroke="var(--good)" stroke-width="1.5" stroke-linecap="round"></path></svg>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good);text-align:right">+0.9σ</span>
+              <span class="chev" style="color:var(--muted);transition:transform .15s">›</span>
+            </summary>
+            <p style="margin:0;padding:0 var(--pad) var(--pad) 46px;font-size:12px;line-height:1.6;color:var(--ink2);max-width:78ch">Broad-based across 19 of 24 channels rather than concentrated, which historically precedes durable view growth better than a single-channel spike does.</p>
+            </details>
+          </li>
+          <li style="border-bottom:1px solid var(--border)">
+            <details><summary style="display:grid;grid-template-columns:14px minmax(0,1fr) 90px 96px 64px 14px;align-items:center;gap:12px;padding:var(--row) var(--pad)">
+              <span style="width:7px;height:7px;border-radius:999px;background:var(--warn)"></span>
+              <span style="font-weight:500">Lead-lag r · TIPS 30d window</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">0.41</span>
+              <svg width="96" height="18" style="overflow:visible"><path d="M1,9 L20,7 L38,10 L57,8 L76,9 L94,8" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"></path></svg>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);text-align:right">−0.3σ</span>
+              <span class="chev" style="color:var(--muted);transition:transform .15s">›</span>
+            </summary>
+            <p style="margin:0;padding:0 var(--pad) var(--pad) 46px;font-size:12px;line-height:1.6;color:var(--ink2);max-width:78ch">Slightly weaker but still clears the 0.35 significance floor at a 4-day lag. Watch for a drop below 0.35 — that is what would break the core thesis on this name.</p>
+            </details>
+          </li>
+          <li>
+            <details><summary style="display:grid;grid-template-columns:14px minmax(0,1fr) 90px 96px 64px 14px;align-items:center;gap:12px;padding:var(--row) var(--pad)">
+              <span style="width:7px;height:7px;border-radius:999px;background:var(--warn)"></span>
+              <span style="font-weight:500">Data quality · frozen channels</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">3 today</span>
+              <svg width="96" height="18" style="overflow:visible"><path d="M1,11 L20,11 L38,8 L57,11 L76,11 L94,7" fill="none" stroke="var(--warn)" stroke-width="1.5" stroke-linecap="round"></path></svg>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--warn);text-align:right">flag</span>
+              <span class="chev" style="color:var(--muted);transition:transform .15s">›</span>
+            </summary>
+            <p style="margin:0;padding:0 var(--pad) var(--pad) 46px;font-size:12px;line-height:1.6;color:var(--ink2);max-width:78ch">Three channels returned an unchanged cumulative viewCount. Today's per-day split for those channels is interpolated; the period total stays exact. Nothing above depends on them.</p>
+            </details>
+          </li>
+        </ul>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--gap)">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)">
+          <header style="padding:var(--pad);border-bottom:1px solid var(--border)">
+            <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Next 14 days</h2>
+          </header>
+          <ul style="list-style:none;margin:0;padding:calc(var(--pad) - 6px) var(--pad) var(--pad);display:flex;flex-direction:column;gap:10px">
+            <li style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;align-items:baseline">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);font-weight:500">+3d</span>
+              <span><span style="display:block;font-size:13px">TIPSMUSIC · Q2 FY27 results</span><span style="display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">earnings · 4 Sep</span></span>
+            </li>
+            <li style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;align-items:baseline">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);font-weight:500">+8d</span>
+              <span><span style="display:block;font-size:13px">TIPSMUSIC · Punjabi single slate</span><span style="display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">release · 9 Sep</span></span>
+            </li>
+            <li style="display:grid;grid-template-columns:38px minmax(0,1fr);gap:12px;align-items:baseline">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);font-weight:500">+14d</span>
+              <span><span style="display:block;font-size:13px">SAREGAMA · dividend record date</span><span style="display:block;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace">corp action · 15 Sep</span></span>
+            </li>
+          </ul>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)">
+          <header style="display:flex;align-items:center;justify-content:space-between;padding:var(--pad);border-bottom:1px solid var(--border)">
+            <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Pipeline</h2>
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--warn)">1 failed</span>
+          </header>
+          <ul style="list-style:none;margin:0;padding:calc(var(--pad) - 6px) var(--pad) var(--pad);display:flex;flex-direction:column;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px">
+            <li style="display:flex;align-items:center;gap:10px"><span style="width:6px;height:6px;border-radius:999px;background:var(--good)"></span><span style="flex:1;color:var(--ink2)">youtube-channels</span><span style="color:var(--muted)">5h</span></li>
+            <li style="display:flex;align-items:center;gap:10px"><span style="width:6px;height:6px;border-radius:999px;background:var(--good)"></span><span style="flex:1;color:var(--ink2)">youtube-videos</span><span style="color:var(--muted)">4h</span></li>
+            <li style="display:flex;align-items:center;gap:10px"><span style="width:6px;height:6px;border-radius:999px;background:var(--warn)"></span><span style="flex:1;color:var(--ink2)">stocks · partial</span><span style="color:var(--muted)">2h</span></li>
+            <li style="display:flex;align-items:center;gap:10px"><span style="width:6px;height:6px;border-radius:999px;background:var(--bad)"></span><span style="flex:1;color:var(--ink2)">corporate-actions</span><span style="color:var(--muted)">2h</span></li>
+            <li style="display:flex;align-items:center;gap:10px"><span style="width:6px;height:6px;border-radius:999px;background:var(--accent);animation:breathe 2s infinite"></span><span style="flex:1;color:var(--ink2)">ugc-discovery</span><span style="color:var(--muted)">now</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)">
+      <header style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;padding:var(--pad);border-bottom:1px solid var(--border)">
+        <div>
+          <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Reach vs price</h2>
+          <p style="margin:4px 0 0;font-size:12px;color:var(--muted)">Views solid · ₹ close dashed · 7-day mean</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:18px;font-size:11px;font-family:'JetBrains Mono',monospace">
+          <span style="display:inline-flex;align-items:center;gap:7px"><span style="width:16px;height:2px;background:var(--tips)"></span>TIPSMUSIC</span>
+          <span style="display:inline-flex;align-items:center;gap:7px"><span style="width:16px;height:2px;background:var(--sare)"></span>SAREGAMA</span>
+        </div>
+      </header>
+      <div style="padding:var(--pad);position:relative">
+        <svg viewBox="0 0 1200 330" width="100%" height="330" preserveAspectRatio="none" style="display:block">
+          <g stroke="var(--gridline)" stroke-width="1">
+            <line x1="52" y1="30" x2="1148" y2="30"></line><line x1="52" y1="100" x2="1148" y2="100"></line><line x1="52" y1="170" x2="1148" y2="170"></line><line x1="52" y1="240" x2="1148" y2="240"></line>
+          </g>
+          <line x1="52" y1="300" x2="1148" y2="300" stroke="var(--border2)"></line>
+          <path d="M52,235 C190,220 270,258 350,208 C440,155 530,198 620,163 C710,133 800,168 890,124 C980,90 1070,132 1148,96" fill="none" stroke="var(--tips)" stroke-width="2.2"></path>
+          <path d="M52,196 C180,210 260,182 350,220 C450,248 530,215 620,244 C720,268 800,240 890,264 C990,283 1070,259 1148,278" fill="none" stroke="var(--sare)" stroke-width="2.2"></path>
+          <path d="M52,278 C190,270 270,283 350,252 C440,232 530,246 620,218 C710,194 800,208 890,180 C980,156 1070,170 1148,142" fill="none" stroke="var(--tips)" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.75"></path>
+          <path d="M52,150 C180,159 260,145 350,173 C450,197 530,178 620,201 C720,220 800,206 890,225 C990,239 1070,230 1148,244" fill="none" stroke="var(--sare)" stroke-width="1.6" stroke-dasharray="4 4" opacity="0.75"></path>
+          <line x1="890" y1="30" x2="890" y2="300" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 4" opacity="0.6"></line>
+        </svg>
+        <div style="position:absolute;left:var(--pad);top:calc(var(--pad) + 22px);display:flex;flex-direction:column;justify-content:space-between;height:216px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">
+          <span>80M</span><span>60M</span><span>40M</span><span>20M</span>
+        </div>
+        <div style="position:absolute;right:var(--pad);top:calc(var(--pad) + 22px);display:flex;flex-direction:column;justify-content:space-between;height:216px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">
+          <span>₹800</span><span>₹680</span><span>₹560</span><span>₹440</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 52px 0;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">
+          <span>SEP 25</span><span>DEC 25</span><span>MAR 26</span><span>JUN 26</span><span>31 AUG 26</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isExplain }}">
+  <main style="max-width:1400px;margin:0 auto;padding:24px 28px 64px;display:flex;flex-direction:column;gap:var(--gap)">
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)">
+      <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.02em">TIPSMUSIC moved +4.1% over 30 days. Here is what carried it.</h1>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--muted);max-width:80ch">Attribution decomposes the group view delta by channel, then tests each against the price series at the lag that clears significance. Channels below the 0.35 floor are shown but not credited.</p>
+    </section>
+
+    <section style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:var(--gap);align-items:start">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)">
+        <header style="padding:var(--pad);border-bottom:1px solid var(--border)"><h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Contribution to Δ views · 30d</h2></header>
+        <ul style="list-style:none;margin:0;padding:var(--pad);display:flex;flex-direction:column;gap:14px">
+          <li style="display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:14px;align-items:center">
+            <span><span style="display:block;font-size:13px;font-weight:500;margin-bottom:6px">Tips Punjabi</span><span style="display:block;height:8px;border-radius:2px;background:var(--gridline)"><span style="display:block;height:8px;border-radius:2px;width:62%;background:var(--tips)"></span></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--good)">+2.9M/d</span>
+          </li>
+          <li style="display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:14px;align-items:center">
+            <span><span style="display:block;font-size:13px;font-weight:500;margin-bottom:6px">Tips Official</span><span style="display:block;height:8px;border-radius:2px;background:var(--gridline)"><span style="display:block;height:8px;border-radius:2px;width:38%;background:var(--tips)"></span></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--good)">+1.8M/d</span>
+          </li>
+          <li style="display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:14px;align-items:center">
+            <span><span style="display:block;font-size:13px;font-weight:500;margin-bottom:6px">Tips Marathi</span><span style="display:block;height:8px;border-radius:2px;background:var(--gridline)"><span style="display:block;height:8px;border-radius:2px;width:11%;background:var(--tips)"></span></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--good)">+0.5M/d</span>
+          </li>
+          <li style="display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:14px;align-items:center">
+            <span><span style="display:block;font-size:13px;font-weight:500;margin-bottom:6px">Tips Bhojpuri</span><span style="display:block;height:8px;border-radius:2px;background:var(--gridline)"><span style="display:block;height:8px;border-radius:2px;width:7%;background:var(--bad)"></span></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--bad)">−0.3M/d</span>
+          </li>
+          <li style="display:grid;grid-template-columns:minmax(0,1fr) 74px;gap:14px;align-items:center">
+            <span><span style="display:block;font-size:13px;font-weight:500;margin-bottom:6px">Remaining 20 channels</span><span style="display:block;height:8px;border-radius:2px;background:var(--gridline)"><span style="display:block;height:8px;border-radius:2px;width:16%;background:var(--muted)"></span></span></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--muted)">+0.7M/d</span>
+          </li>
+        </ul>
+        <details style="border-top:1px solid var(--border);padding:calc(var(--pad) - 4px) var(--pad)">
+          <summary style="display:flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em"><span class="chev" style="display:inline-block;transition:transform .15s">›</span>Method</summary>
+          <p style="margin:9px 0 0;font-size:12px;line-height:1.6;color:var(--ink2);max-width:78ch">Per-channel daily deltas over the window, minus each channel's own trailing 90d mean, summed. Repaired channel-days are included at their interpolated split and marked in Data quality.</p>
+        </details>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)">
+        <header style="padding:var(--pad);border-bottom:1px solid var(--border)"><h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Lead-lag · TIPS 30d</h2></header>
+        <div style="padding:var(--pad)">
+          <svg viewBox="0 0 340 170" width="100%" height="170" style="display:block">
+            <line x1="20" y1="120" x2="330" y2="120" stroke="var(--border2)"></line>
+            <line x1="20" y1="52" x2="330" y2="52" stroke="var(--gridline)" stroke-dasharray="3 3"></line>
+            <g fill="var(--muted)">
+              <rect x="28" y="104" width="18" height="16"></rect><rect x="56" y="98" width="18" height="22"></rect><rect x="84" y="110" width="18" height="10"></rect><rect x="112" y="92" width="18" height="28"></rect><rect x="140" y="86" width="18" height="34"></rect><rect x="168" y="74" width="18" height="46"></rect>
+            </g>
+            <rect x="196" y="46" width="18" height="74" fill="var(--accent)"></rect>
+            <g fill="var(--muted)">
+              <rect x="224" y="80" width="18" height="40"></rect><rect x="252" y="96" width="18" height="24"></rect><rect x="280" y="106" width="18" height="14"></rect><rect x="308" y="112" width="18" height="8"></rect>
+            </g>
+            <text x="205" y="38" fill="var(--accent)" font-size="11" font-family="JetBrains Mono, monospace" text-anchor="middle">0.41</text>
+            <text x="20" y="140" fill="var(--muted)" font-size="10" font-family="JetBrains Mono, monospace">−5d</text>
+            <text x="196" y="140" fill="var(--ink2)" font-size="10" font-family="JetBrains Mono, monospace">+4d</text>
+            <text x="300" y="140" fill="var(--muted)" font-size="10" font-family="JetBrains Mono, monospace">+9d</text>
+            <text x="24" y="49" fill="var(--muted)" font-size="9" font-family="JetBrains Mono, monospace">sig 0.35</text>
+          </svg>
+          <p style="margin:10px 0 0;font-size:12px;line-height:1.6;color:var(--ink2)">Views lead price by four days. Only the +4d bar clears the significance floor; everything else is noise and is drawn in neutral.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isForecast }}">
+  <main style="max-width:1400px;margin:0 auto;padding:24px 28px 64px;display:flex;flex-direction:column;gap:var(--gap)">
+    <section style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)">
+      <article style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+          <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Tips Music · Q2 FY27</h2>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--good)">✓ scored · 4 quarters</span>
+        </div>
+        <p style="margin:14px 0 0;font-size:40px;font-weight:600;letter-spacing:-0.03em;line-height:1">₹78–86<span style="font-size:20px;color:var(--muted);font-weight:500">cr</span></p>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--ink2)">Last printed ₹74.90cr · <span style="color:var(--good)">▲ +21.4% YoY</span></p>
+        <div style="margin-top:18px">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:6px"><span>quarter 66% elapsed</span><span>30d left</span></div>
+          <div style="height:5px;border-radius:3px;background:var(--gridline);overflow:hidden"><div style="height:5px;width:66%;background:var(--accent)"></div></div>
+        </div>
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:26px">
+          <span><span style="display:block;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Hit rate</span><span style="display:block;font-size:18px;font-weight:600;margin-top:3px">4 / 4</span></span>
+          <span><span style="display:block;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Mean abs err</span><span style="display:block;font-size:18px;font-weight:600;margin-top:3px">3.8%</span></span>
+          <span><span style="display:block;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">FY26</span><span style="display:block;font-size:18px;font-weight:600;margin-top:3px">₹268.4cr</span></span>
+        </div>
+      </article>
+
+      <article style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+          <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Saregama · music · Q2 FY27</h2>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--warn)">⚠ unscored</span>
+        </div>
+        <p style="margin:14px 0 0;font-size:40px;font-weight:600;letter-spacing:-0.03em;line-height:1">₹196–214<span style="font-size:20px;color:var(--muted);font-weight:500">cr</span></p>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--ink2)">Last printed ₹191.20cr · <span style="color:var(--good)">▲ +6.8% YoY</span></p>
+        <div style="margin-top:18px">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:6px"><span>quarter 66% elapsed</span><span>30d left</span></div>
+          <div style="height:5px;border-radius:3px;background:var(--gridline);overflow:hidden"><div style="height:5px;width:66%;background:var(--accent)"></div></div>
+        </div>
+        <details style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+          <summary style="display:flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em"><span class="chev" style="display:inline-block;transition:transform .15s">›</span>Why the two bands are not comparable</summary>
+          <p style="margin:9px 0 0;font-size:12px;line-height:1.6;color:var(--ink2);max-width:70ch">Tips reports a single segment, so its revenue line is the music line. Saregama's group revenue also carries artist management, video and events — this band covers music only.</p>
+        </details>
+      </article>
+    </section>
+
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden">
+      <header style="display:flex;align-items:baseline;justify-content:space-between;padding:var(--pad);border-bottom:1px solid var(--border)">
+        <h2 style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em">Filed actuals</h2>
+        <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)">only confirmed rows are scored</span>
+      </header>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="padding:10px var(--pad);font-weight:500">Company</th><th style="padding:10px 14px;font-weight:500">Period</th><th style="padding:10px 14px;text-align:right;font-weight:500">Revenue</th><th style="padding:10px 14px;text-align:right;font-weight:500">YoY</th><th style="padding:10px 14px;font-weight:500">Status</th><th style="padding:10px var(--pad);text-align:right;font-weight:500">Source</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:var(--row) var(--pad);font-weight:500">TIPSMUSIC</td><td style="padding:var(--row) 14px;font-family:'JetBrains Mono',monospace;font-size:12px">Q1 FY27</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px">₹74.90cr</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good)">+24.1%</td><td style="padding:var(--row) 14px;font-size:12px;color:var(--good)">confirmed</td><td style="padding:var(--row) var(--pad);text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">BSE 24 Jul</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:var(--row) var(--pad);font-weight:500">TIPSMUSIC</td><td style="padding:var(--row) 14px;font-family:'JetBrains Mono',monospace;font-size:12px">Q4 FY26</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px">₹71.30cr</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good)">+19.8%</td><td style="padding:var(--row) 14px;font-size:12px;color:var(--good)">confirmed</td><td style="padding:var(--row) var(--pad);text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">BSE 28 Apr</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:var(--row) var(--pad);font-weight:500">SAREGAMA</td><td style="padding:var(--row) 14px;font-family:'JetBrains Mono',monospace;font-size:12px">Q1 FY27</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px">₹191.20cr</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good)">+7.4%</td><td style="padding:var(--row) 14px;font-size:12px;color:var(--good)">confirmed</td><td style="padding:var(--row) var(--pad);text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">BSE 29 Jul</td></tr>
+          <tr><td style="padding:var(--row) var(--pad);font-weight:500;color:var(--muted)">SAREGAMA</td><td style="padding:var(--row) 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">Q2 FY27</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">—</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">—</td><td style="padding:var(--row) 14px;font-size:12px;color:var(--warn)">awaiting</td><td style="padding:var(--row) var(--pad);text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">—</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isEvidence }}">
+  <main style="max-width:1400px;margin:0 auto;padding:24px 28px 64px;display:flex;flex-direction:column;gap:var(--gap)">
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)">
+      <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.02em">Does reach actually lead the price?</h1>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--muted);max-width:80ch">Rolling correlation of log daily-view change against log return, at every lag from −5 to +9 days. The claim is only as strong as the number of windows where it survives.</p>
+    </section>
+
+    <section style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="text-align:left;font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border)">
+          <th style="padding:10px var(--pad);font-weight:500">Window</th><th style="padding:10px 14px;font-weight:500">Company</th><th style="padding:10px 14px;text-align:right;font-weight:500">Best lag</th><th style="padding:10px 14px;text-align:right;font-weight:500">r</th><th style="padding:10px 14px;text-align:right;font-weight:500">n</th><th style="padding:10px var(--pad);font-weight:500">Verdict</th>
+        </tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:var(--row) var(--pad);font-family:'JetBrains Mono',monospace;font-size:12px">30d</td><td style="padding:var(--row) 14px">TIPSMUSIC</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px">+4d</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good)">0.41</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">30</td><td style="padding:var(--row) var(--pad);font-size:12px;color:var(--good)">holds</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:var(--row) var(--pad);font-family:'JetBrains Mono',monospace;font-size:12px">90d</td><td style="padding:var(--row) 14px">TIPSMUSIC</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px">+4d</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--good)">0.36</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">90</td><td style="padding:var(--row) var(--pad);font-size:12px;color:var(--good)">holds</td></tr>
+          <tr style="border-bottom:1px solid var(--border)"><td style="padding:var(--row) var(--pad);font-family:'JetBrains Mono',monospace;font-size:12px">365d</td><td style="padding:var(--row) 14px">TIPSMUSIC</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px">+3d</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--warn)">0.29</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">365</td><td style="padding:var(--row) var(--pad);font-size:12px;color:var(--warn)">below floor</td></tr>
+          <tr><td style="padding:var(--row) var(--pad);font-family:'JetBrains Mono',monospace;font-size:12px">30d</td><td style="padding:var(--row) 14px">SAREGAMA</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">—</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">—</td><td style="padding:var(--row) 14px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)">—</td><td style="padding:var(--row) var(--pad);font-size:12px;color:var(--muted)">not computed</td></tr>
+        </tbody>
+      </table>
+      <details style="border-top:1px solid var(--border);padding:calc(var(--pad) - 4px) var(--pad)">
+        <summary style="display:flex;align-items:center;gap:7px;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em"><span class="chev" style="display:inline-block;transition:transform .15s">›</span>What would falsify this</summary>
+        <p style="margin:9px 0 0;font-size:12px;line-height:1.6;color:var(--ink2);max-width:80ch">Two consecutive 30d windows below r=0.35 at every lag, or the best lag moving outside +2d to +6d. The 365d window is already below the floor, which is why the read is framed on 30d and 90d and never on the full history.</p>
+      </details>
+    </section>
+
+    <section style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap)">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)"><p style="margin:0;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Days of history</p><p style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-0.02em">412</p><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">since first clean ingest</p></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)"><p style="margin:0;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Measured vs repaired</p><p style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-0.02em">98.1%</p><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">184 channel-days interpolated</p></div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:var(--pad);box-shadow:var(--shadow)"><p style="margin:0;font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Nowcast hit rate</p><p style="margin:8px 0 0;font-size:26px;font-weight:600;letter-spacing:-0.02em">4 / 4</p><p style="margin:4px 0 0;font-size:12px;color:var(--muted)">band contained the print</p></div>
+    </section>
+  </main>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1050},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark' | 'light'&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;balanced&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;balanced&quot;,&quot;tsType&quot;:&quot;'balanced' | 'compact'&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;options&quot;:[&quot;#3E8FD6&quot;,&quot;#0072B2&quot;,&quot;#009E73&quot;,&quot;#D55E00&quot;],&quot;default&quot;:&quot;#3E8FD6&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const TABS = [
+  { key: 'monitor', label: 'Monitor', sub: ['Read', 'What changed', 'Reach vs price', 'Events'] },
+  { key: 'explain', label: 'Explain', sub: ['Attribution', 'Lead-lag', 'Channels', 'Videos'] },
+  { key: 'forecast', label: 'Forecast', sub: ['Nowcast', 'Filed actuals', 'Track record'] },
+  { key: 'evidence', label: 'Evidence', sub: ['Correlation', 'Coverage', 'Method'] },
+];
+const RANGES = ['1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
+
+class Component extends DCLogic {
+  state = { tab: 'monitor', range: '1Y', sub: 0, theme: null };
+
+  get theme() { return this.state.theme ?? this.props.theme ?? 'dark'; }
+
+  sync() {
+    const r = document.documentElement;
+    r.dataset.theme = this.theme;
+    r.dataset.density = this.props.density ?? 'balanced';
+    if (this.props.accent) r.style.setProperty('--accent', this.props.accent);
+  }
+  componentDidMount() { this.sync(); }
+  componentDidUpdate() { this.sync(); }
+
+  renderVals() {
+    const { tab, range, sub } = this.state;
+    const current = TABS.find((t) => t.key === tab) ?? TABS[0];
+    return {
+      themeLabel: this.theme === 'dark' ? 'LIGHT' : 'DARK',
+      toggleTheme: () => this.setState({ theme: this.theme === 'dark' ? 'light' : 'dark' }),
+      tabs: TABS.map((t) => ({
+        label: t.label,
+        go: () => this.setState({ tab: t.key, sub: 0 }),
+        style: 'border:0;font-family:inherit;cursor:pointer;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;letter-spacing:-0.005em;' +
+          (t.key === tab
+            ? 'background:var(--accentSoft);color:var(--accent);'
+            : 'background:transparent;color:var(--muted);'),
+      })),
+      subnav: current.sub.map((label, i) => ({
+        label,
+        style: 'font-size:12px;letter-spacing:-0.005em;padding:3px 0;cursor:pointer;white-space:nowrap;' +
+          (i === sub
+            ? 'color:var(--ink);font-weight:500;box-shadow:inset 0 -2px 0 var(--accent);'
+            : 'color:var(--muted);'),
+      })),
+      ranges: RANGES.map((label) => ({
+        label,
+        go: () => this.setState({ range: label }),
+        style: 'border:0;font-family:JetBrains Mono, monospace;cursor:pointer;padding:5px 10px;font-size:11px;' +
+          (label === range
+            ? 'background:var(--accent);color:#fff;'
+            : 'background:var(--surface);color:var(--muted);'),
+      })),
+      showRange: tab === 'monitor' || tab === 'explain' || tab === 'evidence',
+      isMonitor: tab === 'monitor',
+      isExplain: tab === 'explain',
+      isForecast: tab === 'forecast',
+      isEvidence: tab === 'evidence',
+    };
+  }
+}
+</script>
+</body>
+</html>

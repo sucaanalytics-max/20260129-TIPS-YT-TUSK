@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:hsl(222 22% 6%); color:hsl(210 20% 96%); -webkit-font-smoothing:antialiased; font-feature-settings:"rlig" 1,"calt" 1,"ss01" 1; }
+  a { color:hsl(213 94% 68%); text-decoration:none; }
+  a:hover { color:hsl(210 20% 96%); }
+  table, .tnum { font-variant-numeric: tabular-nums; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:hsl(222 22% 6%);color:hsl(210 20% 96%);font-family:Inter,system-ui,sans-serif">
+
+  <nav style="position:sticky;top:0;z-index:10;border-bottom:1px solid hsl(220 14% 18%);background:hsl(222 20% 9% / 0.4);backdrop-filter:blur(8px)">
+    <div style="margin:0 auto;max-width:1280px;display:flex;align-items:center;justify-content:space-between;padding:12px 24px">
+      <div style="display:flex;align-items:center;gap:24px">
+        <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em">TUSK<span style="color:hsl(215 14% 65%);margin-left:8px;font-weight:400">YT × NSE</span></span>
+        <ul style="display:flex;align-items:center;gap:4px;list-style:none;margin:0;padding:0">
+          <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="14">
+            <li><button onClick="{{ item.go }}" style="{{ item.style }}">{{ item.label }}</button></li>
+          </sc-for>
+        </ul>
+      </div>
+      <div style="height:28px;width:28px;border-radius:9999px;background:hsl(222 14% 14%);border:1px solid hsl(220 14% 18%)"></div>
+    </div>
+  </nav>
+
+  <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+  <main style="margin:0 auto;max-width:1280px;padding:40px 24px">
+    <header style="margin-bottom:32px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px">
+      <div>
+        <h1 style="margin:0;font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em">TUSK · YT × NSE</h1>
+        <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:14px">Daily monitor — TIPSMUSIC + SAREGAMA · range: <span style="color:hsl(210 20% 96%);font-weight:500">1Y</span></p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+        <div style="display:inline-flex;border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9% / 0.4);border-radius:8px;padding:2px">
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:hsl(215 14% 65%)">1M</span>
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:hsl(215 14% 65%)">3M</span>
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:hsl(215 14% 65%)">6M</span>
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:hsl(215 14% 65%)">YTD</span>
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;background:hsl(213 94% 68% / 0.15);color:hsl(213 94% 68%)">1Y</span>
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:hsl(215 14% 65%)">5Y</span>
+          <span style="border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:hsl(215 14% 65%)">All</span>
+        </div>
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:hsl(215 14% 65%)">
+          <span style="height:8px;width:8px;border-radius:9999px;background:#34D399"></span>
+          latest youtube-channels · 2026-08-31 · 1d ago
+        </span>
+      </div>
+    </header>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">TIPSMUSIC · close</p>
+        <p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹742.30</p>
+        <p style="margin:4px 0 0;font-size:12px;font-variant-numeric:tabular-nums;color:#34D399">▲ +18.42% <span style="color:hsl(215 14% 65%)">1Y return (log)</span></p>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Daily views (latest)</p>
+        <p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">63,481,905</p>
+        <p style="margin:4px 0 0;font-size:12px;font-variant-numeric:tabular-nums;color:#34D399">▲ +6.11% <span style="color:hsl(215 14% 65%)">365d avg vs prior 365d</span></p>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Subscribers</p>
+        <p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">92,400,000</p>
+        <p style="margin:4px 0 0;font-size:12px;font-variant-numeric:tabular-nums;color:#34D399">▲ +4,120,000 <span style="color:hsl(215 14% 65%)">1Y Δ</span></p>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Views · 1Y trend</p>
+        <div style="margin-top:12px">
+          <svg width="200" height="48" role="img" aria-label="60-day daily views trend"><path d="M1,40 L22,34 L44,37 L66,28 L88,31 L110,22 L132,25 L154,14 L176,17 L198,8" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="198" cy="8" r="2.5" fill="#0072B2"></circle></svg>
+        </div>
+        <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">as of 2026-08-31</p>
+      </div>
+
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">SAREGAMA · close</p>
+        <p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹486.75</p>
+        <p style="margin:4px 0 0;font-size:12px;font-variant-numeric:tabular-nums;color:#F4576B">▼ -7.03% <span style="color:hsl(215 14% 65%)">1Y return (log)</span></p>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Daily views (latest)</p>
+        <p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">41,905,220</p>
+        <p style="margin:4px 0 0;font-size:12px;font-variant-numeric:tabular-nums;color:#F4576B">▼ -2.48% <span style="color:hsl(215 14% 65%)">365d avg vs prior 365d</span></p>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Subscribers</p>
+        <p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">73,150,000</p>
+        <p style="margin:4px 0 0;font-size:12px;font-variant-numeric:tabular-nums;color:#34D399">▲ +2,880,000 <span style="color:hsl(215 14% 65%)">1Y Δ</span></p>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Views · 1Y trend</p>
+        <div style="margin-top:12px">
+          <svg width="200" height="48" role="img" aria-label="60-day daily views trend"><path d="M1,12 L22,18 L44,15 L66,24 L88,20 L110,29 L132,26 L154,33 L176,30 L198,36" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path><circle cx="198" cy="36" r="2.5" fill="#D55E00"></circle></svg>
+        </div>
+        <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">as of 2026-08-31</p>
+      </div>
+    </div>
+
+    <section style="margin-top:32px">
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <header style="margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px">
+          <div>
+            <h3 style="margin:0;font-size:14px;font-weight:500">Daily views × adjusted close — TIPS vs SARE</h3>
+            <p style="margin:0;color:hsl(215 14% 65%);font-size:12px">Left axis: daily views (solid) · Right axis: ₹ adjusted close (dashed) · colour = company · views smoothed (7D)</p>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+            <div style="display:flex;align-items:center;gap:4px;font-size:12px">
+              <span style="color:hsl(215 14% 65%);margin-right:4px">Show:</span>
+              <span style="border-radius:6px;border:1px solid hsl(210 20% 96%);background:hsl(210 20% 96% / 0.1);padding:4px 10px">Both</span>
+              <span style="border-radius:6px;border:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);padding:4px 10px">TIPS</span>
+              <span style="border-radius:6px;border:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);padding:4px 10px">SARE</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:12px">
+              <span style="color:hsl(215 14% 65%);margin-right:4px">Smooth:</span>
+              <span style="border-radius:6px;border:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);padding:4px 10px">Abs</span>
+              <span style="border-radius:6px;border:1px solid hsl(210 20% 96%);background:hsl(210 20% 96% / 0.1);padding:4px 10px">7D</span>
+              <span style="border-radius:6px;border:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);padding:4px 10px">30D</span>
+            </div>
+          </div>
+        </header>
+        <div style="height:360px;position:relative">
+          <svg width="100%" height="360" viewBox="0 0 1200 360" preserveAspectRatio="none" style="display:block">
+            <g stroke="#1B2027" stroke-width="1">
+              <line x1="40" y1="40" x2="1160" y2="40"></line><line x1="40" y1="110" x2="1160" y2="110"></line><line x1="40" y1="180" x2="1160" y2="180"></line><line x1="40" y1="250" x2="1160" y2="250"></line><line x1="40" y1="320" x2="1160" y2="320"></line>
+              <line x1="320" y1="20" x2="320" y2="320"></line><line x1="600" y1="20" x2="600" y2="320"></line><line x1="880" y1="20" x2="880" y2="320"></line>
+            </g>
+            <line x1="40" y1="20" x2="40" y2="320" stroke="#232A33"></line>
+            <line x1="1160" y1="20" x2="1160" y2="320" stroke="#232A33"></line>
+            <line x1="40" y1="320" x2="1160" y2="320" stroke="#232A33"></line>
+            <path d="M40,240 C180,225 260,265 340,215 C430,160 520,205 610,170 C700,140 790,175 880,130 C970,95 1060,140 1160,100" fill="none" stroke="#0072B2" stroke-width="2"></path>
+            <path d="M40,200 C170,215 250,185 340,225 C440,255 520,220 610,250 C710,275 790,245 880,270 C980,290 1060,265 1160,285" fill="none" stroke="#D55E00" stroke-width="2"></path>
+            <path d="M40,290 C180,280 260,295 340,262 C430,240 520,255 610,225 C700,200 790,215 880,185 C970,160 1060,175 1160,145" fill="none" stroke="#0072B2" stroke-width="2" stroke-dasharray="3 3"></path>
+            <path d="M40,150 C170,160 250,145 340,175 C440,200 520,180 610,205 C710,225 790,210 880,230 C980,245 1060,235 1160,250" fill="none" stroke="#D55E00" stroke-width="2" stroke-dasharray="3 3"></path>
+          </svg>
+          <div style="position:absolute;left:0;top:16px;color:#94a3b8;font-size:11px;display:flex;flex-direction:column;justify-content:space-between;height:300px">
+            <span>80.0M</span><span>65.0M</span><span>50.0M</span><span>35.0M</span><span>20.0M</span>
+          </div>
+          <div style="position:absolute;right:0;top:16px;color:#94a3b8;font-size:11px;text-align:right;display:flex;flex-direction:column;justify-content:space-between;height:300px">
+            <span>₹800</span><span>₹700</span><span>₹600</span><span>₹500</span><span>₹400</span>
+          </div>
+          <div style="position:absolute;left:40px;right:40px;bottom:14px;display:flex;justify-content:space-between;color:#94a3b8;font-size:11px">
+            <span>2025-09-01</span><span>2025-12-01</span><span>2026-03-01</span><span>2026-06-01</span><span>2026-08-31</span>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:-4px;display:flex;justify-content:center;gap:20px;font-size:11px;color:#94a3b8">
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#0072B2"></span>TIPS views</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:2px;background:#D55E00"></span>SARE views</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:0;border-top:2px dashed #0072B2"></span>TIPS price</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:0;border-top:2px dashed #D55E00"></span>SARE price</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:40px">
+      <h2 style="margin:0 0 16px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Growth — daily views, current vs prior period</h2>
+      <p style="margin:0 0 12px;color:hsl(215 14% 65%);font-size:12px">Multi-period reference (independent of the page range selector).</p>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px">
+        <header style="border-bottom:1px solid hsl(220 14% 18%);display:flex;align-items:baseline;justify-content:space-between;padding:16px 20px">
+          <div>
+            <h3 style="margin:0;font-size:16px;font-weight:600">TIPSMUSIC</h3>
+            <p style="margin:2px 0 0;color:hsl(215 14% 65%);font-size:12px">24 channels reporting · as of 2026-08-31</p>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:24px;text-align:right">
+            <div>
+              <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Cumulative views</p>
+              <p style="margin:2px 0 0;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">88.4B</p>
+            </div>
+            <div>
+              <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;text-transform:uppercase;letter-spacing:0.05em">Subs (YoY Δ)</p>
+              <p style="margin:2px 0 0;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums">92.4M <span style="color:#34D399">+4.1M</span></p>
+            </div>
+          </div>
+        </header>
+        <table style="width:100%;font-size:14px;border-collapse:collapse">
+          <thead style="border-bottom:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.05em">
+            <tr><th style="padding:12px 20px;font-weight:400">Period</th><th style="padding:12px 20px;text-align:right;font-weight:400">Current avg daily views</th><th style="padding:12px 20px;text-align:right;font-weight:400">Prior period avg</th><th style="padding:12px 20px;text-align:right;font-weight:400">Growth</th><th style="padding:12px 20px;font-weight:400">Detail</th></tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:12px 20px;font-weight:500">1d</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">63.5M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">61.9M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+2.58%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">last 24h vs prior 24h</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:12px 20px;font-weight:500">WoW</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">62.1M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">60.4M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+2.81%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">last 7d avg vs prior 7d avg</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:12px 20px;font-weight:500">MoM</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">60.8M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">59.2M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+2.70%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">last 30d avg vs prior 30d avg</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:12px 20px;font-weight:500">QoQ</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">59.4M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">60.1M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#F4576B">-1.16%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">last 90d avg vs prior 90d avg</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:12px 20px;font-weight:500">QTD</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">61.2M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">58.9M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+3.90%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">quarter to date vs same span last quarter</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:12px 20px;font-weight:500">YTD</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">60.3M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">56.7M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+6.35%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">year to date vs same span last year</td></tr>
+            <tr><td style="padding:12px 20px;font-weight:500">YoY</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums">59.8M</td><td style="padding:12px 20px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">56.4M</td><td style="padding:12px 20px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+6.11%</td><td style="padding:12px 20px;color:hsl(215 14% 65%);font-size:12px">last 365d avg vs prior 365d avg</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <h3 style="margin:0;font-size:14px;font-weight:500">Event horizon · next 30d</h3>
+        <ul style="margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#60a5fa"></span><span style="color:hsl(215 14% 65%);width:80px;flex-shrink:0;font-variant-numeric:tabular-nums">2026-09-04</span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">earnings</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">TIPSMUSIC · Q2 FY27 results</span><span style="color:hsl(215 14% 65%);width:48px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">+3d</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#34D399"></span><span style="color:hsl(215 14% 65%);width:80px;flex-shrink:0;font-variant-numeric:tabular-nums">2026-09-09</span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">release</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">TIPSMUSIC · Punjabi single slate</span><span style="color:hsl(215 14% 65%);width:48px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">+8d</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#FCD34D"></span><span style="color:hsl(215 14% 65%);width:80px;flex-shrink:0;font-variant-numeric:tabular-nums">2026-09-15</span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">corp_action</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">SAREGAMA · interim dividend record date</span><span style="color:hsl(215 14% 65%);width:48px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">+14d</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#60a5fa"></span><span style="color:hsl(215 14% 65%);width:80px;flex-shrink:0;font-variant-numeric:tabular-nums">2026-09-25</span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">film_release</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">TIPSMUSIC · soundtrack tie-in</span><span style="color:hsl(215 14% 65%);width:48px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">+24d</span></li>
+        </ul>
+      </div>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+        <h3 style="margin:0;font-size:14px;font-weight:500">Pipeline pulse</h3>
+        <p style="margin:2px 0 0;color:hsl(215 14% 65%);font-size:12px">last 5 cron runs</p>
+        <ul style="margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px">
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#34D399"></span><span style="color:hsl(215 14% 65%);width:128px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">youtube-channels</span><span style="flex:1;font-variant-numeric:tabular-nums">ok<span style="color:hsl(215 14% 65%)"> · 38 rows</span></span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">5h ago</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#34D399"></span><span style="color:hsl(215 14% 65%);width:128px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">youtube-videos</span><span style="flex:1;font-variant-numeric:tabular-nums">ok<span style="color:hsl(215 14% 65%)"> · 3,412 rows</span></span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">4h ago</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#FCD34D"></span><span style="color:hsl(215 14% 65%);width:128px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">stocks</span><span style="flex:1;font-variant-numeric:tabular-nums">partial<span style="color:hsl(215 14% 65%)"> · 1 rows</span></span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">2h ago</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#34D399"></span><span style="color:hsl(215 14% 65%);width:128px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">nowcast</span><span style="flex:1;font-variant-numeric:tabular-nums">ok<span style="color:hsl(215 14% 65%)"> · 2 rows</span></span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">1h ago</span></li>
+          <li style="display:flex;align-items:baseline;gap:12px;font-size:12px"><span style="height:6px;width:6px;flex-shrink:0;border-radius:9999px;background:#60a5fa;animation:pulse 2s infinite"></span><span style="color:hsl(215 14% 65%);width:128px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em">ugc-discovery</span><span style="flex:1;font-variant-numeric:tabular-nums">running</span><span style="color:hsl(215 14% 65%);width:64px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums">3m ago</span></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isSignals }}">
+  <main style="margin:0 auto;max-width:1280px;padding:40px 24px">
+    <header style="margin-bottom:32px;display:flex;align-items:baseline;justify-content:space-between">
+      <div>
+        <h1 style="margin:0;font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em">Signals</h1>
+        <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:14px">IR cockpit · what the read says right now, weighted by significance</p>
+      </div>
+      <span style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:hsl(215 14% 65%)"><span style="height:8px;width:8px;border-radius:9999px;background:#34D399"></span>latest youtube-channels · 2026-08-31 · 1d ago</span>
+    </header>
+
+    <section style="margin-bottom:32px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <article style="border-radius:8px;border:1px solid rgb(52 211 153 / 0.4);background:rgb(52 211 153 / 0.05);padding:16px">
+        <header style="margin-bottom:12px;display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Read · TIPSMUSIC</span>
+            <span style="color:hsl(215 14% 65%);font-size:12px">as of 2026-08-31</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:6px;border-radius:6px;border:1px solid rgb(52 211 153 / 0.4);padding:2px 8px;font-size:12px;font-weight:600;letter-spacing:0.05em;color:#34D399"><span style="height:6px;width:6px;border-radius:9999px;background:#34D399"></span>POSITIVE</span>
+        </header>
+        <p style="margin:0;font-size:14px;line-height:1.375">View momentum is +1.8σ on a 30d base with catalog freshness holding at 0.62; lead-lag r of 0.41 at +4d has held for six weeks, and peer rank improved two places. Nothing in the measured set argues the other way.</p>
+        <p style="margin:12px 0 0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.18em">Internal view · not research</p>
+      </article>
+      <article style="border-radius:8px;border:1px solid rgb(252 211 77 / 0.4);background:rgb(252 211 77 / 0.05);padding:16px">
+        <header style="margin-bottom:12px;display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Read · SAREGAMA</span>
+            <span style="color:hsl(215 14% 65%);font-size:12px">as of 2026-08-31</span>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:6px;border-radius:6px;border:1px solid rgb(252 211 77 / 0.4);padding:2px 8px;font-size:12px;font-weight:600;letter-spacing:0.05em;color:#FCD34D"><span style="height:6px;width:6px;border-radius:9999px;background:#FCD34D"></span>MIXED</span>
+        </header>
+        <p style="margin:0;font-size:14px;line-height:1.375">Views are drifting −0.6σ while subscribers still add; catalog freshness has fallen to 0.31 and no lead-lag window is significant. Relative strength versus TIPS is −9.2% over 90d.</p>
+        <p style="margin:12px 0 0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.18em">Internal view · not research</p>
+      </article>
+    </section>
+
+    <section style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <div style="margin-bottom:6px;display:flex;align-items:baseline;gap:12px">
+          <h3 style="margin:0;font-size:14px;font-weight:600;letter-spacing:-0.01em">TIPSMUSIC</h3>
+          <p style="margin:0;color:hsl(215 14% 65%);font-size:12px">as of 2026-08-31 · 412 days of data</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">View momentum</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#34D399">+1.8σ</p><svg width="100%" height="20"><path d="M2,16 L20,13 L38,15 L56,9 L74,11 L92,5" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Catalog fresh</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">0.62</p><svg width="100%" height="20"><path d="M2,10 L20,12 L38,8 L56,11 L74,9 L92,10" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Lead-lag r</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">0.41</p><svg width="100%" height="20"><path d="M2,14 L20,12 L38,13 L56,8 L74,9 L92,7" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Rel. strength</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#34D399">+9.2%</p><svg width="100%" height="20"><path d="M2,15 L20,13 L38,14 L56,10 L74,8 L92,6" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Divergence</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">+0.4σ</p><svg width="100%" height="20"><path d="M2,11 L20,9 L38,12 L56,10 L74,11 L92,9" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Subs drift</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">+0.9σ</p><svg width="100%" height="20"><path d="M2,14 L20,12 L38,11 L56,9 L74,8 L92,7" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Peer rank Δ</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#34D399">+2</p><svg width="100%" height="20"><path d="M2,12 L20,12 L38,10 L56,10 L74,8 L92,8" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Live events 30d</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">4</p><svg width="100%" height="20"><path d="M2,13 L20,10 L38,13 L56,11 L74,9 L92,11" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:6px;display:flex;align-items:baseline;gap:12px">
+          <h3 style="margin:0;font-size:14px;font-weight:600;letter-spacing:-0.01em">SAREGAMA</h3>
+          <p style="margin:0;color:hsl(215 14% 65%);font-size:12px">as of 2026-08-31 · 412 days of data</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">View momentum</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#F4576B">−0.6σ</p><svg width="100%" height="20"><path d="M2,8 L20,10 L38,9 L56,12 L74,13 L92,15" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Catalog fresh</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">0.31</p><svg width="100%" height="20"><path d="M2,7 L20,9 L38,10 L56,12 L74,13 L92,14" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Lead-lag r</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:hsl(215 14% 65%)">—</p><svg width="100%" height="20"><line x1="2" y1="10" x2="92" y2="10" stroke="#E8EDF4" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"></line></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Rel. strength</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#F4576B">−9.2%</p><svg width="100%" height="20"><path d="M2,7 L20,9 L38,8 L56,12 L74,14 L92,16" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Divergence</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">−0.3σ</p><svg width="100%" height="20"><path d="M2,10 L20,11 L38,9 L56,12 L74,10 L92,12" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Subs drift</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#34D399">+0.5σ</p><svg width="100%" height="20"><path d="M2,13 L20,12 L38,12 L56,10 L74,10 L92,9" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Peer rank Δ</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;color:#F4576B">−1</p><svg width="100%" height="20"><path d="M2,9 L20,9 L38,11 L56,11 L74,13 L92,13" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:10px"><p style="margin:0;color:hsl(215 14% 65%);font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Live events 30d</p><p style="margin:6px 0 0;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums">2</p><svg width="100%" height="20"><path d="M2,12 L20,13 L38,11 L56,12 L74,12 L92,10" fill="none" stroke="#E8EDF4" stroke-width="1.5"></path></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <p style="margin-top:32px;color:hsl(215 14% 65%);font-size:12px">↓ eight more full-width panels follow on this page: rank trajectory, consolidated YT revenue, topic reach, UGC reach, UGC creators, broker consensus, two lead-lag panoramas, divergence + event horizon.</p>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isNowcast }}">
+  <main style="margin:0 auto;max-width:1280px;padding:40px 24px">
+    <header style="margin-bottom:32px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px">
+      <div>
+        <h1 style="margin:0;font-size:30px;line-height:36px;font-weight:600;letter-spacing:-0.02em">Revenue nowcast</h1>
+        <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:14px">What the music line prints this quarter — TIPSMUSIC + SAREGAMA, from measured quarter-to-date reach.</p>
+      </div>
+      <p style="margin:0;color:hsl(215 14% 65%);font-size:12px;text-transform:uppercase;letter-spacing:0.05em;font-variant-numeric:tabular-nums">Q2 FY27 · 1 Jul 2026 – 30 Sep 2026</p>
+    </header>
+
+    <section style="display:flex;flex-direction:column;gap:24px">
+      <div>
+        <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px">
+          <h3 style="margin:0;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Tips Music</h3>
+          <span style="color:hsl(215 14% 65%);font-size:12px">total revenue from operations · single segment</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Nowcast · Q2 FY27</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹78–86cr</p><p style="margin:4px 0 0;font-size:12px;color:#34D399">✓ scored over 4 quarters</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Last printed</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹74.90cr</p><p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">Q1 FY27 · confirmed filing</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Year on year</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">▲ +21.4%</p><p style="margin:4px 0 0;font-size:12px;color:#34D399">up on the same quarter last year</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">FY26 full year</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹268.40cr</p><p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">reported, confirmed</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Quarter progress</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">66%</p><div style="background:hsl(222 14% 14%);margin-top:8px;height:4px;width:100%;overflow:hidden;border-radius:4px"><div style="background:#60a5fa;height:100%;width:66.3%"></div></div><p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">30 days to quarter end</p></div>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px">
+          <h3 style="margin:0;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Saregama · music segment</h3>
+          <span style="color:hsl(215 14% 65%);font-size:12px">music only — excludes artist mgmt, video, events</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px">
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Nowcast · Q2 FY27</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹196–214cr</p><p style="margin:4px 0 0;font-size:12px;color:#FCD34D">⚠ unscored — no quarter checked yet</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Last printed</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹191.20cr</p><p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">Q1 FY27 · confirmed filing</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Year on year</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">▲ +6.8%</p><p style="margin:4px 0 0;font-size:12px;color:#34D399">up on the same quarter last year</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">FY26 full year</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">₹742.10cr</p><p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">reported, confirmed</p></div>
+          <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px"><p style="margin:0;color:hsl(215 14% 65%);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Quarter progress</p><p style="margin:8px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums">66%</p><div style="background:hsl(222 14% 14%);margin-top:8px;height:4px;width:100%;overflow:hidden;border-radius:4px"><div style="background:#60a5fa;height:100%;width:66.3%"></div></div><p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:12px">30 days to quarter end</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:40px">
+      <h2 style="margin:0 0 16px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Reported financials — what has actually been filed</h2>
+      <p style="margin:0 0 12px;color:hsl(215 14% 65%);font-size:12px">Read off the BSE filings in rupees (the filings quote lakhs). These are the actuals the estimate is scored against; only rows marked confirmed feed the headline or the track record.</p>
+      <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;overflow:hidden">
+        <table style="width:100%;font-size:14px;border-collapse:collapse">
+          <thead style="border-bottom:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.05em"><tr><th style="padding:12px 16px;font-weight:400">Company</th><th style="padding:12px 16px;font-weight:400">Period</th><th style="padding:12px 16px;text-align:right;font-weight:400">Revenue</th><th style="padding:12px 16px;text-align:right;font-weight:400">YoY</th><th style="padding:12px 16px;font-weight:400">Status</th><th style="padding:12px 16px;font-weight:400">Source</th></tr></thead>
+          <tbody>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">TIPSMUSIC</td><td style="padding:10px 16px;font-variant-numeric:tabular-nums">Q1 FY27</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">₹74.90cr</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+24.1%</td><td style="padding:10px 16px;font-size:12px;color:#34D399">confirmed</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">BSE 2026-07-24</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">TIPSMUSIC</td><td style="padding:10px 16px;font-variant-numeric:tabular-nums">Q4 FY26</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">₹71.30cr</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+19.8%</td><td style="padding:10px 16px;font-size:12px;color:#34D399">confirmed</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">BSE 2026-04-28</td></tr>
+            <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">SAREGAMA</td><td style="padding:10px 16px;font-variant-numeric:tabular-nums">Q1 FY27</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">₹191.20cr</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums;color:#34D399">+7.4%</td><td style="padding:10px 16px;font-size:12px;color:#34D399">confirmed</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">BSE 2026-07-29</td></tr>
+            <tr><td style="padding:10px 16px;font-weight:500">SAREGAMA</td><td style="padding:10px 16px;font-variant-numeric:tabular-nums">Q2 FY27</td><td style="padding:10px 16px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">—</td><td style="padding:10px 16px;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">—</td><td style="padding:10px 16px;font-size:12px;color:#FCD34D">awaiting filing</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p style="margin-top:40px;max-width:90ch;color:hsl(215 14% 65%);font-size:12px;line-height:1.625"><span style="color:hsl(210 20% 96%);font-weight:500">How the estimate is built.</span> Measured quarter-to-date reach on owned channels and Topic/OAC-attributed channels is extrapolated to a full quarter on elapsed days, converted at a rupee-per-thousand-views band, and uplifted for revenue that does not appear on YouTube. UGC reach is tracked but deliberately excluded: it is a cumulative discovered figure rather than a quarterly flow, so extrapolating it would inflate the estimate. Internal research tool — not investment advice.</p>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isChannels }}">
+  <main style="margin:0 auto;max-width:1280px;padding:40px 24px">
+    <header style="margin-bottom:24px">
+      <h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.02em">Channels</h1>
+      <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:14px">Per-channel daily stats and language rollup · subscriber deltas are noisy below 1k subs due to YT rounding</p>
+      <div style="margin-top:16px;display:flex;gap:8px;font-size:12px">
+        <span style="border-radius:6px;border:1px solid #3b82f6;background:rgb(59 130 246 / 0.2);color:#bfdbfe;padding:4px 10px">All</span>
+        <span style="border-radius:6px;border:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);padding:4px 10px">TIPSMUSIC</span>
+        <span style="border-radius:6px;border:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);padding:4px 10px">SAREGAMA</span>
+      </div>
+    </header>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Channel leaderboard</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;overflow:hidden">
+          <table style="width:100%;font-size:14px;border-collapse:collapse">
+            <thead style="border-bottom:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.05em"><tr><th style="padding:12px 16px;font-weight:400">Channel</th><th style="padding:12px 16px;font-weight:400">Company</th><th style="padding:12px 16px;font-weight:400">Lang</th><th style="padding:12px 16px;text-align:right;font-weight:400">Subs</th><th style="padding:12px 16px;text-align:right;font-weight:400">Total views</th><th style="padding:12px 16px;text-align:right;font-weight:400">Daily views</th><th style="padding:12px 16px;text-align:right;font-weight:400">Δ subs</th><th style="padding:12px 16px;text-align:right;font-weight:400">Δ videos</th><th style="padding:12px 16px;font-weight:400">As of</th></tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">Tips Official</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">TIPSMUSIC</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">hi</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">57.8M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">52.4B</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">38.2M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+12.0k</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+3</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-size:12px">2026-08-31</td></tr>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">Saregama Music</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">SAREGAMA</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">hi</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">61.4M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">48.9B</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">27.6M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+8.4k</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+5</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-size:12px">2026-08-31</td></tr>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">Tips Punjabi</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">TIPSMUSIC</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">pa</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">12.9M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">9.8B</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">9.1M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+4.1k</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+2</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-size:12px">2026-08-31</td></tr>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:10px 16px;font-weight:500">Saregama Tamil</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">SAREGAMA</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">ta</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">8.6M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">7.1B</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">6.4M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+1.9k</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+1</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-size:12px">2026-08-31</td></tr>
+              <tr><td style="padding:10px 16px;font-weight:500">Tips Marathi</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">TIPSMUSIC</td><td style="padding:10px 16px;color:hsl(215 14% 65%)">mr</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">2.4M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">1.6B</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">1.2M</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">+420</td><td style="padding:10px 16px;text-align:right;font-variant-numeric:tabular-nums">0</td><td style="padding:10px 16px;color:hsl(215 14% 65%);font-size:12px">2026-08-31</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Per-channel growth (WoW · MoM · QoQ)</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9% / 0.5);border-radius:8px;height:160px"></div>
+      </div>
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Language rollup (7d)</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9% / 0.5);border-radius:8px;height:160px"></div>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ isOps }}">
+  <main style="margin:0 auto;max-width:1280px;padding:40px 24px">
+    <header style="margin-bottom:24px">
+      <h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.02em">Ops</h1>
+      <p style="margin:4px 0 0;color:hsl(215 14% 65%);font-size:14px">Cron run history + error log for the last 7 days</p>
+    </header>
+
+    <section style="display:flex;flex-direction:column;gap:32px">
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Recent runs</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;overflow:hidden">
+          <table style="width:100%;font-size:14px;border-collapse:collapse">
+            <thead style="border-bottom:1px solid hsl(220 14% 18%);color:hsl(215 14% 65%);text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.05em"><tr><th style="padding:12px 16px;font-weight:400">Run</th><th style="padding:12px 16px;font-weight:400">Source</th><th style="padding:12px 16px;font-weight:400">Status</th><th style="padding:12px 16px;font-weight:400">Started</th><th style="padding:12px 16px;text-align:right;font-weight:400">Duration</th><th style="padding:12px 16px;text-align:right;font-weight:400">In</th><th style="padding:12px 16px;text-align:right;font-weight:400">Out</th></tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:8px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">#4821</td><td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:11px">youtube-channels</td><td style="padding:8px 16px;font-size:11px;text-transform:uppercase;color:#34D399">ok</td><td style="padding:8px 16px;color:hsl(215 14% 65%);font-size:11px">2026-08-31 00:30:04</td><td style="padding:8px 16px;text-align:right;color:hsl(215 14% 65%);font-size:11px;font-variant-numeric:tabular-nums">42s</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">38</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">38</td></tr>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:8px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">#4822</td><td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:11px">youtube-videos</td><td style="padding:8px 16px;font-size:11px;text-transform:uppercase;color:#34D399">ok</td><td style="padding:8px 16px;color:hsl(215 14% 65%);font-size:11px">2026-08-31 01:00:02</td><td style="padding:8px 16px;text-align:right;color:hsl(215 14% 65%);font-size:11px;font-variant-numeric:tabular-nums">184s</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">3480</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">3412</td></tr>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.4)"><td style="padding:8px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">#4823</td><td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:11px">stocks</td><td style="padding:8px 16px;font-size:11px;text-transform:uppercase;color:#FCD34D">partial</td><td style="padding:8px 16px;color:hsl(215 14% 65%);font-size:11px">2026-08-31 10:30:01</td><td style="padding:8px 16px;text-align:right;color:hsl(215 14% 65%);font-size:11px;font-variant-numeric:tabular-nums">9s</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">2</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">1</td></tr>
+              <tr><td style="padding:8px 16px;color:hsl(215 14% 65%);font-family:'JetBrains Mono',monospace;font-size:11px">#4824</td><td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:11px">corporate-actions</td><td style="padding:8px 16px;font-size:11px;text-transform:uppercase;color:#F4576B">failed</td><td style="padding:8px 16px;color:hsl(215 14% 65%);font-size:11px">2026-08-31 11:00:03</td><td style="padding:8px 16px;text-align:right;color:hsl(215 14% 65%);font-size:11px;font-variant-numeric:tabular-nums">31s</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">—</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Data quality</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9%);border-radius:8px;padding:16px">
+          <header style="margin-bottom:12px;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px">
+            <div>
+              <h3 style="margin:0;font-size:14px;font-weight:500">View-series repairs</h3>
+              <p style="margin:0;color:hsl(215 14% 65%);font-size:12px">days spread from a multi-day catch-up after YouTube served a stale cumulative count · correct in total, interpolated per day</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="border-radius:4px;background:rgb(252 211 77 / 0.15);padding:2px 6px;font-size:10px;color:#FCD34D">3 frozen today</span>
+              <span style="color:hsl(215 14% 65%);font-size:11px;font-variant-numeric:tabular-nums">since 2026-06-02</span>
+            </div>
+          </header>
+          <p style="margin:0 0 8px;color:hsl(215 14% 65%);font-size:11px;font-variant-numeric:tabular-nums">184 channel-days repaired across 11 dates</p>
+          <table style="width:100%;text-align:left;font-size:12px;border-collapse:collapse">
+            <thead style="color:hsl(215 14% 65%);border-bottom:1px solid hsl(220 14% 18% / 0.6)"><tr><th style="padding:6px 12px 6px 0;font-weight:500">Date</th><th style="padding:6px 12px 6px 0;font-weight:500">Company</th><th style="padding:6px 12px 6px 0;text-align:right;font-weight:500">Channels</th><th style="padding:6px 0;text-align:right;font-weight:500">Span</th></tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.3)"><td style="padding:6px 12px 6px 0;font-variant-numeric:tabular-nums">2026-08-24</td><td style="padding:6px 12px 6px 0;color:hsl(215 14% 65%)">TIPSMUSIC</td><td style="padding:6px 12px 6px 0;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">18</td><td style="padding:6px 0;text-align:right;font-variant-numeric:tabular-nums"><span style="color:hsl(215 14% 65%)">3d</span></td></tr>
+              <tr style="border-bottom:1px solid hsl(220 14% 18% / 0.3)"><td style="padding:6px 12px 6px 0;font-variant-numeric:tabular-nums">2026-08-11</td><td style="padding:6px 12px 6px 0;color:hsl(215 14% 65%)">SAREGAMA</td><td style="padding:6px 12px 6px 0;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">14</td><td style="padding:6px 0;text-align:right;font-variant-numeric:tabular-nums"><span style="color:#FCD34D">8d</span></td></tr>
+              <tr><td style="padding:6px 12px 6px 0;font-variant-numeric:tabular-nums">2026-07-29</td><td style="padding:6px 12px 6px 0;color:hsl(215 14% 65%)">TIPSMUSIC</td><td style="padding:6px 12px 6px 0;text-align:right;color:hsl(215 14% 65%);font-variant-numeric:tabular-nums">22</td><td style="padding:6px 0;text-align:right;font-variant-numeric:tabular-nums"><span style="color:hsl(215 14% 65%)">2d</span></td></tr>
+            </tbody>
+          </table>
+          <p style="margin:12px 0 0;color:hsl(215 14% 65%);font-size:11px;opacity:0.7">Repairs preserve the period total exactly — only the per-day split is inferred. Cumulative <code style="font-family:'JetBrains Mono',monospace">total_views</code>, the raw API reading, is never modified.</p>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Errors</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9% / 0.5);border-radius:8px;height:160px"></div>
+      </div>
+      <div>
+        <h2 style="margin:0 0 12px;font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Candidate Topic channels (surfaced by UGC discovery)</h2>
+        <div style="border:1px solid hsl(220 14% 18%);background:hsl(222 20% 9% / 0.5);border-radius:8px;height:160px"></div>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1000}}">
+const ROUTES = ['Overview','Nowcast','Drivers','Signals','Analysis','Explore','Market','Growth','Channels','Correlation','Events','Stock','Data','Ops'];
+const BUILT = { Overview:1, Signals:1, Nowcast:1, Channels:1, Ops:1 };
+
+class Component extends DCLogic {
+  state = { route: 'Overview' };
+  renderVals() {
+    const active = this.state.route;
+    return {
+      navItems: ROUTES.map((label) => ({
+        label,
+        go: () => this.setState({ route: BUILT[label] ? label : active }),
+        style: `border:0;font-family:inherit;cursor:pointer;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;transition:color .15s,background .15s;` +
+          (label === active
+            ? 'background:rgb(59 130 246 / 0.15);color:#bfdbfe;'
+            : `background:transparent;color:hsl(215 14% 65%);${BUILT[label] ? '' : 'opacity:.55;'}`),
+      })),
+      isOverview: active === 'Overview',
+      isSignals: active === 'Signals',
+      isNowcast: active === 'Nowcast',
+      isChannels: active === 'Channels',
+      isOps: active === 'Ops',
+    };
+  }
+}
+</script>
+</body>
+</html>

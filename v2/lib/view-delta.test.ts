@@ -273,3 +273,74 @@ test('every value this module emits is acceptable to the CHECK constraint', () =
     }
   }
 });
+
+/* ---- conservation --------------------------------------------------------
+ *
+ * The invariant that makes the whole module checkable against reality:
+ * total_views is authoritative and never modified, so the daily values derived
+ * from it must sum back to the cumulative movement they were derived from.
+ *
+ * On 2026-09-01 the channel ingest began differencing a TRUNCATED series -- a
+ * read with no pagination silently took PostgREST's 1000-row cap -- and wrote
+ * the same 32-day backlog onto every day. daily_views ran to 26x the truth
+ * before anyone looked. No unit test could have caught the truncation itself,
+ * but this is the property that makes the corruption obvious the moment it is
+ * measured, and it is asserted in production by comparing against total_views.
+ */
+
+test('computeDailyViews: the daily values sum to the cumulative movement', () => {
+  const got = computeDailyViews([
+    { date: '2026-07-01', total_views: 1_000_000 },
+    { date: '2026-07-02', total_views: 1_010_000 },
+    { date: '2026-07-03', total_views: 1_025_000 },
+    { date: '2026-07-04', total_views: 1_031_000 },
+  ]);
+  const sum = got.reduce((a, r) => a + (r.daily_views ?? 0), 0);
+  assert.equal(sum, 1_031_000 - 1_000_000);
+});
+
+test('computeDailyViews: a resolved freeze still conserves the total', () => {
+  // Frozen for two days, then a catch-up. However the backlog is split across
+  // the plateau, the sum must equal the cumulative movement exactly.
+  const got = computeDailyViews([
+    { date: '2026-07-01', total_views: 1_000_000 },
+    { date: '2026-07-02', total_views: 1_000_000 },
+    { date: '2026-07-03', total_views: 1_000_000 },
+    { date: '2026-07-04', total_views: 1_030_000 },
+  ]);
+  const sum = got.reduce((a, r) => a + (r.daily_views ?? 0), 0);
+  assert.equal(sum, 30_000);
+});
+
+test('computeDailyViews: a gap in the rows conserves what it can see', () => {
+  // Rows missing for part of the span, so the delta is stored whole. The sum
+  // must still be the movement between the readings actually held -- never a
+  // multiple of it, which is precisely what the truncation bug produced.
+  const got = computeDailyViews([
+    { date: '2026-07-01', total_views: 1_000_000 },
+    { date: '2026-07-09', total_views: 1_080_000 },
+    { date: '2026-07-10', total_views: 1_085_000 },
+  ]);
+  const sum = got.reduce((a, r) => a + (r.daily_views ?? 0), 0);
+  assert.equal(sum, 85_000);
+});
+
+test('computeDailyViews: re-running on its own output does not double-count', () => {
+  // Idempotence. The ingest re-derives a 45-day window every run, so a series
+  // processed twice must not accumulate -- the failure mode that turned one
+  // backlog into nine days of triple-counted views.
+  const series = [
+    { date: '2026-07-01', total_views: 1_000_000 },
+    { date: '2026-07-02', total_views: 1_000_000 },
+    { date: '2026-07-03', total_views: 1_030_000 },
+    { date: '2026-07-04', total_views: 1_040_000 },
+  ];
+  const first = computeDailyViews(series);
+  const second = computeDailyViews(series);
+  assert.deepEqual(
+    first.map((r) => r.daily_views),
+    second.map((r) => r.daily_views),
+  );
+  const sum = second.reduce((a, r) => a + (r.daily_views ?? 0), 0);
+  assert.equal(sum, 40_000);
+});

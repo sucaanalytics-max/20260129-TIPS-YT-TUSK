@@ -56,12 +56,56 @@ export async function GET(req: Request) {
     // unfreezes, the catch-up has to be spread back over the days it actually
     // covers (see lib/view-delta.ts), which means re-deriving the recent series
     // rather than differencing a single pair of readings.
-    const { data: priorRows } = await supabase
-      .from('fct_channel_daily')
-      .select('channel_id, date, total_views, subscribers, video_count, daily_views')
-      .gte('date', windowStart)
-      .lt('date', today)
-      .order('date', { ascending: true });
+    /*
+     * PAGED, and it must stay paged.
+     *
+     * This read had no .limit() and no pagination, so it took PostgREST's
+     * default 1000-row cap. The window holds 71 channels x 45 days = ~2900
+     * rows, so it silently returned only the OLDEST thousand and every
+     * channel's series ended about a month before today.
+     *
+     * The consequence was not a missing number, it was a wrong one. `prev`
+     * became a month-old reading, `dv` a ~32-day backlog, and `span` ~32 --
+     * which trips the "rows missing, store the delta whole" branch. So every
+     * run wrote the same 32-day backlog onto today, again, and the anchor never
+     * advanced. Between 2026-09-01 and 2026-09-09 daily_views ran 3x to 26x the
+     * truth, and the nowcast built on it drifted upward every day.
+     *
+     * Order by (date, channel_id) so paging is a total order and cannot repeat
+     * or skip a row.
+     */
+    const PAGE = 1000;
+    const MAX_PAGES = 40; // 40k rows; the window is ~2.9k today
+    const priorRows: Array<{
+      channel_id: string;
+      date: string;
+      total_views: number | null;
+      subscribers: number | null;
+      video_count: number | null;
+      daily_views: number | null;
+    }> = [];
+    for (let page = 0; ; page++) {
+      if (page >= MAX_PAGES) {
+        throw new Error(
+          `youtube-channels: prior-series read exceeded ${MAX_PAGES * PAGE} rows. ` +
+            `Refusing to difference a truncated series -- that silently corrupts every delta.`,
+        );
+      }
+      const { data: chunk, error } = await supabase
+        .from('fct_channel_daily')
+        .select('channel_id, date, total_views, subscribers, video_count, daily_views')
+        .gte('date', windowStart)
+        .lt('date', today)
+        .order('date', { ascending: true })
+        .order('channel_id', { ascending: true })
+        .range(page * PAGE, page * PAGE + PAGE - 1);
+      if (error) {
+        throw new Error(`youtube-channels: prior-series read failed -- ${error.message}`);
+      }
+      const rows = chunk ?? [];
+      priorRows.push(...(rows as typeof priorRows));
+      if (rows.length < PAGE) break;
+    }
 
     const priorBy = new Map<
       string,
@@ -71,7 +115,7 @@ export async function GET(req: Request) {
       string,
       Array<{ date: string; total_views: number | null; daily_views: number | null }>
     >();
-    for (const r of priorRows ?? []) {
+    for (const r of priorRows) {
       // ascending, so the last write per channel is the most recent day
       priorBy.set(r.channel_id, {
         date: r.date,

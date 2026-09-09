@@ -606,3 +606,35 @@ test('catalogFreshness: scores normally when the catalogue has real depth', () =
   assert.notEqual(got.value, null);
   assert.equal(Number(got.value?.toFixed(2)), 0.5);
 });
+
+/* ---- benchmark staleness --------------------------------------------------
+ *
+ * The Nifty Midcap 150 feed died on 2026-07-23 when Yahoo stopped serving
+ * ^CRSMID. relativeStrength measures each leg from its own last row, so for 48
+ * days it compared the stock's last thirty days against the index's June-July
+ * window and returned a confident number from two different periods.
+ */
+
+const days = (n: number, from = '2026-09-09') =>
+  Array.from({ length: n }, (_, i) => {
+    const d = new Date(Date.parse(`${from}T00:00:00Z`) - (n - 1 - i) * 86_400_000);
+    return d.toISOString().slice(0, 10);
+  });
+
+test('relativeStrength: refuses to score against a stale benchmark', () => {
+  const stock = days(60).map((date, i) => ({ date, adjusted_close: 100 + i }));
+  // Index stops 48 days before the stock does.
+  const index = days(60, '2026-07-23').map((date, i) => ({ date, close: 200 + i }));
+  const got = relativeStrength(stock, index, 30);
+  assert.equal(got.value, null, 'must not compare two different periods');
+  assert.equal(got.warming, true);
+  assert.match(got.caveat ?? '', /days apart/);
+});
+
+test('relativeStrength: a weekend gap does not block the comparison', () => {
+  const stock = days(60).map((date, i) => ({ date, adjusted_close: 100 + i }));
+  // Index ends three days earlier — a long weekend, not a dead feed.
+  const index = days(60, '2026-09-06').map((date, i) => ({ date, close: 200 + i }));
+  const got = relativeStrength(stock, index, 30);
+  assert.notEqual(got.value, null, 'a few days must still score');
+});

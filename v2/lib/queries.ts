@@ -3,7 +3,6 @@ import { getServiceSupabase } from '@/lib/supabase/server';
 import {
   viewMomentum,
   catalogFreshness,
-  freshnessRatioAsOf,
   leadLagRead,
   relativeStrength,
   divergence,
@@ -1897,11 +1896,9 @@ export async function getSignalsSnapshot(opts: {
   const iso = (d: Date) => d.toISOString().slice(0, 10);
   const since180 = iso(new Date(today.getTime() - 180 * 86_400_000));
   const since90 = iso(new Date(today.getTime() - 90 * 86_400_000));
-  const last30 = iso(new Date(today.getTime() - 30 * 86_400_000));
   // Catalog-freshness baseline needs 60 historical 30d-rolling windows;
   // the earliest window starts at today-90, so we need fct_video_daily
   // from today-90 forward.
-  const since90forFacts = since90;
 
   type EmptyResult<T> = { data: T };
   const emptyResult = <T>(data: T): Promise<EmptyResult<T>> => Promise.resolve({ data });
@@ -1953,19 +1950,34 @@ export async function getSignalsSnapshot(opts: {
     ((corrAsofRes.data ?? []) as Array<{ asof: string }>)[0]?.asof ?? null;
 
   // Phase 2: dependent fetches (videos + lead-lag rows for that asof).
-  const [videosRes, videoFactsRes, leadLagRowsRes] = await Promise.all([
-    channelIds.length > 0
-      ? supabase
-          .from('dim_video')
-          .select('video_id, published_at, channel_id')
-          .in('channel_id', channelIds)
-      : emptyResult<Array<{ video_id: string; published_at: string; channel_id: string }>>([]),
-    channelIds.length > 0
-      ? supabase
-          .from('fct_video_daily')
-          .select('video_id, daily_views, date')
-          .gte('date', since90forFacts)
-      : emptyResult<Array<{ video_id: string; daily_views: number | null; date: string }>>([]),
+  /*
+   * The two video reads that used to live here are gone.
+   *
+   * dim_video was fetched with no date bound and fct_video_daily with NO filter
+   * at all — 172,900 rows over the window, which PostgREST silently capped at
+   * 1000, so catalogue freshness was computed from 0.6% of its data on every
+   * page render. The 30-day aggregation now happens in the database
+   * (v_video_freshness_30d, migration 0031) and returns one row per video that
+   * actually earned views.
+   *
+   * The 60-point historical baseline is NOT rebuilt here. It needs the same
+   * 90-day per-video history the old read was truncating, so it belongs in the
+   * database too. It is moot today regardless: dim_video holds almost no back
+   * catalogue, so catalogFreshness refuses to score at all and never reaches
+   * the baseline. Both the catalogue backfill and a DB-side baseline are
+   * prerequisites to this signal meaning anything again.
+   */
+  const [videoFreshnessRows, leadLagRowsRes] = await Promise.all([
+    pageAll<{ published_at: string; views_last_30d: number }>(
+      (from, to) =>
+        supabase
+          .from('v_video_freshness_30d')
+          .select('published_at, views_last_30d')
+          .eq('company', opts.company)
+          .order('video_id', { ascending: true })
+          .range(from, to),
+      { label: 'getSignalsSnapshot video freshness' },
+    ),
     corrAsof
       ? supabase
           .from('fct_correlation_window')
@@ -1984,16 +1996,6 @@ export async function getSignalsSnapshot(opts: {
         >([]),
   ]);
 
-  const videos = (videosRes.data ?? []) as Array<{
-    video_id: string;
-    published_at: string;
-    channel_id: string;
-  }>;
-  const videoFacts = (videoFactsRes.data ?? []) as Array<{
-    video_id: string;
-    daily_views: number | null;
-    date: string;
-  }>;
   const leadLagRows = (leadLagRowsRes.data ?? []) as Array<{
     lag_days: number;
     pearson_r: number;
@@ -2001,37 +2003,10 @@ export async function getSignalsSnapshot(opts: {
     is_significant: boolean | null;
   }>;
 
-  // videoFacts is fetched over the wider 90d window for the baseline below.
-  // For the current-window signal input, sum only the trailing 30d.
-  const last30Ms = new Date(last30 + 'T00:00:00Z').getTime();
-  const viewsByVideo = new Map<string, number>();
-  for (const r of videoFacts) {
-    if (r.daily_views == null) continue;
-    const dMs = new Date(r.date + 'T00:00:00Z').getTime();
-    if (dMs < last30Ms) continue;
-    viewsByVideo.set(r.video_id, (viewsByVideo.get(r.video_id) ?? 0) + Number(r.daily_views));
-  }
-  const channelSet = new Set(channelIds);
-  const ourVideos = videos.filter((v) => channelSet.has(v.channel_id));
-  const videoInputs: VideoFreshnessInput[] = ourVideos
-    .map((v) => ({
-      published_at: v.published_at,
-      views_last_30d: viewsByVideo.get(v.video_id) ?? 0,
-    }))
-    .filter((v) => v.views_last_30d > 0);
-
-  // Build catalog-freshness baseline: 60 historical 30d-rolling ratios.
-  // catalogFreshness() uses this distribution to z-score the current ratio,
-  // sidestepping the structural bias of static thresholds (Saregama legacy
-  // would always sit < 0.3, TIPS frontline always > 0.6).
-  const ourVideoIds = new Set(ourVideos.map((v) => v.video_id));
-  const ourFacts = videoFacts.filter((f) => ourVideoIds.has(f.video_id));
-  const baselineRatios: number[] = [];
-  for (let i = 1; i <= 60; i++) {
-    const asOf = new Date(today.getTime() - i * 86_400_000);
-    const r = freshnessRatioAsOf(ourVideos, ourFacts, asOf);
-    if (r != null) baselineRatios.push(r);
-  }
+  const videoInputs: VideoFreshnessInput[] = videoFreshnessRows.map((v) => ({
+    published_at: v.published_at,
+    views_last_30d: Number(v.views_last_30d),
+  }));
 
   // Compute price momentum (z-score of 7d-avg adjusted_close) for divergence.
   // We re-use viewMomentum on a price-shaped series for consistency.
@@ -2041,7 +2016,7 @@ export async function getSignalsSnapshot(opts: {
   const viewMom = viewMomentum(
     companyDaily.map((r) => ({ date: r.date, daily_views: r.daily_views })),
   );
-  const fresh = catalogFreshness(videoInputs, today, baselineRatios);
+  const fresh = catalogFreshness(videoInputs, today);
   const ll = leadLagRead(leadLagRows);
   const rs = relativeStrength(stock, index, 30);
   const div = divergence(viewMom.sigma ?? null, priceMom.sigma ?? null);
@@ -2344,29 +2319,47 @@ export async function getDualSymbolChartSeries(opts: { from?: string; to?: strin
   const from = opts.from ?? new Date(Date.now() - 180 * 86_400_000).toISOString().slice(0, 10);
   const to = opts.to ?? new Date().toISOString().slice(0, 10);
 
-  const [viewsRes, priceRes] = await Promise.all([
-    supabase
-      .from('v_company_daily')
-      .select('date, company, daily_views')
-      .in('company', ['TIPSMUSIC', 'SAREGAMA'])
-      .gte('date', from)
-      .lte('date', to)
-      .order('date', { ascending: true }),
-    supabase
-      .from('fct_adjusted_price_daily')
-      .select('date, symbol, adjusted_close')
-      .in('symbol', ['TIPSMUSIC', 'SAREGAMA'])
-      .gte('date', from)
-      .lte('date', to)
-      .order('date', { ascending: true }),
+  /*
+   * PAGED. At the 1Y default these fit inside the silent 1000-row cap, but the
+   * range strip offers 5Y and All: two companies over five years is ~3,650
+   * view rows and ~2,500 price rows. Unpaged, picking 5Y quietly redrew the
+   * chart from the oldest thousand days and dropped everything recent.
+   */
+  const [viewsRows, priceRows] = await Promise.all([
+    pageAll<{ date: string; company: string; daily_views: number | null }>(
+      (lo, hi) =>
+        supabase
+          .from('v_company_daily')
+          .select('date, company, daily_views')
+          .in('company', ['TIPSMUSIC', 'SAREGAMA'])
+          .gte('date', from)
+          .lte('date', to)
+          .order('date', { ascending: true })
+          .order('company', { ascending: true })
+          .range(lo, hi),
+      { label: 'getDualSymbolChartSeries views' },
+    ),
+    pageAll<{ date: string; symbol: string; adjusted_close: number | null }>(
+      (lo, hi) =>
+        supabase
+          .from('fct_adjusted_price_daily')
+          .select('date, symbol, adjusted_close')
+          .in('symbol', ['TIPSMUSIC', 'SAREGAMA'])
+          .gte('date', from)
+          .lte('date', to)
+          .order('date', { ascending: true })
+          .order('symbol', { ascending: true })
+          .range(lo, hi),
+      { label: 'getDualSymbolChartSeries prices' },
+    ),
   ]);
 
-  const views = (viewsRes.data ?? []) as Array<{
+  const views = viewsRows as Array<{
     date: string;
     company: string;
     daily_views: number | null;
   }>;
-  const prices = (priceRes.data ?? []) as Array<{
+  const prices = priceRows as Array<{
     date: string;
     symbol: string;
     adjusted_close: number | null;

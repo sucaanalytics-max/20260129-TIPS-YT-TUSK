@@ -230,7 +230,22 @@ export async function GET(req: Request) {
         it.status?.madeForKids ?? it.status?.selfDeclaredMadeForKids ?? null;
       const privacy_status = it.status?.privacyStatus ?? null;
       if (uploads || made_for_kids != null || privacy_status != null) {
-        const update: Record<string, unknown> = { channel_id: ch.channel_id };
+        /*
+         * channel_name is REQUIRED in this payload even though the row always
+         * exists. PostgREST's upsert is INSERT ... ON CONFLICT, so the INSERT
+         * arm is type-checked against every NOT NULL column regardless of
+         * whether the conflict path is the one taken. Omitting it failed the
+         * whole statement every single day since the column was made NOT NULL,
+         * which meant uploads_playlist_id was never refreshed and the video
+         * cron has been running on whatever playlist ids it started with.
+         *
+         * Prefer the live title so names stay current, and fall back to the
+         * stored one, which is never null because the column forbids it.
+         */
+        const update: Record<string, unknown> = {
+          channel_id: ch.channel_id,
+          channel_name: it.snippet?.title || ch.channel_name,
+        };
         if (uploads) update.uploads_playlist_id = uploads;
         if (made_for_kids != null) update.made_for_kids = made_for_kids;
         if (privacy_status != null) update.privacy_status = privacy_status;

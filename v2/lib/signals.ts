@@ -319,6 +319,12 @@ export function leadLagRead(
  * (NIFTY MIDCAP 150 by default). Positive = outperforming benchmark.
  * Rows must be sorted ascending by date.
  */
+/**
+ * How far the benchmark may lag the stock before a comparison is meaningless.
+ * Wide enough for a long weekend, narrow enough to catch a dead feed.
+ */
+const BENCHMARK_STALENESS_DAYS = 5;
+
 export function relativeStrength(
   stock: Array<{ date: string; adjusted_close: number | null }>,
   index: Array<{ date: string; close: number | null }>,
@@ -339,6 +345,36 @@ export function relativeStrength(
   const iRet = logRet(index, 'close');
   if (sRet == null || iRet == null) {
     return { value: null, direction: 'flat', significant: false, warming: true };
+  }
+
+  /*
+   * Both legs must cover the SAME period, or this is not relative strength.
+   *
+   * Each return is measured from its own last available row, so a stale
+   * benchmark silently compares the stock's last thirty days against whatever
+   * thirty days the index happens to end on. The Nifty Midcap 150 feed died on
+   * 2026-07-23 (Yahoo stopped serving ^CRSMID) and went 48 days stale while
+   * this kept returning a confident number built from two different windows.
+   */
+  const lastOf = (rows: Array<{ date: string }>, has: (r: never) => boolean) =>
+    rows.filter(has as (r: unknown) => boolean).at(-1)?.date ?? null;
+  const sLast = lastOf(stock, ((r: { adjusted_close: number | null }) => r.adjusted_close != null) as never);
+  const iLast = lastOf(index, ((r: { close: number | null }) => r.close != null) as never);
+  if (sLast && iLast) {
+    const gapDays = Math.abs(Date.parse(sLast) - Date.parse(iLast)) / 86_400_000;
+    // A few days absorbs weekends and market holidays; beyond that the two
+    // series are measuring different weeks.
+    if (gapDays > BENCHMARK_STALENESS_DAYS) {
+      return {
+        value: null,
+        direction: 'flat',
+        significant: false,
+        warming: true,
+        caveat:
+          `Benchmark last traded ${iLast} against the stock's ${sLast} — ` +
+          `${Math.round(gapDays)} days apart, so the two returns would cover different periods.`,
+      };
+    }
   }
   const diff = sRet - iRet;
   let direction: Direction = 'flat';

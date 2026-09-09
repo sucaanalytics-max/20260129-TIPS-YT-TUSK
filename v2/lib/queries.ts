@@ -25,6 +25,7 @@ import {
   periodReturn,
   returnSinceDate,
 } from '@/lib/risk';
+import { pageAll } from '@/lib/paged';
 import { buildCorrelationMatrix } from '@/lib/correlation-matrix';
 import { resolveStockRange, type StockRange } from '@/lib/stock-range';
 import {
@@ -1777,14 +1778,27 @@ export async function getChannelGrowth(opts: { company?: string }): Promise<Chan
     is_active: boolean;
   }> | null) ?? []).filter((c) => c.is_active && (!opts.company || c.company === opts.company));
 
-  const { data: facts } = await supabase
-    .from('fct_channel_daily')
-    .select('channel_id, date, daily_views, subscribers, total_views')
-    .gte('date', since)
-    .order('date', { ascending: false });
+  // PAGED. 74 channels over the window is ~6,200 rows, six times the silent cap.
+  const facts = await pageAll<{
+    channel_id: string;
+    date: string;
+    daily_views: number | null;
+    subscribers: number | null;
+    total_views: number | null;
+  }>(
+    (from, to) =>
+      supabase
+        .from('fct_channel_daily')
+        .select('channel_id, date, daily_views, subscribers, total_views')
+        .gte('date', since)
+        .order('date', { ascending: false })
+        .order('channel_id', { ascending: true })
+        .range(from, to),
+    { label: 'getChannelGrowth facts' },
+  );
 
   const byChannel = new Map<string, Array<{ date: string; daily_views: number | null; subscribers: number | null; total_views: number | null }>>();
-  for (const r of (facts ?? []) as Array<{
+  for (const r of facts as Array<{
     channel_id: string;
     date: string;
     daily_views: number | null;
@@ -3732,21 +3746,34 @@ export async function getTopicReach(opts: {
 
   // 3) Daily facts over the window
   const channelIds = channels.map((c) => c.channel_id);
-  const { data: facts } = await supabase
-    .from('fct_channel_daily')
-    // delta_span_days: a 0026 catch-up row holds several days of views, so the
-    // day it lands on must not be scaled up again for the freeze it resolves.
-    .select('channel_id, date, daily_views, subscribers, delta_span_days')
-    .in('channel_id', channelIds)
-    .gte('date', since)
-    .order('date', { ascending: true });
-  const factRows = (facts ?? []) as Array<{
+  /*
+   * PAGED. 33 topic channels over a 120-day window is ~3,500 rows, well past
+   * PostgREST's silent 1000-row cap — this read was returning 28% of its data
+   * and the nowcast's topic leg, roughly 40% of the revenue estimate, was built
+   * on it. Ordered by (date, channel_id) so paging is a total order.
+   */
+  const factRows = await pageAll<{
     channel_id: string;
     date: string;
     daily_views: number | null;
     subscribers: number | null;
     delta_span_days: number | null;
-  }>;
+  }>(
+    (from, to) =>
+      supabase
+        .from('fct_channel_daily')
+        // delta_span_days: a 0026 catch-up row holds several days of views, so
+        // the day it lands on must not be scaled up again for the freeze it
+        // resolves.
+        .select('channel_id, date, daily_views, subscribers, delta_span_days')
+        .in('channel_id', channelIds)
+        .gte('date', since)
+        .order('date', { ascending: true })
+        .order('channel_id', { ascending: true })
+        .range(from, to),
+    { label: 'getTopicReach facts' },
+  );
+
 
   // 4) Aggregate attributed views per date, carrying how many channels
   //    actually contributed — a day built from half the roster is not the same

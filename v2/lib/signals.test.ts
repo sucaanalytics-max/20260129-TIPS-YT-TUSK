@@ -570,3 +570,39 @@ test('demandMomentum: accelerating final week → up, and never bias-weighted (c
   assert.ok((r.sigma ?? 0) > 1.5, `expected strong positive z, got ${r.sigma}`);
   assert.ok(r.caveat?.includes('not paid subscribers'));
 });
+
+/* ---- catalogue depth ------------------------------------------------------
+ *
+ * dim_video tracks recent uploads, not the back catalogue: as of 2026-09 it
+ * held 10,024 videos published in 2026 and 284 from every prior year combined.
+ * The freshness ratio duly read 0.998 — "almost everything watched is new",
+ * when the truth was "almost nothing old is recorded".
+ */
+
+test('catalogFreshness: refuses to score an incomplete catalogue', () => {
+  const now = new Date('2026-09-09T00:00:00Z');
+  // 19 of 20 videos published inside the window — not a catalogue, a feed.
+  const videos = [
+    { published_at: '2020-01-01', views_last_30d: 100 },
+    ...Array.from({ length: 19 }, () => ({
+      published_at: '2026-08-20',
+      views_last_30d: 1000,
+    })),
+  ];
+  const got = catalogFreshness(videos, now);
+  assert.equal(got.value, null, 'must not report a ratio it cannot support');
+  assert.equal(got.warming, true);
+  assert.match(got.caveat ?? '', /back catalogue is not represented/);
+});
+
+test('catalogFreshness: scores normally when the catalogue has real depth', () => {
+  const now = new Date('2026-09-09T00:00:00Z');
+  // Half the videos predate the window — a plausible catalogue.
+  const videos = [
+    ...Array.from({ length: 10 }, () => ({ published_at: '2019-05-01', views_last_30d: 100 })),
+    ...Array.from({ length: 10 }, () => ({ published_at: '2026-08-20', views_last_30d: 100 })),
+  ];
+  const got = catalogFreshness(videos, now);
+  assert.notEqual(got.value, null);
+  assert.equal(Number(got.value?.toFixed(2)), 0.5);
+});

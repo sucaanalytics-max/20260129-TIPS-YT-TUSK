@@ -147,6 +147,13 @@ export interface VideoFreshnessInput {
  *   - Without baseline: falls back to static thresholds (> 0.6 = up,
  *     < 0.3 = down). Kept for tests / cold-start.
  */
+/**
+ * Minimum share of tracked videos that must predate the freshness window for
+ * the ratio to mean anything. Below this the catalogue is not being measured,
+ * only the recent-uploads feed.
+ */
+const CATALOG_DEPTH_FLOOR = 0.25;
+
 export function catalogFreshness(
   videos: VideoFreshnessInput[],
   asOf: Date = new Date(),
@@ -156,6 +163,37 @@ export function catalogFreshness(
     return { value: null, direction: 'flat', significant: false, warming: true };
   }
   const ninetyDaysAgoMs = asOf.getTime() - 90 * 86_400_000;
+
+  /*
+   * The denominator has to be the WHOLE catalogue, or this ratio is not a
+   * freshness measure — it is a measure of what the video ingest happens to
+   * track.
+   *
+   * As of 2026-09 dim_video holds 10,024 videos published in 2026 and 284 from
+   * every year before it. Tips and Saregama have back catalogues in the tens of
+   * thousands going back decades, so the older material is simply absent. The
+   * ratio duly came out at 0.998, which reads as "almost everything watched is
+   * new" when the truth is "almost nothing old is recorded".
+   *
+   * So refuse to report when the input is overwhelmingly inside the freshness
+   * window. That is not a plausible catalogue, it is an incomplete one, and a
+   * confident 0.998 is worse than an honest gap.
+   */
+  const olderThanWindow = videos.filter(
+    (v) => Number.isFinite(new Date(v.published_at).getTime())
+      && new Date(v.published_at).getTime() < ninetyDaysAgoMs,
+  ).length;
+  if (olderThanWindow / videos.length < CATALOG_DEPTH_FLOOR) {
+    return {
+      value: null,
+      direction: 'flat',
+      significant: false,
+      warming: true,
+      caveat:
+        `Only ${olderThanWindow} of ${videos.length} tracked videos predate the 90-day window, ` +
+        `so the back catalogue is not represented and the ratio would be meaningless.`,
+    };
+  }
   let total = 0;
   let fresh = 0;
   for (const v of videos) {
